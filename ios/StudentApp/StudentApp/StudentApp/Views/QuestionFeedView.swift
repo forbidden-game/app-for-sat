@@ -6,6 +6,8 @@ struct QuestionFeedView: View {
     @State private var selectedOption: String?
     @State private var freeResponse: String = ""
 
+    private let swipeThreshold: CGFloat = 30
+
     var body: some View {
         let question = vm.session.questions[vm.currentIndex]
         VStack(alignment: .leading, spacing: 20) {
@@ -41,20 +43,28 @@ struct QuestionFeedView: View {
                 .foregroundStyle(.secondary)
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .contentShape(Rectangle())
-        .gesture(
-            DragGesture(minimumDistance: 24)
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 12)
                 .onEnded { value in
-                    if value.translation.height < -40 {
-                        selectedOption = nil
-                        freeResponse = ""
-                        vm.advance()
-                    } else if value.translation.height > 40 {
-                        selectedOption = nil
-                        freeResponse = ""
-                        vm.retreat()
-                    }
+                    handleSwipe(value)
                 }
         )
+    }
+
+    private func handleSwipe(_ value: DragGesture.Value) {
+        if value.translation.height < -swipeThreshold {
+            resetInputs()
+            vm.advance()
+        } else if value.translation.height > swipeThreshold {
+            resetInputs()
+            vm.retreat()
+        }
+    }
+
+    private func resetInputs() {
+        selectedOption = nil
+        freeResponse = ""
     }
 }
