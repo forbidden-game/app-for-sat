@@ -29,9 +29,21 @@ struct ContentView: View {
                 stem: "Solve: 5x = 20. x = ?",
                 options: nil,
                 answerKey: AnswerKey(correct: 4.0)
+            ),
+            Question(
+                id: "Q3",
+                questionType: "mcq",
+                stem: "Which is a prime number?",
+                options: [
+                    QuestionOption(label: "A", content: "9"),
+                    QuestionOption(label: "B", content: "11"),
+                    QuestionOption(label: "C", content: "12"),
+                    QuestionOption(label: "D", content: "15")
+                ],
+                answerKey: AnswerKey(correct: "B")
             )
         ])
-        QuestionFeedView(vm: QuestionFeedViewModel(session: sample))
+        PracticeFlowView(session: sample)
     }
 }
 
