@@ -6,6 +6,7 @@ struct QuestionFeedView: View {
     @Binding var answers: [String: String]
     @Binding var returnToOverviewOnAnswer: Bool
     let onShowOverview: () -> Void
+    let onAnswer: (Question, String) -> Void
 
     @State private var selectedOption: String?
     @State private var freeResponse: String = ""
@@ -188,6 +189,7 @@ struct QuestionFeedView: View {
     private func recordAnswer(_ value: String) {
         let question = vm.session.questions[vm.currentIndex]
         answers[question.id] = value
+        onAnswer(question, value)
     }
 
     private func advanceAfterAnswer() {

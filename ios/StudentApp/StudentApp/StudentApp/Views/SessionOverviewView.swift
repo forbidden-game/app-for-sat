@@ -4,6 +4,8 @@ import StudentCore
 struct SessionOverviewView: View {
     let session: PracticeSession
     let answers: [String: String]
+    let isSubmitting: Bool
+    let submissionError: String?
     let onSelectQuestion: (Int) -> Void
     let onSubmit: () -> Void
 
@@ -46,20 +48,34 @@ struct SessionOverviewView: View {
                     }
                 }
 
+                if let error = submissionError {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                }
+
                 Spacer()
 
                 Button {
                     onSubmit()
                 } label: {
-                    Text("Submit")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color(red: 0.22, green: 0.76, blue: 0.39))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    HStack {
+                        if isSubmitting {
+                            ProgressView()
+                                .tint(.white)
+                        }
+                        Text(isSubmitting ? "Submitting..." : "Submit")
+                            .font(.headline)
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color(red: 0.22, green: 0.76, blue: 0.39))
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
                 }
+                .disabled(isSubmitting)
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
