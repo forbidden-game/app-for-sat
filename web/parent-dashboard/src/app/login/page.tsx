@@ -17,28 +17,40 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="p-6 max-w-sm mx-auto">
+    <div className="min-h-screen bg-zinc-50">
       <SupabaseConfigBanner />
-      <h1 className="text-xl font-semibold">Parent Login</h1>
-      {sent ? (
-        <p className="mt-4">Check your email for the login link.</p>
-      ) : supabase ? (
-        <form onSubmit={onSubmit} className="mt-4 space-y-3">
-          <input
-            className="border p-2 w-full"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-          />
-          <button className="bg-black text-white px-4 py-2" type="submit">
-            Send Link
-          </button>
-        </form>
-      ) : (
-        <p className="mt-4 text-sm text-zinc-600">
-          Login is disabled until Supabase is configured.
-        </p>
-      )}
-    </main>
+      <main className="mx-auto flex max-w-md flex-col px-6 py-16">
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
+          <h1 className="text-xl font-semibold text-zinc-900">Parent Login</h1>
+          <p className="mt-2 text-sm text-zinc-500">
+            Receive a magic link to access your student dashboard.
+          </p>
+          {sent ? (
+            <p className="mt-4 text-sm text-zinc-700">
+              Check your email for the login link.
+            </p>
+          ) : supabase ? (
+            <form onSubmit={onSubmit} className="mt-4 space-y-3">
+              <input
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+              />
+              <button
+                className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+                type="submit"
+              >
+                Send Link
+              </button>
+            </form>
+          ) : (
+            <p className="mt-4 text-sm text-zinc-600">
+              Login is disabled until Supabase is configured.
+            </p>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
