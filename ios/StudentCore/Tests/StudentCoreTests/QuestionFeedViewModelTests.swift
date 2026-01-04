@@ -12,4 +12,16 @@ final class QuestionFeedViewModelTests: XCTestCase {
         vm.advance()
         XCTAssertEqual(vm.currentIndex, 1)
     }
+
+    func testRetreatMovesIndex() async throws {
+        let session = PracticeSession(id: "S1", questions: [
+            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: AnswerKey(correct: "A")),
+            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: AnswerKey(correct: "B"))
+        ])
+        let vm = QuestionFeedViewModel(session: session)
+        vm.advance()
+        XCTAssertEqual(vm.currentIndex, 1)
+        vm.retreat()
+        XCTAssertEqual(vm.currentIndex, 0)
+    }
 }
