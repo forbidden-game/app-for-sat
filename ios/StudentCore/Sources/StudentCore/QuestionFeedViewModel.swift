@@ -12,4 +12,9 @@ public final class QuestionFeedViewModel: ObservableObject {
         guard currentIndex + 1 < session.questions.count else { return }
         currentIndex += 1
     }
+
+    public func retreat() {
+        guard currentIndex - 1 >= 0 else { return }
+        currentIndex -= 1
+    }
 }
