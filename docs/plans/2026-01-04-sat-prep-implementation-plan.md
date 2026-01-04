@@ -1,7 +1,5 @@
 # SAT Prep MVP Backend Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Stand up the Supabase backend foundation (schema, RLS, core edge functions, and minimal seed data) to unblock iOS + web development.
 
 **Architecture:** Supabase Postgres stores question bank, sessions, attempts, and AI explanations. RLS enforces student/parent access. Edge Functions handle scoring and AI explanation generation with caching.

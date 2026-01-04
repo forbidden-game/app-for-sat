@@ -1,6 +1,5 @@
 # SAT Prep iOS Student App Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Build the iOS student MVP app with a swipe-based question feed, answer submission stub, and session summary.
 

@@ -1,7 +1,5 @@
 # SAT Prep Parent Web Dashboard Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
-
 **Goal:** Build the parent-facing web dashboard MVP (login, dashboard, student detail, session detail).
 
 **Architecture:** Next.js App Router with a lightweight data layer and Supabase client. UI is componentized with a simple auth gate.
