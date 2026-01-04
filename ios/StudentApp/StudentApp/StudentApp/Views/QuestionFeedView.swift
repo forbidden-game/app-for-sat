@@ -3,8 +3,14 @@ import StudentCore
 
 struct QuestionFeedView: View {
     @StateObject var vm: QuestionFeedViewModel
+    @Binding var answers: [String: String]
+    @Binding var returnToOverviewOnAnswer: Bool
+    let onShowOverview: () -> Void
+
     @State private var selectedOption: String?
     @State private var freeResponse: String = ""
+    @State private var pendingAutoAdvance: DispatchWorkItem?
+    @FocusState private var isInputFocused: Bool
 
     private let swipeThreshold: CGFloat = 30
 
@@ -49,6 +55,15 @@ struct QuestionFeedView: View {
                     handleSwipe(value)
                 }
         )
+        .onAppear {
+            loadAnswer(for: question)
+        }
+        .onChange(of: vm.currentIndex) { _, _ in
+            loadAnswer(for: vm.session.questions[vm.currentIndex])
+        }
+        .onChange(of: freeResponse) { _, newValue in
+            scheduleAutoAdvanceIfNeeded(with: newValue)
+        }
     }
 
     private func header(progress: Double, index: Int, total: Int) -> some View {
@@ -95,6 +110,8 @@ struct QuestionFeedView: View {
         let isSelected = selectedOption == option.label
         return Button {
             selectedOption = option.label
+            recordAnswer(option.label)
+            advanceAfterAnswer()
         } label: {
             HStack(spacing: 12) {
                 Text(option.label)
@@ -132,8 +149,13 @@ struct QuestionFeedView: View {
                 .foregroundStyle(Color(red: 0.22, green: 0.76, blue: 0.39))
 
             TextField("Type your answer", text: $freeResponse)
+                .focused($isInputFocused)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.numbersAndPunctuation)
+                .submitLabel(.done)
+                .onSubmit {
+                    commitFreeResponse()
+                }
         }
         .padding(16)
         .background(
@@ -141,6 +163,42 @@ struct QuestionFeedView: View {
                 .fill(Color.white)
                 .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 5)
         )
+    }
+
+    private func scheduleAutoAdvanceIfNeeded(with newValue: String) {
+        pendingAutoAdvance?.cancel()
+        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let workItem = DispatchWorkItem {
+            commitFreeResponse()
+        }
+        pendingAutoAdvance = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: workItem)
+    }
+
+    private func commitFreeResponse() {
+        let trimmed = freeResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        pendingAutoAdvance?.cancel()
+        recordAnswer(trimmed)
+        isInputFocused = false
+        advanceAfterAnswer()
+    }
+
+    private func recordAnswer(_ value: String) {
+        let question = vm.session.questions[vm.currentIndex]
+        answers[question.id] = value
+    }
+
+    private func advanceAfterAnswer() {
+        resetInputs()
+        let isLast = vm.currentIndex == vm.session.questions.count - 1
+        if returnToOverviewOnAnswer || isLast {
+            returnToOverviewOnAnswer = false
+            onShowOverview()
+        } else {
+            vm.advance()
+        }
     }
 
     private func handleSwipe(_ value: DragGesture.Value) {
@@ -154,7 +212,21 @@ struct QuestionFeedView: View {
     }
 
     private func resetInputs() {
+        pendingAutoAdvance?.cancel()
         selectedOption = nil
         freeResponse = ""
+        isInputFocused = false
+    }
+
+    private func loadAnswer(for question: Question) {
+        pendingAutoAdvance?.cancel()
+        if let options = question.options, !options.isEmpty {
+            selectedOption = answers[question.id]
+            freeResponse = ""
+            isInputFocused = false
+        } else {
+            selectedOption = nil
+            freeResponse = answers[question.id] ?? ""
+        }
     }
 }

@@ -17,4 +17,9 @@ public final class QuestionFeedViewModel: ObservableObject {
         guard currentIndex - 1 >= 0 else { return }
         currentIndex -= 1
     }
+
+    public func jump(to index: Int) {
+        guard index >= 0 && index < session.questions.count else { return }
+        currentIndex = index
+    }
 }

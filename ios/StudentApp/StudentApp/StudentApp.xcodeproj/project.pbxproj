@@ -100,12 +100,12 @@
 			);
 			mainGroup = C54E8FA62F0A86A0008EE419;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../../StudentCore" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C54E8FB02F0A86A0008EE419 /* Products */;
 			projectDirPath = "";
-			packageReferences = (
-				C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "StudentCore" */,
-			);
 			projectRoot = "";
 			targets = (
 				C54E8FAE2F0A86A0008EE419 /* StudentApp */,
@@ -132,21 +132,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin XCLocalSwiftPackageReference section */
-		C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "StudentCore" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../StudentCore;
-		};
-/* End XCLocalSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		C5A1F1102F0B0001008EE419 /* StudentCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "StudentCore" */;
-			productName = StudentCore;
-		};
-/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCBuildConfiguration section */
 		C54E8FB82F0A86A2008EE419 /* Debug */ = {
@@ -352,6 +337,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../../StudentCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = ../../StudentCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C5A1F1102F0B0001008EE419 /* StudentCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../../StudentCore" */;
+			productName = StudentCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C54E8FA72F0A86A0008EE419 /* Project object */;
 }
