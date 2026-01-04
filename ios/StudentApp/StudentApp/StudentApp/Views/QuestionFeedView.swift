@@ -6,6 +6,7 @@ struct QuestionFeedView: View {
     @Binding var answers: [String: String]
     @Binding var returnToOverviewOnAnswer: Bool
     let onShowOverview: () -> Void
+    let onAnswer: (Question, String) -> Void
 
     @State private var selectedOption: String?
     @State private var freeResponse: String = ""
@@ -188,6 +189,7 @@ struct QuestionFeedView: View {
     private func recordAnswer(_ value: String) {
         let question = vm.session.questions[vm.currentIndex]
         answers[question.id] = value
+        onAnswer(question, value)
     }
 
     private func advanceAfterAnswer() {
@@ -199,98 +201,6 @@ struct QuestionFeedView: View {
         } else {
             vm.advance()
         }
-    }
-
-    private func header(progress: Double, index: Int, total: Int) -> some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text("Practice")
-                    .font(.headline)
-                Spacer()
-                Text("\(index)/\(total)")
-                    .font(.subheadline)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .background(Color.white.opacity(0.9))
-                    .clipShape(Capsule())
-            }
-
-            ProgressView(value: progress)
-                .tint(Color(red: 0.22, green: 0.76, blue: 0.39))
-        }
-    }
-
-    private func questionCard(text: String) -> some View {
-        Text(text)
-            .font(.title2.bold())
-            .foregroundStyle(Color(red: 0.1, green: 0.2, blue: 0.15))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
-            )
-    }
-
-    private func optionsGrid(_ options: [QuestionOption]) -> some View {
-        VStack(spacing: 12) {
-            ForEach(options, id: \.label) { option in
-                optionButton(option)
-            }
-        }
-    }
-
-    private func optionButton(_ option: QuestionOption) -> some View {
-        let isSelected = selectedOption == option.label
-        return Button {
-            selectedOption = option.label
-        } label: {
-            HStack(spacing: 12) {
-                Text(option.label)
-                    .font(.headline)
-                    .foregroundStyle(isSelected ? Color.white : Color(red: 0.16, green: 0.33, blue: 0.24))
-                    .frame(width: 36, height: 36)
-                    .background(isSelected ? Color(red: 0.22, green: 0.76, blue: 0.39) : Color(red: 0.90, green: 0.97, blue: 0.92))
-                    .clipShape(Circle())
-
-                Text(option.content)
-                    .font(.headline)
-                    .foregroundStyle(Color(red: 0.12, green: 0.2, blue: 0.16))
-
-                Spacer()
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? Color(red: 0.90, green: 1.0, blue: 0.93) : Color.white)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isSelected ? Color(red: 0.22, green: 0.76, blue: 0.39) : Color.clear, lineWidth: 2)
-            )
-            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func freeResponseField() -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "pencil.circle.fill")
-                .font(.system(size: 22))
-                .foregroundStyle(Color(red: 0.22, green: 0.76, blue: 0.39))
-
-            TextField("Type your answer", text: $freeResponse)
-                .textInputAutocapitalization(.never)
-                .keyboardType(.numbersAndPunctuation)
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 5)
-        )
     }
 
     private func handleSwipe(_ value: DragGesture.Value) {
