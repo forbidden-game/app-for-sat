@@ -1,6 +1,6 @@
 import Supabase
 
-public final class SupabaseService {
+public final class SupabaseService: @unchecked Sendable {
     public static let shared = SupabaseService()
     public let client: SupabaseClient
 
