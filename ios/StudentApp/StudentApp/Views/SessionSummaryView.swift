@@ -5,10 +5,17 @@ struct SessionSummaryView: View {
     let correct: Int
 
     var body: some View {
-        VStack(spacing: 12) {
-            Text("Session Complete").font(.title)
-            Text("Score: \(correct)/\(total)")
+        ZStack {
+            AppTheme.backgroundGradient
+                .ignoresSafeArea()
+
+            VStack(spacing: 12) {
+                Text("Session Complete")
+                    .font(.title)
+                    .foregroundStyle(AppTheme.textPrimary)
+                Text("Score: \(correct)/\(total)")
+                    .foregroundStyle(AppTheme.textSecondary)
+            }
         }
-        .padding()
     }
 }

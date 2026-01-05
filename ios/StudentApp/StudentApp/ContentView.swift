@@ -13,37 +13,79 @@ struct ContentView: View {
 
     var body: some View {
         Group {
-            if let user = vm.user, let session = vm.session, let sessionId = vm.sessionId {
-                ZStack(alignment: .topTrailing) {
-                    PracticeFlowView(session: session, sessionId: sessionId, studentId: user.id)
-
-                    Button {
-                        Task { await vm.signOut() }
-                    } label: {
-                        Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                            .font(.footnote.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.vertical, 8)
-                            .padding(.horizontal, 12)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.35), lineWidth: 1)
-                            )
-                    }
-                    .padding(.top, 12)
-                    .padding(.trailing, 16)
-                }
+            if vm.user != nil {
+                MainContainerView(vm: vm)
             } else if vm.isLoading {
-                ProgressView()
+                ZStack {
+                    AppTheme.backgroundGradient
+                        .ignoresSafeArea()
+                    ProgressView()
+                        .tint(AppTheme.accentStrong)
+                }
             } else {
                 AuthView(vm: vm)
             }
         }
+        .preferredColorScheme(.dark)
     }
 }
 
 #Preview {
     ContentView()
+}
+
+private struct MainContainerView: View {
+    @ObservedObject var vm: AppViewModel
+    @State private var showPanel = false
+
+    var body: some View {
+        SidePanelHost(isPresented: $showPanel) {
+            ZStack(alignment: .topTrailing) {
+                contentView
+
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) {
+                        showPanel = true
+                    }
+                } label: {
+                    Image(systemName: "square.grid.2x2.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppTheme.textPrimary)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .fill(AppTheme.surface)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(AppTheme.divider, lineWidth: 1)
+                        )
+                }
+                .padding(.top, 12)
+                .padding(.trailing, 16)
+            }
+        } panel: {
+            SidePanelView(displayName: displayName) {
+                Task { await vm.signOut() }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var contentView: some View {
+        if let session = vm.session, let sessionId = vm.sessionId, let user = vm.user {
+            PracticeFlowView(session: session, sessionId: sessionId, studentId: user.id)
+        } else {
+            QuestionBankSelectionView(banks: vm.banks, isLoading: vm.isLoading, errorMessage: vm.errorMessage) { bank in
+                Task { await vm.startSession(for: bank) }
+            }
+        }
+    }
+
+    private var displayName: String {
+        if let email = vm.user?.email, !email.isEmpty {
+            return email
+        }
+        return "Student"
+    }
 }

@@ -31,12 +31,8 @@ struct QuestionFeedView: View {
         let total = vm.session.questions.count
 
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.87, green: 0.98, blue: 0.93), Color(red: 0.90, green: 0.95, blue: 1.0)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            AppTheme.backgroundGradient
+                .ignoresSafeArea()
 
             GeometryReader { proxy in
                 let height = proxy.size.height
@@ -83,31 +79,41 @@ struct QuestionFeedView: View {
             HStack {
                 Text("Practice")
                     .font(.headline)
+                    .foregroundStyle(AppTheme.textPrimary)
                 Spacer()
                 Text("\(index)/\(total)")
                     .font(.subheadline)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 12)
-                    .background(Color.white.opacity(0.9))
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .background(AppTheme.surfaceRaised)
                     .clipShape(Capsule())
+                    .overlay(
+                        Capsule()
+                            .stroke(AppTheme.divider, lineWidth: 1)
+                    )
             }
 
             ProgressView(value: progress)
-                .tint(Color(red: 0.22, green: 0.76, blue: 0.39))
+                .tint(AppTheme.accent)
         }
     }
 
     private func questionCard(text: String) -> some View {
         Text(text)
             .font(.title2.bold())
-            .foregroundStyle(Color(red: 0.1, green: 0.2, blue: 0.15))
+            .foregroundStyle(AppTheme.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white)
-                    .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
+                    .fill(AppTheme.surface)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(AppTheme.divider, lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.45), radius: 14, x: 0, y: 8)
     }
 
     private func currentContent(question: Question, total: Int, index: Int) -> some View {
@@ -127,7 +133,7 @@ struct QuestionFeedView: View {
 
             Text("Swipe up/down to change question")
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(AppTheme.textMuted)
         }
         .padding(.horizontal, 20)
         .padding(.top, 12)
@@ -152,14 +158,18 @@ struct QuestionFeedView: View {
             HStack(spacing: 12) {
                 Text(option.label)
                     .font(.headline)
-                    .foregroundStyle(isSelected ? Color.white : Color(red: 0.16, green: 0.33, blue: 0.24))
+                    .foregroundStyle(isSelected ? Color.black : AppTheme.textSecondary)
                     .frame(width: 36, height: 36)
-                    .background(isSelected ? Color(red: 0.22, green: 0.76, blue: 0.39) : Color(red: 0.90, green: 0.97, blue: 0.92))
+                    .background(isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
                     .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(AppTheme.divider, lineWidth: 1)
+                    )
 
                 Text(option.content)
                     .font(.headline)
-                    .foregroundStyle(Color(red: 0.12, green: 0.2, blue: 0.16))
+                    .foregroundStyle(AppTheme.textPrimary)
 
                 Spacer()
             }
@@ -167,13 +177,13 @@ struct QuestionFeedView: View {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? Color(red: 0.90, green: 1.0, blue: 0.93) : Color.white)
+                    .fill(isSelected ? AppTheme.surfaceRaised : AppTheme.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isSelected ? Color(red: 0.22, green: 0.76, blue: 0.39) : Color.clear, lineWidth: 2)
+                    .stroke(isSelected ? AppTheme.accent : AppTheme.divider, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.06), radius: 8, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }
@@ -182,7 +192,7 @@ struct QuestionFeedView: View {
         HStack(spacing: 12) {
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 22))
-                .foregroundStyle(Color(red: 0.22, green: 0.76, blue: 0.39))
+                .foregroundStyle(AppTheme.accent)
 
             TextField("Type your answer", text: $freeResponse)
                 .focused($isInputFocused)
@@ -192,13 +202,18 @@ struct QuestionFeedView: View {
                 .onSubmit {
                     commitFreeResponse()
                 }
+                .foregroundStyle(AppTheme.textPrimary)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 5)
+                .fill(AppTheme.surface)
         )
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(AppTheme.divider, lineWidth: 1)
+        )
+        .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
     }
 
     private func scheduleAutoAdvanceIfNeeded(with newValue: String) {

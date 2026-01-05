@@ -7,6 +7,8 @@ final class AppViewModel: ObservableObject {
     @Published var user: AuthUser?
     @Published var session: PracticeSession?
     @Published var sessionId: String?
+    @Published var selectedBank: QuestionBank?
+    @Published var banks: [QuestionBank] = QuestionBank.samples
     @Published var isLoading = false
     @Published var errorMessage: String?
 
@@ -17,17 +19,6 @@ final class AppViewModel: ObservableObject {
         self.authService = authService
         self.practiceService = practiceService
         self.user = authService.currentUser()
-        if let existingUser = self.user {
-            isLoading = true
-            Task {
-                do {
-                    try await loadSession(for: existingUser.id)
-                } catch {
-                    errorMessage = error.localizedDescription
-                }
-                isLoading = false
-            }
-        }
     }
 
     func signIn(email: String, password: String) async {
@@ -46,6 +37,7 @@ final class AppViewModel: ObservableObject {
             user = nil
             session = nil
             sessionId = nil
+            selectedBank = nil
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -57,15 +49,33 @@ final class AppViewModel: ObservableObject {
         do {
             let authedUser = try await action()
             user = authedUser
-            try await loadSession(for: authedUser.id)
         } catch {
             errorMessage = error.localizedDescription
         }
         isLoading = false
     }
 
-    private func loadSession(for studentId: String) async throws {
-        let questions = try await practiceService.fetchQuestions(limit: 10)
+    func startSession(for bank: QuestionBank) async {
+        guard let studentId = user?.id else { return }
+        isLoading = true
+        errorMessage = nil
+        selectedBank = bank
+        session = nil
+        sessionId = nil
+        do {
+            try await loadSession(for: studentId, limit: bank.questionLimit)
+            if sessionId == nil {
+                selectedBank = nil
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            selectedBank = nil
+        }
+        isLoading = false
+    }
+
+    private func loadSession(for studentId: String, limit: Int) async throws {
+        let questions = try await practiceService.fetchQuestions(limit: limit)
         guard !questions.isEmpty else {
             errorMessage = "No questions available."
             return

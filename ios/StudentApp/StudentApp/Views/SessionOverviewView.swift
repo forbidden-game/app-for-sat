@@ -13,21 +13,18 @@ struct SessionOverviewView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color(red: 0.87, green: 0.98, blue: 0.93), Color(red: 0.90, green: 0.95, blue: 1.0)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            AppTheme.backgroundGradient
+                .ignoresSafeArea()
 
             VStack(spacing: 20) {
                 Text("Session Overview")
                     .font(.title2.bold())
+                    .foregroundStyle(AppTheme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Text("Tap a question to review it")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(AppTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 LazyVGrid(columns: columns, spacing: 12) {
@@ -39,10 +36,14 @@ struct SessionOverviewView: View {
                             Text("\(index + 1)")
                                 .font(.headline)
                                 .frame(width: 48, height: 48)
-                                .background(answered ? Color(red: 0.22, green: 0.76, blue: 0.39) : Color(red: 0.94, green: 0.39, blue: 0.39))
-                                .foregroundStyle(.white)
+                                .background(answered ? AppTheme.accentStrong : AppTheme.surfaceRaised)
+                                .foregroundStyle(answered ? Color.black : AppTheme.textPrimary)
                                 .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 3)
+                                .overlay(
+                                    Circle()
+                                        .stroke(AppTheme.divider, lineWidth: 1)
+                                )
+                                .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
                         }
                         .buttonStyle(.plain)
                     }
@@ -51,7 +52,7 @@ struct SessionOverviewView: View {
                 if let error = submissionError {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color(red: 0.92, green: 0.45, blue: 0.45))
                         .multilineTextAlignment(.center)
                 }
 
@@ -63,17 +64,17 @@ struct SessionOverviewView: View {
                     HStack {
                         if isSubmitting {
                             ProgressView()
-                                .tint(.white)
+                                .tint(.black)
                         }
                         Text(isSubmitting ? "Submitting..." : "Submit")
                             .font(.headline)
                     }
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.black)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(Color(red: 0.22, green: 0.76, blue: 0.39))
+                    .background(AppTheme.accentStrong)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: Color.black.opacity(0.1), radius: 10, x: 0, y: 5)
+                    .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 6)
                 }
                 .disabled(isSubmitting)
             }
