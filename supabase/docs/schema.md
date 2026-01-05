@@ -1,11 +1,11 @@
 # Supabase Schema（MVP）
 
-日期：2026-01-05
+日期：2026-01-06
 
 ## 总览
-- 表数量：11
+- 表数量：14
 - 视图数量：1
-- 函数/RPC：4（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC）
+- 函数/RPC：5（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、1 个练习 session RPC）
 
 ## 表结构
 
@@ -79,6 +79,9 @@
 - N:M -> `tags`（通过 `question_tags`）
 - 1:N -> `question_assets`
 
+**备注**
+- 学生端不直接读取 `questions`，由 `start_practice_session` 返回不含答案的题目 payload。
+
 ---
 
 ### `public.question_options`
@@ -138,6 +141,46 @@
 
 ---
 
+### `public.question_banks`
+**用途**：题库配置与入口（题库索引页展示 + 选题策略配置）。
+
+**字段**
+- `id` uuid，PK，default `gen_random_uuid()`
+- `slug` text，唯一标识（客户端使用）
+- `title` text
+- `subtitle` text
+- `icon` text
+- `mode` text，enum：`fixed|daily_mix`
+- `question_limit` int
+- `rule_json` jsonb（题库规则/过滤条件）
+- `is_active` boolean
+- `sort_order` int
+- `created_at` timestamptz，default `now()`
+
+**关系**
+- 1:N -> `question_bank_questions`
+- 1:N -> `sessions`
+
+---
+
+### `public.question_bank_questions`
+**用途**：题库与题目的固定编排关系（按顺序出题）。
+
+**字段**
+- `bank_id` uuid，FK -> `question_banks.id`
+- `question_id` uuid，FK -> `questions.id`
+- `position` int
+
+**约束**
+- PK：`(bank_id, question_id)`
+- Unique：`(bank_id, position)`
+
+**关系**
+- N:1 -> `question_banks`
+- N:1 -> `questions`
+
+---
+
 ### `public.sessions`
 **用途**：学生练习/测验的 session 记录。
 
@@ -147,11 +190,14 @@
 - `mode` text，default `practice`
 - `total_questions` int
 - `correct_count` int
+- `bank_id` uuid，FK -> `question_banks.id`
 - `created_at` timestamptz，default `now()`
 
 **关系**
 - N:1 -> `profiles`
 - 1:N -> `attempts`
+- 1:N -> `session_questions`
+- N:1 -> `question_banks`
 
 ---
 
@@ -173,6 +219,25 @@
 - N:1 -> `sessions`
 - N:1 -> `questions`
 - N:1 -> `profiles`
+
+---
+
+### `public.session_questions`
+**用途**：session 下发题目列表（顺序与快照）。
+
+**字段**
+- `session_id` uuid，FK -> `sessions.id`
+- `question_id` uuid，FK -> `questions.id`
+- `position` int
+- `assigned_at` timestamptz，default `now()`
+
+**约束**
+- PK：`(session_id, question_id)`
+- Unique：`(session_id, position)`
+
+**关系**
+- N:1 -> `sessions`
+- N:1 -> `questions`
 
 ---
 
@@ -222,6 +287,14 @@
 
 ---
 
+### `public.start_practice_session(bank_slug text, override_limit int)`
+**用途**：创建练习 session，按题库生成题目列表并返回（不包含答案）。
+
+---
+
 ## 显式索引
 - `attempts_student_created_at_idx` on `attempts(student_id, created_at)`
 - `sessions_student_created_at_idx` on `sessions(student_id, created_at)`
+- `question_banks_active_order_idx` on `question_banks(is_active, sort_order)`
+- `question_bank_questions_bank_position_idx` on `question_bank_questions(bank_id, position)`
+- `session_questions_session_position_idx` on `session_questions(session_id, position)`
