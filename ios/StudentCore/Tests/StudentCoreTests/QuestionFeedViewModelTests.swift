@@ -4,8 +4,8 @@ import XCTest
 final class QuestionFeedViewModelTests: XCTestCase {
     func testAdvanceMovesIndex() async throws {
         let session = PracticeSession(id: "S1", questions: [
-            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: AnswerKey(correct: "A")),
-            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: AnswerKey(correct: "B"))
+            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: nil),
+            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: nil)
         ])
         let vm = QuestionFeedViewModel(session: session)
         XCTAssertEqual(vm.currentIndex, 0)
@@ -15,8 +15,8 @@ final class QuestionFeedViewModelTests: XCTestCase {
 
     func testRetreatMovesIndex() async throws {
         let session = PracticeSession(id: "S1", questions: [
-            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: AnswerKey(correct: "A")),
-            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: AnswerKey(correct: "B"))
+            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: nil),
+            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: nil)
         ])
         let vm = QuestionFeedViewModel(session: session)
         vm.advance()
@@ -27,8 +27,8 @@ final class QuestionFeedViewModelTests: XCTestCase {
 
     func testJumpMovesIndex() async throws {
         let session = PracticeSession(id: "S1", questions: [
-            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: AnswerKey(correct: "A")),
-            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: AnswerKey(correct: "B"))
+            Question(id: "Q1", questionType: "mcq", stem: "A?", options: nil, answerKey: nil),
+            Question(id: "Q2", questionType: "mcq", stem: "B?", options: nil, answerKey: nil)
         ])
         let vm = QuestionFeedViewModel(session: session)
         vm.jump(to: 1)

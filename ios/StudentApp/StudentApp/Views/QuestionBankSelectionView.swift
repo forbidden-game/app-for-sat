@@ -1,4 +1,5 @@
 import Foundation
+import StudentCore
 import SwiftUI
 
 struct QuestionBankSelectionView: View {
@@ -68,7 +69,7 @@ struct QuestionBankSelectionView: View {
 
     private func bankCell(_ bank: QuestionBank) -> some View {
         VStack(spacing: 12) {
-            Image(systemName: bank.icon)
+            Image(systemName: bank.icon ?? "square.grid.2x2.fill")
                 .font(.system(size: 30, weight: .semibold))
                 .foregroundStyle(AppTheme.accentStrong)
 
@@ -78,9 +79,11 @@ struct QuestionBankSelectionView: View {
                     .foregroundStyle(AppTheme.textPrimary)
                     .multilineTextAlignment(.center)
 
-                Text(bank.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(AppTheme.textSecondary)
+                if let subtitle = bank.subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(AppTheme.textSecondary)
+                }
             }
         }
         .frame(maxWidth: .infinity)

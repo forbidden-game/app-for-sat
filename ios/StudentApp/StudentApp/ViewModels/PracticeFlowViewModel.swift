@@ -10,15 +10,13 @@ final class PracticeFlowViewModel: ObservableObject {
 
     let session: PracticeSession
     let sessionId: String
-    let studentId: String
 
     private let practiceService: SupabasePracticeService
     private var pendingAnswers: [String: String] = [:]
 
-    init(session: PracticeSession, sessionId: String, studentId: String, practiceService: SupabasePracticeService = SupabasePracticeService()) {
+    init(session: PracticeSession, sessionId: String, practiceService: SupabasePracticeService = SupabasePracticeService()) {
         self.session = session
         self.sessionId = sessionId
-        self.studentId = studentId
         self.practiceService = practiceService
     }
 
@@ -29,8 +27,7 @@ final class PracticeFlowViewModel: ObservableObject {
                 let isCorrect = try await practiceService.submitAttempt(
                     question: question,
                     answer: answer,
-                    sessionId: sessionId,
-                    studentId: studentId
+                    sessionId: sessionId
                 )
                 correctByQuestion[question.id] = isCorrect
                 pendingAnswers.removeValue(forKey: question.id)
@@ -50,19 +47,12 @@ final class PracticeFlowViewModel: ObservableObject {
                         let isCorrect = try await practiceService.submitAttempt(
                             question: question,
                             answer: answer,
-                            sessionId: sessionId,
-                            studentId: studentId
+                            sessionId: sessionId
                         )
                         correctByQuestion[question.id] = isCorrect
                     }
                 }
                 pendingAnswers.removeAll()
-                let correctCount = correctByQuestion.values.filter { $0 }.count
-                try await practiceService.updateSession(
-                    sessionId: sessionId,
-                    totalQuestions: session.questions.count,
-                    correctCount: correctCount
-                )
             } catch {
                 submissionError = error.localizedDescription
             }

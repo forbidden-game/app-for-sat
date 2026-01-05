@@ -5,9 +5,9 @@ public struct Question: Codable, Equatable {
     public let questionType: String
     public let stem: String
     public let options: [QuestionOption]?
-    public let answerKey: AnswerKey
+    public let answerKey: AnswerKey?
 
-    public init(id: String, questionType: String, stem: String, options: [QuestionOption]?, answerKey: AnswerKey) {
+    public init(id: String, questionType: String, stem: String, options: [QuestionOption]?, answerKey: AnswerKey? = nil) {
         self.id = id
         self.questionType = questionType
         self.stem = stem

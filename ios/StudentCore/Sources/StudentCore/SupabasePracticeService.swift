@@ -12,12 +12,66 @@ public final class SupabasePracticeService {
         self.client = client
     }
 
+    public func fetchQuestionBanks() async throws -> [QuestionBank] {
+        struct BankRow: Decodable {
+            let id: UUID
+            let slug: String
+            let title: String
+            let subtitle: String?
+            let icon: String?
+            let mode: String
+            let question_limit: Int
+            let sort_order: Int
+        }
+
+        let rows: [BankRow] = try await client
+            .from("question_banks")
+            .select("id, slug, title, subtitle, icon, mode, question_limit, sort_order")
+            .eq("is_active", value: true)
+            .order("sort_order", ascending: true)
+            .execute()
+            .value
+
+        return rows.map { row in
+            QuestionBank(
+                id: row.id.uuidString,
+                slug: row.slug,
+                title: row.title,
+                subtitle: row.subtitle,
+                icon: row.icon,
+                mode: row.mode,
+                questionLimit: row.question_limit,
+                sortOrder: row.sort_order
+            )
+        }
+    }
+
+    public func startPracticeSession(bankSlug: String, overrideLimit: Int? = nil) async throws -> PracticeSession {
+        let params = StartPracticeSessionParams(bank_slug: bankSlug, override_limit: overrideLimit)
+        let response: StartPracticeSessionResponse = try await client
+            .rpc("start_practice_session", params: params)
+            .execute()
+            .value
+
+        let questions = response.questions.map { payload in
+            Question(
+                id: payload.id,
+                questionType: payload.questionType,
+                stem: payload.stem,
+                options: payload.options,
+                answerKey: nil
+            )
+        }
+
+        return PracticeSession(id: response.sessionId, questions: questions)
+    }
+
     public func fetchQuestions(limit: Int) async throws -> [Question] {
         struct DBQuestion: Decodable {
             let id: UUID
             let question_type: String
             let stem: String
-            let answer_key: AnswerKey
+            let answer_key: AnswerKey?
             let question_options: [QuestionOption]?
         }
 
@@ -62,10 +116,19 @@ public final class SupabasePracticeService {
         return created.id.uuidString
     }
 
-    public func submitAttempt(question: Question, answer: String, sessionId: String, studentId: String) async throws -> Bool {
-        let payload = FunctionPayload(
-            question: FunctionQuestion(questionType: question.questionType, answerKey: FunctionAnswerKey(correct: question.answerKey)),
-            attempt: FunctionAttempt(answer: encodedAnswer(for: question, answer: answer))
+    public func submitAttempt(
+        question: Question,
+        answer: String?,
+        sessionId: String,
+        durationMs: Int? = nil,
+        skipped: Bool? = nil
+    ) async throws -> Bool {
+        let payload = SubmitAttemptPayload(
+            session_id: sessionId,
+            question_id: question.id,
+            answer: encodedAnswer(for: question, answer: answer),
+            duration_ms: durationMs,
+            skipped: skipped
         )
 
         struct FunctionResponse: Decodable {
@@ -75,99 +138,59 @@ public final class SupabasePracticeService {
         let response: FunctionResponse = try await client.functions
             .invoke("submit_attempt", options: FunctionInvokeOptions(body: payload))
 
-        try await insertAttempt(
-            questionId: question.id,
-            sessionId: sessionId,
-            studentId: studentId,
-            answer: answer,
-            isCorrect: response.isCorrect
-        )
-
         return response.isCorrect
     }
 
-    public func updateSession(sessionId: String, totalQuestions: Int, correctCount: Int) async throws {
-        struct SessionUpdate: Encodable {
-            let total_questions: Int
-            let correct_count: Int
+    private func encodedAnswer(for question: Question, answer: String?) -> FunctionAnswerValue? {
+        guard let answer, !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
         }
-
-        let update = SessionUpdate(total_questions: totalQuestions, correct_count: correctCount)
-        try await client
-            .from("sessions")
-            .update(update)
-            .eq("id", value: sessionId)
-            .execute()
-    }
-
-    private func insertAttempt(questionId: String, sessionId: String, studentId: String, answer: String, isCorrect: Bool) async throws {
-        struct AttemptInsert: Encodable {
-            let session_id: UUID
-            let question_id: UUID
-            let student_id: UUID
-            let answer: String
-            let is_correct: Bool
-            let skipped: Bool
-        }
-
-        guard let sessionUUID = UUID(uuidString: sessionId),
-              let questionUUID = UUID(uuidString: questionId),
-              let studentUUID = UUID(uuidString: studentId) else {
-            return
-        }
-
-        let insert = AttemptInsert(
-            session_id: sessionUUID,
-            question_id: questionUUID,
-            student_id: studentUUID,
-            answer: answer,
-            is_correct: isCorrect,
-            skipped: false
-        )
-
-        try await client
-            .from("attempts")
-            .insert(insert)
-            .execute()
-    }
-
-    private func encodedAnswer(for question: Question, answer: String) -> FunctionAnswerValue? {
         if question.questionType == "numeric", let value = Double(answer) {
             return .number(value)
-        }
-        if answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return nil
         }
         return .string(answer)
     }
 }
 
-private struct FunctionPayload: Encodable {
-    let question: FunctionQuestion
-    let attempt: FunctionAttempt
+private struct StartPracticeSessionParams: Encodable {
+    let bank_slug: String
+    let override_limit: Int?
 }
 
-private struct FunctionQuestion: Encodable {
-    let questionType: String
-    let answerKey: FunctionAnswerKey
-}
+private struct StartPracticeSessionResponse: Decodable {
+    let sessionId: String
+    let totalQuestions: Int
+    let bank: QuestionBank
+    let questions: [QuestionPayload]
 
-private struct FunctionAnswerKey: Encodable {
-    let correct: FunctionAnswerValue?
-
-    init(correct: AnswerKey) {
-        if let s = correct.correctString {
-            self.correct = .string(s)
-        } else if let n = correct.correctNumber {
-            self.correct = .number(n)
-        } else {
-            self.correct = nil
-        }
+    enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+        case totalQuestions = "total_questions"
+        case bank
+        case questions
     }
 }
 
-private struct FunctionAttempt: Encodable {
+private struct QuestionPayload: Decodable {
+    let id: String
+    let questionType: String
+    let stem: String
+    let options: [QuestionOption]?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case questionType = "question_type"
+        case stem
+        case options
+    }
+}
+
+private struct SubmitAttemptPayload: Encodable {
+    let session_id: String
+    let question_id: String
     let answer: FunctionAnswerValue?
+    let duration_ms: Int?
+    let skipped: Bool?
 }
 
 private enum FunctionAnswerValue: Encodable {

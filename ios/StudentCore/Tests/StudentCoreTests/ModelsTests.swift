@@ -7,6 +7,6 @@ final class ModelsTests: XCTestCase {
         let data = json.data(using: .utf8)!
         let q = try JSONDecoder().decode(Question.self, from: data)
         XCTAssertEqual(q.options?.count, 2)
-        XCTAssertEqual(q.answerKey.correctString, "B")
+        XCTAssertEqual(q.answerKey?.correctString, "B")
     }
 }

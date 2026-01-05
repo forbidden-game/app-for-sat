@@ -11,10 +11,10 @@ struct PracticeFlowView: View {
     let headerTitle: String?
     let onExit: () -> Void
 
-    init(session: PracticeSession, sessionId: String, studentId: String, headerTitle: String?, onExit: @escaping () -> Void) {
+    init(session: PracticeSession, sessionId: String, headerTitle: String?, onExit: @escaping () -> Void) {
         self.session = session
         _vm = StateObject(wrappedValue: QuestionFeedViewModel(session: session))
-        _flowModel = StateObject(wrappedValue: PracticeFlowViewModel(session: session, sessionId: sessionId, studentId: studentId))
+        _flowModel = StateObject(wrappedValue: PracticeFlowViewModel(session: session, sessionId: sessionId))
         self.headerTitle = headerTitle
         self.onExit = onExit
     }
