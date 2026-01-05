@@ -16,14 +16,19 @@ struct QuestionFeedView: View {
     @State private var pendingAutoAdvance: DispatchWorkItem?
     @FocusState private var isInputFocused: Bool
     @State private var dragOffset: CGFloat = 0
+    @State private var isTransitioning = false
+    @State private var transitionFromIndex: Int?
+    @State private var transitionToIndex: Int?
+    @State private var transitionDirection: SwipeDirection?
+    @State private var transitionOffset: CGFloat = 0
 
     private let commitThreshold: CGFloat = 120
     private let rubberBandFactor: CGFloat = 0.25
+    private let transitionDuration: UInt64 = 380_000_000
 
     var body: some View {
         let question = vm.session.questions[vm.currentIndex]
         let total = vm.session.questions.count
-        let progress = total > 0 ? Double(vm.currentIndex + 1) / Double(total) : 0
 
         ZStack {
             LinearGradient(
@@ -33,21 +38,35 @@ struct QuestionFeedView: View {
             )
             .ignoresSafeArea()
 
-            ZStack {
-                if dragOffset < 0, let nextQuestion = nextQuestion {
-                    previewCard(question: nextQuestion, direction: .next, progress: previewProgress)
-                }
-                if dragOffset > 0, let previousQuestion = previousQuestion {
-                    previewCard(question: previousQuestion, direction: .previous, progress: previewProgress)
-                }
+            GeometryReader { proxy in
+                let height = proxy.size.height
+                ZStack {
+                    if isTransitioning,
+                       let fromIndex = transitionFromIndex,
+                       let toIndex = transitionToIndex,
+                       let direction = transitionDirection {
+                        let fromQuestion = vm.session.questions[fromIndex]
+                        let toQuestion = vm.session.questions[toIndex]
+                        currentContent(question: fromQuestion, total: total, index: fromIndex)
+                            .offset(y: transitionOffset)
+                        currentContent(question: toQuestion, total: total, index: toIndex)
+                            .offset(y: transitionOffset + (direction == .next ? height : -height))
+                    } else {
+                        if let target = dragTarget(height: height) {
+                            currentContent(question: target.question, total: total, index: target.index)
+                                .offset(y: target.offset)
+                        }
 
-                currentContent(question: question, total: total, progress: progress)
-                    .offset(y: dragOffset)
-                    .scaleEffect(1 - previewProgress * 0.03)
+                        currentContent(question: question, total: total, index: vm.currentIndex)
+                            .offset(y: dragOffset)
+                    }
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .contentShape(Rectangle())
+                .highPriorityGesture(dragGesture(height: height))
+                .allowsHitTesting(!isTransitioning)
             }
         }
-        .contentShape(Rectangle())
-        .highPriorityGesture(dragGesture)
         .onAppear {
             loadAnswer(for: question)
         }
@@ -91,9 +110,10 @@ struct QuestionFeedView: View {
             )
     }
 
-    private func currentContent(question: Question, total: Int, progress: Double) -> some View {
-        VStack(spacing: 20) {
-            header(progress: progress, index: vm.currentIndex + 1, total: total)
+    private func currentContent(question: Question, total: Int, index: Int) -> some View {
+        let progress = total > 0 ? Double(index + 1) / Double(total) : 0
+        return VStack(spacing: 20) {
+            header(progress: progress, index: index + 1, total: total)
 
             questionCard(text: question.stem)
 
@@ -112,28 +132,6 @@ struct QuestionFeedView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 24)
-    }
-
-    private func previewCard(question: Question, direction: SwipeDirection, progress: CGFloat) -> some View {
-        let baseOffset: CGFloat = direction == .next ? 140 : -140
-        let offset = baseOffset * (1 - progress)
-        let scale = 0.94 + 0.06 * progress
-        let opacity = 0.15 + 0.85 * progress
-
-        return VStack(spacing: 16) {
-            Text(direction == .next ? "Next Question" : "Previous Question")
-                .font(.footnote.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            questionCard(text: question.stem)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 24)
-        .scaleEffect(scale)
-        .opacity(opacity)
-        .offset(y: offset)
-        .allowsHitTesting(false)
     }
 
     private func optionsGrid(_ options: [QuestionOption]) -> some View {
@@ -240,9 +238,10 @@ struct QuestionFeedView: View {
         }
     }
 
-    private var dragGesture: some Gesture {
+    private func dragGesture(height: CGFloat) -> some Gesture {
         DragGesture(minimumDistance: 12)
             .onChanged { value in
+                guard !isTransitioning else { return }
                 if abs(value.translation.height) > 4 {
                     isInputFocused = false
                 }
@@ -256,21 +255,22 @@ struct QuestionFeedView: View {
                 dragOffset = adjusted
             }
             .onEnded { value in
+                guard !isTransitioning else { return }
                 let translation = value.translation.height
                 let shouldAdvance = translation < -commitThreshold && canAdvance
                 let shouldRetreat = translation > commitThreshold && canRetreat
-                if shouldAdvance || shouldRetreat {
+                if shouldAdvance {
                     triggerHaptic()
-                }
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    if shouldAdvance {
-                        resetInputs()
-                        vm.advance()
-                    } else if shouldRetreat {
-                        resetInputs()
-                        vm.retreat()
+                    resetInputs()
+                    beginTransition(direction: .next, height: height, startingOffset: dragOffset)
+                } else if shouldRetreat {
+                    triggerHaptic()
+                    resetInputs()
+                    beginTransition(direction: .previous, height: height, startingOffset: dragOffset)
+                } else {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        dragOffset = 0
                     }
-                    dragOffset = 0
                 }
             }
     }
@@ -297,6 +297,59 @@ struct QuestionFeedView: View {
         let previousIndex = vm.currentIndex - 1
         guard previousIndex >= 0 else { return nil }
         return vm.session.questions[previousIndex]
+    }
+
+    private struct DragTarget {
+        let question: Question
+        let index: Int
+        let offset: CGFloat
+    }
+
+    private func dragTarget(height: CGFloat) -> DragTarget? {
+        guard dragOffset != 0 else { return nil }
+        if dragOffset < 0, let nextQuestion = nextQuestion {
+            return DragTarget(
+                question: nextQuestion,
+                index: vm.currentIndex + 1,
+                offset: dragOffset + height
+            )
+        }
+        if dragOffset > 0, let previousQuestion = previousQuestion {
+            return DragTarget(
+                question: previousQuestion,
+                index: vm.currentIndex - 1,
+                offset: dragOffset - height
+            )
+        }
+        return nil
+    }
+
+    private func beginTransition(direction: SwipeDirection, height: CGFloat, startingOffset: CGFloat) {
+        let fromIndex = vm.currentIndex
+        let toIndex = direction == .next ? fromIndex + 1 : fromIndex - 1
+        guard toIndex >= 0 && toIndex < vm.session.questions.count else { return }
+
+        isTransitioning = true
+        transitionFromIndex = fromIndex
+        transitionToIndex = toIndex
+        transitionDirection = direction
+        transitionOffset = startingOffset
+
+        let target = direction == .next ? -height : height
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+            transitionOffset = target
+        }
+
+        Task {
+            try? await Task.sleep(nanoseconds: transitionDuration)
+            vm.jump(to: toIndex)
+            dragOffset = 0
+            transitionOffset = 0
+            transitionFromIndex = nil
+            transitionToIndex = nil
+            transitionDirection = nil
+            isTransitioning = false
+        }
     }
 
     private func resetInputs() {
