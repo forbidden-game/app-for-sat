@@ -1,5 +1,8 @@
 import SwiftUI
 import StudentCore
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct QuestionFeedView: View {
     @StateObject var vm: QuestionFeedViewModel
@@ -12,8 +15,10 @@ struct QuestionFeedView: View {
     @State private var freeResponse: String = ""
     @State private var pendingAutoAdvance: DispatchWorkItem?
     @FocusState private var isInputFocused: Bool
+    @State private var dragOffset: CGFloat = 0
 
-    private let swipeThreshold: CGFloat = 30
+    private let commitThreshold: CGFloat = 120
+    private let rubberBandFactor: CGFloat = 0.25
 
     var body: some View {
         let question = vm.session.questions[vm.currentIndex]
@@ -28,34 +33,21 @@ struct QuestionFeedView: View {
             )
             .ignoresSafeArea()
 
-            VStack(spacing: 20) {
-                header(progress: progress, index: vm.currentIndex + 1, total: total)
-
-                questionCard(text: question.stem)
-
-                if let options = question.options, !options.isEmpty {
-                    optionsGrid(options)
-                } else {
-                    freeResponseField()
+            ZStack {
+                if dragOffset < 0, let nextQuestion = nextQuestion {
+                    previewCard(question: nextQuestion, direction: .next, progress: previewProgress)
+                }
+                if dragOffset > 0, let previousQuestion = previousQuestion {
+                    previewCard(question: previousQuestion, direction: .previous, progress: previewProgress)
                 }
 
-                Spacer()
-
-                Text("Swipe up/down to change question")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                currentContent(question: question, total: total, progress: progress)
+                    .offset(y: dragOffset)
+                    .scaleEffect(1 - previewProgress * 0.03)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 12)
-            .padding(.bottom, 24)
         }
         .contentShape(Rectangle())
-        .highPriorityGesture(
-            DragGesture(minimumDistance: 12)
-                .onEnded { value in
-                    handleSwipe(value)
-                }
-        )
+        .highPriorityGesture(dragGesture)
         .onAppear {
             loadAnswer(for: question)
         }
@@ -97,6 +89,51 @@ struct QuestionFeedView: View {
                     .fill(Color.white)
                     .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: 6)
             )
+    }
+
+    private func currentContent(question: Question, total: Int, progress: Double) -> some View {
+        VStack(spacing: 20) {
+            header(progress: progress, index: vm.currentIndex + 1, total: total)
+
+            questionCard(text: question.stem)
+
+            if let options = question.options, !options.isEmpty {
+                optionsGrid(options)
+            } else {
+                freeResponseField()
+            }
+
+            Spacer()
+
+            Text("Swipe up/down to change question")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
+    }
+
+    private func previewCard(question: Question, direction: SwipeDirection, progress: CGFloat) -> some View {
+        let baseOffset: CGFloat = direction == .next ? 140 : -140
+        let offset = baseOffset * (1 - progress)
+        let scale = 0.94 + 0.06 * progress
+        let opacity = 0.15 + 0.85 * progress
+
+        return VStack(spacing: 16) {
+            Text(direction == .next ? "Next Question" : "Previous Question")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            questionCard(text: question.stem)
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 24)
+        .scaleEffect(scale)
+        .opacity(opacity)
+        .offset(y: offset)
+        .allowsHitTesting(false)
     }
 
     private func optionsGrid(_ options: [QuestionOption]) -> some View {
@@ -203,14 +240,63 @@ struct QuestionFeedView: View {
         }
     }
 
-    private func handleSwipe(_ value: DragGesture.Value) {
-        if value.translation.height < -swipeThreshold {
-            resetInputs()
-            vm.advance()
-        } else if value.translation.height > swipeThreshold {
-            resetInputs()
-            vm.retreat()
-        }
+    private var dragGesture: some Gesture {
+        DragGesture(minimumDistance: 12)
+            .onChanged { value in
+                if abs(value.translation.height) > 4 {
+                    isInputFocused = false
+                }
+                let translation = value.translation.height
+                let isMovingDown = translation > 0
+                let isMovingUp = translation < 0
+                var adjusted = translation
+                if (isMovingDown && !canRetreat) || (isMovingUp && !canAdvance) {
+                    adjusted = translation * rubberBandFactor
+                }
+                dragOffset = adjusted
+            }
+            .onEnded { value in
+                let translation = value.translation.height
+                let shouldAdvance = translation < -commitThreshold && canAdvance
+                let shouldRetreat = translation > commitThreshold && canRetreat
+                if shouldAdvance || shouldRetreat {
+                    triggerHaptic()
+                }
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                    if shouldAdvance {
+                        resetInputs()
+                        vm.advance()
+                    } else if shouldRetreat {
+                        resetInputs()
+                        vm.retreat()
+                    }
+                    dragOffset = 0
+                }
+            }
+    }
+
+    private var canAdvance: Bool {
+        vm.currentIndex + 1 < vm.session.questions.count
+    }
+
+    private var canRetreat: Bool {
+        vm.currentIndex > 0
+    }
+
+    private var previewProgress: CGFloat {
+        min(abs(dragOffset) / commitThreshold, 1)
+    }
+
+    private var nextQuestion: Question? {
+        let nextIndex = vm.currentIndex + 1
+        guard nextIndex < vm.session.questions.count else { return nil }
+        return vm.session.questions[nextIndex]
+    }
+
+    private var previousQuestion: Question? {
+        let previousIndex = vm.currentIndex - 1
+        guard previousIndex >= 0 else { return nil }
+        return vm.session.questions[previousIndex]
     }
 
     private func resetInputs() {
@@ -231,4 +317,16 @@ struct QuestionFeedView: View {
             freeResponse = answers[question.id] ?? ""
         }
     }
+}
+
+private enum SwipeDirection {
+    case previous
+    case next
+}
+
+private func triggerHaptic() {
+    #if canImport(UIKit)
+    let generator = UIImpactFeedbackGenerator(style: .light)
+    generator.impactOccurred()
+    #endif
 }

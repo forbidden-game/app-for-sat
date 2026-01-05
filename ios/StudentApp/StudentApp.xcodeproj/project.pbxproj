@@ -101,7 +101,7 @@
 			mainGroup = C54E8FA62F0A86A0008EE419;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../../StudentCore" */,
+				C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../StudentCore" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C54E8FB02F0A86A0008EE419 /* Products */;
@@ -339,16 +339,16 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../../StudentCore" */ = {
+		C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../StudentCore" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = ../../StudentCore;
+			relativePath = ../StudentCore;
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		C5A1F1102F0B0001008EE419 /* StudentCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../../StudentCore" */;
+			package = C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../StudentCore" */;
 			productName = StudentCore;
 		};
 /* End XCSwiftPackageProductDependency section */
