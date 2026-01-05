@@ -2,8 +2,6 @@ import Link from "next/link";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/students", label: "Students" },
-  { href: "/sessions", label: "Sessions" },
 ];
 
 export function AppNav() {
