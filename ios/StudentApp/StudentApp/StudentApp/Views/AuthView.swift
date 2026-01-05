@@ -8,13 +8,13 @@ struct AuthView: View {
     var body: some View {
         ZStack {
             LinearGradient(
-                colors: [Color(red: 0.87, green: 0.98, blue: 0.93), Color(red: 0.90, green: 0.95, blue: 1.0)],
+                colors: [Color(red: 0.05, green: 0.08, blue: 0.14), Color(red: 0.08, green: 0.12, blue: 0.22)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            backgroundOrbs
+            neonOrbs
 
             VStack(spacing: 24) {
                 mascotHeader
@@ -27,14 +27,14 @@ struct AuthView: View {
                 if let error = vm.errorMessage {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color(red: 1.0, green: 0.45, blue: 0.45))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                 }
 
                 if vm.isLoading {
                     ProgressView()
-                        .tint(Color(red: 0.22, green: 0.76, blue: 0.39))
+                        .tint(Color(red: 0.45, green: 1.0, blue: 0.75))
                 }
 
                 Button {
@@ -47,13 +47,13 @@ struct AuthView: View {
                         .padding(.vertical, 14)
                         .background(
                             LinearGradient(
-                                colors: [Color(red: 0.20, green: 0.78, blue: 0.42), Color(red: 0.16, green: 0.62, blue: 0.36)],
+                                colors: [Color(red: 0.25, green: 0.9, blue: 0.7), Color(red: 0.2, green: 0.6, blue: 1.0)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: Color.black.opacity(0.15), radius: 10, x: 0, y: 6)
+                        .shadow(color: Color(red: 0.35, green: 1.0, blue: 0.8).opacity(0.5), radius: 14, x: 0, y: 8)
                 }
 
                 Button {
@@ -61,14 +61,14 @@ struct AuthView: View {
                 } label: {
                     Text("Create Account")
                         .font(.headline)
-                        .foregroundStyle(Color(red: 0.16, green: 0.33, blue: 0.24))
+                        .foregroundStyle(Color(red: 0.85, green: 0.9, blue: 1.0))
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Color.white.opacity(0.9))
+                        .background(Color.white.opacity(0.08))
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color(red: 0.16, green: 0.33, blue: 0.24), lineWidth: 1)
+                                .stroke(Color(red: 0.35, green: 0.75, blue: 1.0).opacity(0.6), lineWidth: 1)
                         )
                 }
 
@@ -85,26 +85,26 @@ struct AuthView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color(red: 0.35, green: 0.90, blue: 0.60), Color(red: 0.36, green: 0.74, blue: 1.0)],
+                            colors: [Color(red: 0.3, green: 0.95, blue: 0.7), Color(red: 0.35, green: 0.65, blue: 1.0)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 86, height: 86)
-                    .shadow(color: Color.black.opacity(0.15), radius: 12, x: 0, y: 6)
+                    .frame(width: 92, height: 92)
+                    .shadow(color: Color(red: 0.35, green: 0.9, blue: 1.0).opacity(0.6), radius: 16, x: 0, y: 8)
 
                 Image(systemName: "sparkles")
-                    .font(.system(size: 34, weight: .bold))
+                    .font(.system(size: 36, weight: .bold))
                     .foregroundStyle(.white)
             }
 
             Text("SAT Quest")
                 .font(.title.bold())
-                .foregroundStyle(Color(red: 0.12, green: 0.22, blue: 0.18))
+                .foregroundStyle(Color(red: 0.9, green: 0.95, blue: 1.0))
 
             Text("Level up your practice")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Color(red: 0.7, green: 0.82, blue: 0.95))
         }
     }
 
@@ -112,42 +112,56 @@ struct AuthView: View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(Color(red: 0.22, green: 0.76, blue: 0.39))
+                .foregroundStyle(Color(red: 0.45, green: 1.0, blue: 0.8))
                 .frame(width: 28)
 
             if isSecure {
                 SecureField(placeholder, text: text)
                     .textInputAutocapitalization(.never)
+                    .foregroundStyle(Color.white)
             } else {
                 TextField(placeholder, text: text)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
+                    .foregroundStyle(Color.white)
             }
         }
         .padding(.vertical, 12)
         .padding(.horizontal, 16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(Color.white.opacity(0.95))
-                .shadow(color: Color.black.opacity(0.08), radius: 10, x: 0, y: 6)
+                .fill(Color.white.opacity(0.08))
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.3), radius: 14, x: 0, y: 10)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color.white.opacity(0.6), lineWidth: 1)
+                .stroke(Color(red: 0.3, green: 0.8, blue: 1.0).opacity(0.25), lineWidth: 1)
         )
     }
 
-    private var backgroundOrbs: some View {
+    private var neonOrbs: some View {
         ZStack {
             Circle()
-                .fill(Color(red: 0.40, green: 0.80, blue: 1.0).opacity(0.25))
-                .frame(width: 200, height: 200)
-                .offset(x: 140, y: -220)
+                .fill(Color(red: 0.25, green: 0.8, blue: 1.0).opacity(0.25))
+                .frame(width: 260, height: 260)
+                .blur(radius: 2)
+                .offset(x: 160, y: -220)
 
             Circle()
-                .fill(Color(red: 0.30, green: 1.0, blue: 0.65).opacity(0.18))
-                .frame(width: 240, height: 240)
-                .offset(x: -160, y: 240)
+                .fill(Color(red: 0.3, green: 1.0, blue: 0.75).opacity(0.18))
+                .frame(width: 280, height: 280)
+                .blur(radius: 2)
+                .offset(x: -170, y: 240)
+
+            Circle()
+                .fill(Color(red: 0.6, green: 0.4, blue: 1.0).opacity(0.15))
+                .frame(width: 200, height: 200)
+                .blur(radius: 1)
+                .offset(x: -140, y: -260)
         }
     }
 }
