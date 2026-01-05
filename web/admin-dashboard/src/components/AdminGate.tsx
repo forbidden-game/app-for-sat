@@ -93,14 +93,15 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
               Admin access required
             </p>
             <p className="mt-2 text-sm text-amber-700">
-              This area is restricted to admin accounts only.
+              This area is restricted to admin accounts only. Sign in with an
+              admin account to continue.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
                 className="rounded-full border border-amber-300 px-4 py-2 text-sm text-amber-900 transition hover:bg-amber-100"
-                href="/dashboard"
+                href="/login"
               >
-                Go to parent dashboard
+                Go to login
               </Link>
               {displayName ? (
                 <span className="text-xs text-amber-600">

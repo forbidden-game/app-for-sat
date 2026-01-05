@@ -4,7 +4,6 @@ const links = [
   { href: "/admin", label: "Overview" },
   { href: "/admin#content", label: "Content" },
   { href: "/admin#users", label: "Users" },
-  { href: "/dashboard", label: "Parent dashboard" },
 ];
 
 export function AdminNav() {
