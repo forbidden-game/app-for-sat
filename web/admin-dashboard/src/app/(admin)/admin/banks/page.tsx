@@ -1,0 +1,410 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+import {
+  createQuestionBank,
+  deleteQuestionBank,
+  listQuestionBanks,
+  updateQuestionBank,
+  type QuestionBank,
+  type QuestionBankInput,
+} from "./actions";
+
+const EMPTY_FORM: QuestionBankInput = {
+  slug: "",
+  title: "",
+  subtitle: "",
+  icon: "",
+  mode: "fixed",
+  question_limit: 10,
+  rule_json: "{\\n  \\n}",
+  is_active: true,
+  sort_order: 0,
+};
+
+function formatRuleJson(value: QuestionBank["rule_json"]) {
+  try {
+    return JSON.stringify(value ?? {}, null, 2);
+  } catch {
+    return "{\\n  \\n}";
+  }
+}
+
+export default function QuestionBanksPage() {
+  const supabase = getSupabaseClient();
+  const [banks, setBanks] = useState<QuestionBank[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [form, setForm] = useState<QuestionBankInput>({ ...EMPTY_FORM });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadBanks() {
+      if (!supabase) {
+        if (active) {
+          setError("Supabase not configured.");
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (!session) {
+        if (active) {
+          setError("You are not signed in.");
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const data = await listQuestionBanks(session.access_token);
+        if (active) {
+          setBanks(data);
+          setError(null);
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load question banks.",
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadBanks();
+
+    return () => {
+      active = false;
+    };
+  }, [supabase]);
+
+  const sortedBanks = useMemo(
+    () => [...banks].sort((a, b) => a.sort_order - b.sort_order),
+    [banks],
+  );
+
+  function resetForm() {
+    setForm({ ...EMPTY_FORM });
+    setEditingId(null);
+  }
+
+  async function handleSave() {
+    if (!supabase) return;
+    setSaving(true);
+    setError(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) {
+      setError("You are not signed in.");
+      setSaving(false);
+      return;
+    }
+
+    try {
+      if (editingId) {
+        const updated = await updateQuestionBank(session.access_token, editingId, form);
+        setBanks((prev) => prev.map((bank) => (bank.id === updated.id ? updated : bank)));
+      } else {
+        const created = await createQuestionBank(session.access_token, form);
+        setBanks((prev) => [created, ...prev]);
+      }
+      resetForm();
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error ? saveError.message : "Failed to save question bank.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(bank: QuestionBank) {
+    if (!supabase) return;
+    const confirmed = window.confirm(
+      `Delete question bank \"${bank.title}\"? This will remove its question mappings.`,
+    );
+    if (!confirmed) return;
+
+    setSaving(true);
+    setError(null);
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) {
+      setError("You are not signed in.");
+      setSaving(false);
+      return;
+    }
+
+    try {
+      await deleteQuestionBank(session.access_token, bank.id);
+      setBanks((prev) => prev.filter((item) => item.id !== bank.id));
+      if (editingId === bank.id) {
+        resetForm();
+      }
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete question bank.",
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEdit(bank: QuestionBank) {
+    setEditingId(bank.id);
+    setForm({
+      slug: bank.slug,
+      title: bank.title,
+      subtitle: bank.subtitle ?? "",
+      icon: bank.icon ?? "",
+      mode: bank.mode,
+      question_limit: bank.question_limit,
+      rule_json: formatRuleJson(bank.rule_json),
+      is_active: bank.is_active,
+      sort_order: bank.sort_order,
+    });
+  }
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-12">
+        <p className="text-sm text-zinc-500">Loading question banks...</p>
+      </main>
+    );
+  }
+
+  if (error && banks.length === 0) {
+    return (
+      <main className="mx-auto max-w-6xl px-6 py-12">
+        <p className="text-sm text-red-600">{error}</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-8">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+            Admin Console
+          </p>
+          <h1 className="text-2xl font-semibold text-zinc-900">Question banks</h1>
+          <p className="text-sm text-zinc-500">
+            Create, edit, and retire question banks for the student app.
+          </p>
+        </div>
+        <button
+          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300"
+          onClick={resetForm}
+          type="button"
+        >
+          Reset form
+        </button>
+      </header>
+
+      {error ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {error}
+        </div>
+      ) : null}
+
+      <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+          <table className="w-full text-left text-sm text-zinc-700">
+            <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+              <tr>
+                <th className="px-4 py-3">Title</th>
+                <th className="px-4 py-3">Slug</th>
+                <th className="px-4 py-3">Mode</th>
+                <th className="px-4 py-3">Limit</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Order</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedBanks.length === 0 ? (
+                <tr>
+                  <td
+                    className="px-4 py-6 text-center text-sm text-zinc-500"
+                    colSpan={7}
+                  >
+                    No question banks yet.
+                  </td>
+                </tr>
+              ) : (
+                sortedBanks.map((bank) => (
+                  <tr key={bank.id} className="border-t border-zinc-100">
+                    <td className="px-4 py-3 font-medium text-zinc-900">
+                      {bank.title}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-zinc-500">
+                      {bank.slug}
+                    </td>
+                    <td className="px-4 py-3">{bank.mode}</td>
+                    <td className="px-4 py-3">{bank.question_limit}</td>
+                    <td className="px-4 py-3">
+                      {bank.is_active ? "Active" : "Paused"}
+                    </td>
+                    <td className="px-4 py-3">{bank.sort_order}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+                          onClick={() => startEdit(bank)}
+                          type="button"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 transition hover:border-red-300"
+                          onClick={() => handleDelete(bank)}
+                          type="button"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-zinc-900">
+            {editingId ? "Edit bank" : "Create new bank"}
+          </h2>
+          <div className="mt-4 grid gap-3 text-sm text-zinc-700">
+            <label className="grid gap-1">
+              Slug
+              <input
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                value={form.slug}
+                onChange={(event) => setForm({ ...form, slug: event.target.value })}
+                placeholder="sat-practice"
+              />
+            </label>
+            <label className="grid gap-1">
+              Title
+              <input
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                value={form.title}
+                onChange={(event) => setForm({ ...form, title: event.target.value })}
+                placeholder="SAT Practice"
+              />
+            </label>
+            <label className="grid gap-1">
+              Subtitle
+              <input
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                value={form.subtitle}
+                onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
+                placeholder="Optional description"
+              />
+            </label>
+            <label className="grid gap-1">
+              Icon
+              <input
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                value={form.icon}
+                onChange={(event) => setForm({ ...form, icon: event.target.value })}
+                placeholder="sparkle"
+              />
+            </label>
+            <label className="grid gap-1">
+              Mode
+              <select
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                value={form.mode}
+                onChange={(event) => setForm({ ...form, mode: event.target.value })}
+              >
+                <option value="fixed">fixed</option>
+                <option value="daily_mix">daily_mix</option>
+              </select>
+            </label>
+            <label className="grid gap-1">
+              Question limit
+              <input
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                type="number"
+                value={form.question_limit}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    question_limit: Number(event.target.value),
+                  })
+                }
+              />
+            </label>
+            <label className="grid gap-1">
+              Sort order
+              <input
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                type="number"
+                value={form.sort_order}
+                onChange={(event) =>
+                  setForm({ ...form, sort_order: Number(event.target.value) })
+                }
+              />
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                checked={form.is_active}
+                onChange={(event) =>
+                  setForm({ ...form, is_active: event.target.checked })
+                }
+                type="checkbox"
+              />
+              Active
+            </label>
+            <label className="grid gap-1">
+              Rule JSON
+              <textarea
+                className="min-h-[160px] rounded-lg border border-zinc-200 px-3 py-2 font-mono text-xs"
+                value={form.rule_json}
+                onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
+              />
+            </label>
+            <div className="flex flex-wrap gap-2 pt-2">
+              <button
+                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                disabled={saving}
+                onClick={handleSave}
+                type="button"
+              >
+                {editingId ? "Save changes" : "Create bank"}
+              </button>
+              {editingId ? (
+                <button
+                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
+                  onClick={resetForm}
+                  type="button"
+                >
+                  Cancel edit
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

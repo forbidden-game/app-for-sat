@@ -38,3 +38,4 @@ npm run dev
 ## 近期改动
 - 管理端从 `parent-dashboard` 中拆分，迁移为独立的 `admin-dashboard`。
 - 管理端路由保持 `/admin`，并使用 server-side service role 访问后端。
+- 管理端新增题库管理（question_banks）的增删改查页面。

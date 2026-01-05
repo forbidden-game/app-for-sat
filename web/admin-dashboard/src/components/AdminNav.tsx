@@ -2,8 +2,7 @@ import Link from "next/link";
 
 const links = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin#content", label: "Content" },
-  { href: "/admin#users", label: "Users" },
+  { href: "/admin/banks", label: "Question banks" },
 ];
 
 export function AdminNav() {

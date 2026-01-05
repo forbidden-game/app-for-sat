@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getAdminOverview, type AdminOverview } from "./actions";
 
@@ -142,7 +143,12 @@ export default function AdminPage() {
       <section id="content" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-zinc-900">Question banks</h2>
-          <span className="text-xs text-zinc-400">Read-only (MVP)</span>
+          <Link
+            className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+            href="/admin/banks"
+          >
+            Manage banks
+          </Link>
         </div>
         <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
           <table className="w-full text-left text-sm text-zinc-700">
