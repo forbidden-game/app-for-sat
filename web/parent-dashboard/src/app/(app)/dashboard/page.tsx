@@ -66,6 +66,19 @@ function formatShortDate(value: string) {
   });
 }
 
+function formatSupabaseError(error: {
+  message?: string;
+  details?: string;
+  hint?: string;
+  code?: string;
+} | null) {
+  if (!error) return "Unknown error";
+  const parts = [error.message, error.details, error.hint, error.code]
+    .filter(Boolean)
+    .join(" | ");
+  return parts.length > 0 ? parts : "Unknown error";
+}
+
 export default function DashboardPage() {
   const supabase = getSupabaseClient();
   const [dashboard, setDashboard] = useState<ParentDashboard | null>(null);
@@ -94,8 +107,11 @@ export default function DashboardPage() {
         .limit(1);
 
       if (linksError) {
+        console.error("[dashboard] Failed to load parent links", linksError);
         if (isActive) {
-          setError("Failed to load linked student.");
+          setError(
+            `Failed to load linked student. ${formatSupabaseError(linksError)}`,
+          );
           setLoading(false);
         }
         return;
@@ -119,8 +135,11 @@ export default function DashboardPage() {
       );
 
       if (rpcError) {
+        console.error("[dashboard] Failed to load parent dashboard", rpcError);
         if (isActive) {
-          setError("Failed to load dashboard data.");
+          setError(
+            `Failed to load dashboard data. ${formatSupabaseError(rpcError)}`,
+          );
           setLoading(false);
         }
         return;
