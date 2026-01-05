@@ -43,6 +43,13 @@ final class AppViewModel: ObservableObject {
         }
     }
 
+    func exitSession() {
+        session = nil
+        sessionId = nil
+        selectedBank = nil
+        errorMessage = nil
+    }
+
     private func authenticate(_ action: () async throws -> AuthUser) async {
         isLoading = true
         errorMessage = nil

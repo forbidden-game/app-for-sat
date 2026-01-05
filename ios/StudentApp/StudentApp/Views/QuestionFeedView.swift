@@ -8,6 +8,8 @@ struct QuestionFeedView: View {
     @StateObject var vm: QuestionFeedViewModel
     @Binding var answers: [String: String]
     @Binding var returnToOverviewOnAnswer: Bool
+    let headerTitle: String?
+    let onBack: () -> Void
     let onShowOverview: () -> Void
     let onAnswer: (Question, String) -> Void
 
@@ -74,24 +76,47 @@ struct QuestionFeedView: View {
         }
     }
 
-    private func header(progress: Double, index: Int, total: Int) -> some View {
+    private func header(progress: Double, index: Int, total: Int, question: Question) -> some View {
         VStack(spacing: 10) {
-            HStack {
-                Text("Practice")
-                    .font(.headline)
+            ZStack {
+                HStack {
+                    Button(action: onBack) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Back")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                        .foregroundStyle(AppTheme.textPrimary)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 10)
+                        .background(AppTheme.surface)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(AppTheme.divider, lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+
+                    Text("\(index)/\(total)")
+                        .font(.subheadline)
+                        .padding(.vertical, 6)
+                        .padding(.horizontal, 12)
+                        .foregroundStyle(AppTheme.textPrimary)
+                        .background(AppTheme.surfaceRaised)
+                        .clipShape(Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(AppTheme.divider, lineWidth: 1)
+                        )
+                }
+
+                Text(resolvedHeaderTitle(for: question))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(AppTheme.textPrimary)
-                Spacer()
-                Text("\(index)/\(total)")
-                    .font(.subheadline)
-                    .padding(.vertical, 6)
-                    .padding(.horizontal, 12)
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .background(AppTheme.surfaceRaised)
-                    .clipShape(Capsule())
-                    .overlay(
-                        Capsule()
-                            .stroke(AppTheme.divider, lineWidth: 1)
-                    )
             }
 
             ProgressView(value: progress)
@@ -119,7 +144,7 @@ struct QuestionFeedView: View {
     private func currentContent(question: Question, total: Int, index: Int) -> some View {
         let progress = total > 0 ? Double(index + 1) / Double(total) : 0
         return VStack(spacing: 20) {
-            header(progress: progress, index: index + 1, total: total)
+            header(progress: progress, index: index + 1, total: total, question: question)
 
             questionCard(text: question.stem)
 
@@ -138,6 +163,24 @@ struct QuestionFeedView: View {
         .padding(.horizontal, 20)
         .padding(.top, 12)
         .padding(.bottom, 24)
+    }
+
+    private func questionTitle(for question: Question) -> String {
+        let raw = question.questionType.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return "Question" }
+        let cleaned = raw
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+        let parts = cleaned.split { !$0.isLetter && !$0.isNumber }
+        let title = parts.map { $0.capitalized }.joined(separator: " ")
+        return title.isEmpty ? "Question" : title
+    }
+
+    private func resolvedHeaderTitle(for question: Question) -> String {
+        if let headerTitle, !headerTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return headerTitle
+        }
+        return questionTitle(for: question)
     }
 
     private func optionsGrid(_ options: [QuestionOption]) -> some View {

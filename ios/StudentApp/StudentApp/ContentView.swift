@@ -43,30 +43,37 @@ private struct MainContainerView: View {
             ZStack(alignment: .topTrailing) {
                 contentView
 
-                Button {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        showPanel = true
+                if !isInSession {
+                    Button {
+                        withAnimation(.easeOut(duration: 0.2)) {
+                            showPanel = true
+                        }
+                    } label: {
+                        Image(systemName: "square.grid.2x2.fill")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(AppTheme.textPrimary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .fill(AppTheme.surface)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .stroke(AppTheme.divider, lineWidth: 1)
+                            )
                     }
-                } label: {
-                    Image(systemName: "square.grid.2x2.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .fill(AppTheme.surface)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                .stroke(AppTheme.divider, lineWidth: 1)
-                        )
+                    .padding(.top, 12)
+                    .padding(.trailing, 16)
                 }
-                .padding(.top, 12)
-                .padding(.trailing, 16)
             }
         } panel: {
             SidePanelView(displayName: displayName) {
                 Task { await vm.signOut() }
+            }
+        }
+        .onChange(of: isInSession) { _, newValue in
+            if newValue {
+                showPanel = false
             }
         }
     }
@@ -74,12 +81,18 @@ private struct MainContainerView: View {
     @ViewBuilder
     private var contentView: some View {
         if let session = vm.session, let sessionId = vm.sessionId, let user = vm.user {
-            PracticeFlowView(session: session, sessionId: sessionId, studentId: user.id)
+            PracticeFlowView(session: session, sessionId: sessionId, studentId: user.id, headerTitle: vm.selectedBank?.title) {
+                vm.exitSession()
+            }
         } else {
             QuestionBankSelectionView(banks: vm.banks, isLoading: vm.isLoading, errorMessage: vm.errorMessage) { bank in
                 Task { await vm.startSession(for: bank) }
             }
         }
+    }
+
+    private var isInSession: Bool {
+        vm.session != nil && vm.sessionId != nil
     }
 
     private var displayName: String {

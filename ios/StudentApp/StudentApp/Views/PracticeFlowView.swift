@@ -8,11 +8,15 @@ struct PracticeFlowView: View {
     @State private var answers: [String: String] = [:]
     @State private var showingOverview = false
     @State private var returnToOverviewOnAnswer = false
+    let headerTitle: String?
+    let onExit: () -> Void
 
-    init(session: PracticeSession, sessionId: String, studentId: String) {
+    init(session: PracticeSession, sessionId: String, studentId: String, headerTitle: String?, onExit: @escaping () -> Void) {
         self.session = session
         _vm = StateObject(wrappedValue: QuestionFeedViewModel(session: session))
         _flowModel = StateObject(wrappedValue: PracticeFlowViewModel(session: session, sessionId: sessionId, studentId: studentId))
+        self.headerTitle = headerTitle
+        self.onExit = onExit
     }
 
     var body: some View {
@@ -36,6 +40,8 @@ struct PracticeFlowView: View {
                 vm: vm,
                 answers: $answers,
                 returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
+                headerTitle: headerTitle,
+                onBack: onExit,
                 onShowOverview: {
                     showingOverview = true
                 },
