@@ -292,6 +292,35 @@
 
 ---
 
+## Edge Functions
+
+### `submit_attempt`
+**用途**：服务端评分并保存学生作答记录。根据 `question_id` 读取答案，写入 `attempts`，并在该题目首次作答正确时递增 `sessions.correct_count`（重复提交只存 attempts，不重复计分）。
+
+**鉴权**
+- 需要 `Authorization: Bearer <jwt>`。
+
+**请求字段**
+- `session_id` string (uuid)
+- `question_id` string (uuid)
+- `answer` string | number | null
+- `duration_ms` number | null (optional)
+- `skipped` boolean | null (optional)
+
+**响应字段**
+- `isCorrect` boolean
+
+**示例**
+```json
+{
+  "session_id": "9b4638c3-1a3a-4d1b-9d7a-9aa5c94a1b2c",
+  "question_id": "ae5e7f6b-2ed2-4f0f-b38a-986c9a0a2f2c",
+  "answer": "B",
+  "duration_ms": 12000,
+  "skipped": false
+}
+```
+
 ## 显式索引
 - `attempts_student_created_at_idx` on `attempts(student_id, created_at)`
 - `sessions_student_created_at_idx` on `sessions(student_id, created_at)`
