@@ -75,6 +75,15 @@ deno test --allow-read supabase/functions/_shared/scoring_test.ts
 
 ---
 
+## Automation & Verification
+
+- Prefer executing commands, checks, and validations yourself instead of asking the user to do them.
+- When remote resources are involved (e.g., managed databases, hosted Supabase projects), ask for the minimum required connection details and credentials, then perform the verification directly.
+- If additional access is needed (VPN, SSH, allowlist, MFA), request the missing info explicitly and proceed once provided.
+- Only ask the user to run commands when access cannot be delegated or tooling is unavailable; otherwise, automate and report results.
+
+---
+
 ## Code Style Guidelines
 
 ### TypeScript / React (Web)
