@@ -1,17 +1,21 @@
 import { defineConfig } from "vitest/config";
-import react from "@vitejs/plugin-react";
 import path from "path";
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     environment: "node",
     globals: true,
     setupFiles: ["./test/setup.ts"],
-    include: ["**/*.test.ts", "**/*.test.tsx"],
-    exclude: ["node_modules", ".next", "e2e"],
+    include: ["src/**/__tests__/**/*.test.ts", "test/**/*.test.ts"],
+    exclude: ["node_modules", ".next"],
     testTimeout: 30000,
     hookTimeout: 30000,
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
   },
   resolve: {
     alias: {
