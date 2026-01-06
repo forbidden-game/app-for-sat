@@ -135,9 +135,7 @@ public final class SupabasePracticeService {
             let isCorrect: Bool
         }
 
-        let response: FunctionResponse = try await client.functions
-            .invoke("submit_attempt", options: FunctionInvokeOptions(body: payload))
-
+        let response: FunctionResponse = try await invokeFunction("submit_attempt", body: payload)
         return response.isCorrect
     }
 
@@ -166,6 +164,130 @@ public final class SupabasePracticeService {
             return .number(value)
         }
         return .string(answer)
+    }
+
+    private func invokeFunction<Response: Decodable, Body: Encodable>(
+        _ name: String,
+        body: Body,
+        retryOnUnauthorized: Bool = true
+    ) async throws -> Response {
+        do {
+            let session = try await client.auth.session
+            return try await client.functions.invoke(
+                name,
+                options: FunctionInvokeOptions(
+                    headers: ["Authorization": "Bearer \(session.accessToken)"],
+                    body: body
+                )
+            )
+        } catch let error as FunctionsError {
+            guard case let .httpError(code, data) = error else {
+                throw error
+            }
+
+            if code == 401, retryOnUnauthorized {
+                _ = try? await client.auth.refreshSession()
+                return try await invokeFunction(name, body: body, retryOnUnauthorized: false)
+            }
+
+            let message = decodeFunctionError(from: data)
+            let rawBody = decodeRawBody(from: data)
+            let sessionDebug = currentSessionDebug()
+            let description = formatFunctionError(
+                code: code,
+                message: message,
+                rawBody: rawBody,
+                sessionDebug: sessionDebug
+            )
+            throw NSError(
+                domain: "SupabasePracticeService",
+                code: code,
+                userInfo: [NSLocalizedDescriptionKey: description]
+            )
+        }
+    }
+
+    private func decodeFunctionError(from data: Data) -> String? {
+        struct FunctionErrorPayload: Decodable {
+            let error: String?
+        }
+
+        guard let payload = try? JSONDecoder().decode(FunctionErrorPayload.self, from: data) else {
+            return nil
+        }
+        return payload.error
+    }
+
+    private func decodeRawBody(from data: Data) -> String? {
+        guard let raw = String(data: data, encoding: .utf8) else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    private func formatFunctionError(
+        code: Int,
+        message: String?,
+        rawBody: String?,
+        sessionDebug: String?
+    ) -> String {
+        let suffix: String
+#if DEBUG
+        suffix = sessionDebug.map { " (\($0))" } ?? ""
+#else
+        suffix = ""
+#endif
+        switch message {
+        case "missing_authorization", "invalid_authorization":
+            return "Authentication expired. Please sign in again."
+        default:
+            if let message, !message.isEmpty {
+                return "Edge function error (\(code)): \(message)\(suffix)"
+            }
+            if let rawBody {
+                let preview = String(rawBody.prefix(200))
+                return "Edge function error (\(code)): \(preview)\(suffix)"
+            }
+            return "Edge function error (\(code)).\(suffix)"
+        }
+    }
+
+    private func currentSessionDebug() -> String? {
+        guard let session = client.auth.currentSession else {
+            return "session=missing"
+        }
+        let expired = session.isExpired ? "expired" : "valid"
+        let tokenLength = session.accessToken.count
+        let jwtInfo = decodeJwtInfo(from: session.accessToken) ?? "jwt=unreadable"
+        return "session=\(expired),tokenLength=\(tokenLength),\(jwtInfo)"
+    }
+
+    private func decodeJwtInfo(from token: String) -> String? {
+        let parts = token.split(separator: ".")
+        guard parts.count >= 2 else { return nil }
+        let payloadPart = String(parts[1])
+        guard let payloadData = base64URLDecode(payloadPart) else { return nil }
+        guard
+            let object = try? JSONSerialization.jsonObject(with: payloadData),
+            let dict = object as? [String: Any]
+        else {
+            return nil
+        }
+        let iss = dict["iss"] as? String ?? "unknown"
+        let aud = dict["aud"] as? String ?? "unknown"
+        let role = dict["role"] as? String ?? "unknown"
+        let exp = dict["exp"] as? TimeInterval ?? 0
+        return "jwt=iss:\(iss),aud:\(aud),role:\(role),exp:\(Int(exp))"
+    }
+
+    private func base64URLDecode(_ value: String) -> Data? {
+        var base64 = value
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        let padding = 4 - (base64.count % 4)
+        if padding < 4 {
+            base64.append(String(repeating: "=", count: padding))
+        }
+        return Data(base64Encoded: base64)
     }
 }
 
