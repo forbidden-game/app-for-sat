@@ -9,9 +9,9 @@ struct QuestionFeedView: View {
     @Binding var answers: [String: String]
     @Binding var returnToOverviewOnAnswer: Bool
     let headerTitle: String?
+    @ObservedObject var flowModel: PracticeFlowViewModel
     let onBack: () -> Void
     let onShowOverview: () -> Void
-    let onAnswer: (Question, String) -> Void
 
     @State private var selectedOption: String?
     @State private var freeResponse: String = ""
@@ -23,6 +23,7 @@ struct QuestionFeedView: View {
     @State private var transitionToIndex: Int?
     @State private var transitionDirection: SwipeDirection?
     @State private var transitionOffset: CGFloat = 0
+    @State private var showFeedback = false
 
     private let commitThreshold: CGFloat = 120
     private let rubberBandFactor: CGFloat = 0.25
@@ -193,21 +194,34 @@ struct QuestionFeedView: View {
 
     private func optionButton(_ option: QuestionOption) -> some View {
         let isSelected = selectedOption == option.label
+        let isJustSelected = showFeedback && isSelected
+        
         return Button {
+            guard !showFeedback else { return }
             selectedOption = option.label
+            triggerSelectionHaptic()
+            withAnimation(.easeInOut(duration: 0.15)) {
+                showFeedback = true
+            }
             recordAnswer(option.label)
-            advanceAfterAnswer()
+            Task {
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                showFeedback = false
+                advanceAfterAnswer()
+            }
         } label: {
             HStack(spacing: 12) {
                 Text(option.label)
                     .font(.headline)
-                    .foregroundStyle(isSelected ? Color.black : AppTheme.textSecondary)
+                    .foregroundStyle(isJustSelected ? Color.black : (isSelected ? Color.black : AppTheme.textSecondary))
                     .frame(width: 36, height: 36)
-                    .background(isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
+                    .background(
+                        isJustSelected ? Color(red: 0.6, green: 0.85, blue: 0.75) : (isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
+                    )
                     .clipShape(Circle())
                     .overlay(
                         Circle()
-                            .stroke(AppTheme.divider, lineWidth: 1)
+                            .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.divider, lineWidth: isJustSelected ? 2 : 1)
                     )
 
                 Text(option.content)
@@ -220,22 +234,24 @@ struct QuestionFeedView: View {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isSelected ? AppTheme.surfaceRaised : AppTheme.surface)
+                    .fill(isJustSelected ? Color(red: 0.18, green: 0.22, blue: 0.20) : (isSelected ? AppTheme.surfaceRaised : AppTheme.surface))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isSelected ? AppTheme.accent : AppTheme.divider, lineWidth: 1)
+                    .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : (isSelected ? AppTheme.accent : AppTheme.divider), lineWidth: isJustSelected ? 2 : 1)
             )
             .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
+            .scaleEffect(isJustSelected ? 0.97 : 1.0)
         }
         .buttonStyle(.plain)
+        .disabled(showFeedback)
     }
 
     private func freeResponseField() -> some View {
         HStack(spacing: 12) {
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 22))
-                .foregroundStyle(AppTheme.accent)
+                .foregroundStyle(showFeedback ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.accent)
 
             TextField("Type your answer", text: $freeResponse)
                 .focused($isInputFocused)
@@ -246,17 +262,19 @@ struct QuestionFeedView: View {
                     commitFreeResponse()
                 }
                 .foregroundStyle(AppTheme.textPrimary)
+                .disabled(showFeedback)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
+                .fill(showFeedback ? Color(red: 0.18, green: 0.22, blue: 0.20) : AppTheme.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(AppTheme.divider, lineWidth: 1)
+                .stroke(showFeedback ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.divider, lineWidth: showFeedback ? 2 : 1)
         )
         .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
+        .scaleEffect(showFeedback ? 0.97 : 1.0)
     }
 
     private func scheduleAutoAdvanceIfNeeded(with newValue: String) {
@@ -272,17 +290,25 @@ struct QuestionFeedView: View {
 
     private func commitFreeResponse() {
         let trimmed = freeResponse.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty, !showFeedback else { return }
         pendingAutoAdvance?.cancel()
-        recordAnswer(trimmed)
         isInputFocused = false
-        advanceAfterAnswer()
+        triggerSelectionHaptic()
+        recordAnswer(trimmed)
+        withAnimation(.easeInOut(duration: 0.15)) {
+            showFeedback = true
+        }
+        Task {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            showFeedback = false
+            advanceAfterAnswer()
+        }
     }
 
     private func recordAnswer(_ value: String) {
         let question = vm.session.questions[vm.currentIndex]
         answers[question.id] = value
-        onAnswer(question, value)
+        flowModel.submitAnswer(question: question, answer: value)
     }
 
     private func advanceAfterAnswer() {
@@ -442,6 +468,7 @@ struct QuestionFeedView: View {
             selectedOption = nil
             freeResponse = answers[question.id] ?? ""
         }
+        showFeedback = false
     }
 }
 
@@ -453,6 +480,13 @@ private enum SwipeDirection {
 private func triggerHaptic() {
     #if canImport(UIKit)
     let generator = UIImpactFeedbackGenerator(style: .light)
+    generator.impactOccurred()
+    #endif
+}
+
+private func triggerSelectionHaptic() {
+    #if canImport(UIKit)
+    let generator = UIImpactFeedbackGenerator(style: .medium)
     generator.impactOccurred()
     #endif
 }

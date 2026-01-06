@@ -26,12 +26,10 @@ struct PracticeFlowView: View {
                 answers: $answers,
                 returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
                 headerTitle: headerTitle,
+                flowModel: flowModel,
                 onBack: onExit,
                 onShowOverview: {
                     flowModel.flowState = .overview
-                },
-                onAnswer: { question, answer in
-                    flowModel.submitAnswer(question: question, answer: answer)
                 }
             )
 
