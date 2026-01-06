@@ -143,11 +143,15 @@ public final class SupabasePracticeService {
 
     public func fetchSessionResult(sessionId: String) async throws -> SessionResult {
         struct Params: Encodable {
-            let p_session_id: String
+            let p_session_id: UUID
+        }
+
+        guard let uuid = UUID(uuidString: sessionId) else {
+            throw NSError(domain: "SupabasePracticeService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid session ID format"])
         }
 
         let result: SessionResult = try await client
-            .rpc("get_session_result", params: Params(p_session_id: sessionId))
+            .rpc("get_session_result", params: Params(p_session_id: uuid))
             .execute()
             .value
 
