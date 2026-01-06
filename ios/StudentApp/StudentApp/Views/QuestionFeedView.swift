@@ -334,7 +334,12 @@ struct QuestionFeedView: View {
     }
 
     private var canAdvance: Bool {
-        vm.currentIndex + 1 < vm.session.questions.count
+        // Allow swipe-up on last question to go to overview
+        true
+    }
+
+    private var isLastQuestion: Bool {
+        vm.currentIndex == vm.session.questions.count - 1
     }
 
     private var canRetreat: Bool {
@@ -385,6 +390,16 @@ struct QuestionFeedView: View {
     private func beginTransition(direction: SwipeDirection, height: CGFloat, startingOffset: CGFloat) {
         let fromIndex = vm.currentIndex
         let toIndex = direction == .next ? fromIndex + 1 : fromIndex - 1
+
+        // Last question swipe-up goes to overview
+        if direction == .next && toIndex >= vm.session.questions.count {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                dragOffset = 0
+            }
+            onShowOverview()
+            return
+        }
+
         guard toIndex >= 0 && toIndex < vm.session.questions.count else { return }
 
         isTransitioning = true
