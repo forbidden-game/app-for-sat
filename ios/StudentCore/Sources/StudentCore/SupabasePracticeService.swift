@@ -141,6 +141,19 @@ public final class SupabasePracticeService {
         return response.isCorrect
     }
 
+    public func fetchSessionResult(sessionId: String) async throws -> SessionResult {
+        struct Params: Encodable {
+            let p_session_id: String
+        }
+
+        let result: SessionResult = try await client
+            .rpc("get_session_result", params: Params(p_session_id: sessionId))
+            .execute()
+            .value
+
+        return result
+    }
+
     private func encodedAnswer(for question: Question, answer: String?) -> FunctionAnswerValue? {
         guard let answer, !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return nil

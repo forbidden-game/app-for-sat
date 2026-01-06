@@ -5,7 +5,7 @@
 ## 总览
 - 表数量：14
 - 视图数量：1
-- 函数/RPC：5（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、1 个练习 session RPC）
+- 函数/RPC：6（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC）
 
 ## 表结构
 
@@ -289,6 +289,43 @@
 
 ### `public.start_practice_session(bank_slug text, override_limit int)`
 **用途**：创建练习 session，按题库生成题目列表并返回（不包含答案）。
+
+---
+
+### `public.get_session_result(p_session_id uuid)`
+**用途**：返回 session 结果详情（含题目、用户答案、正确答案、讲解）。
+
+**鉴权**
+- 使用 `SECURITY INVOKER` + RLS，调用者必须是 session 所有者（`session.student_id = auth.uid()`）。
+- 非所有者调用将抛出 `forbidden` 异常。
+
+**返回结构**
+```json
+{
+  "session_id": "uuid",
+  "total_questions": 10,
+  "correct_count": 7,
+  "questions": [
+    {
+      "question_id": "uuid",
+      "position": 1,
+      "is_correct": true,
+      "user_answer": "B",
+      "correct_answer": "B",
+      "stem": "题干文本",
+      "options": [{"label": "A", "content": "..."}],
+      "explanation": "讲解文本"
+    }
+  ]
+}
+```
+
+**字段说明**
+- `is_correct`：若用户未作答或跳过，返回 `false`
+- `user_answer`：若用户跳过或无 attempt 记录，返回 `null`
+- `correct_answer`：从 `questions.answer_key->'correct'` 提取
+- `explanation`：优先取 `ai_explanations.content`，无则返回空字符串
+- `questions` 按 `session_questions.position` 升序排列
 
 ---
 

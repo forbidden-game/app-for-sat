@@ -6,7 +6,6 @@ struct PracticeFlowView: View {
     @StateObject private var vm: QuestionFeedViewModel
     @StateObject private var flowModel: PracticeFlowViewModel
     @State private var answers: [String: String] = [:]
-    @State private var showingOverview = false
     @State private var returnToOverviewOnAnswer = false
     let headerTitle: String?
     let onExit: () -> Void
@@ -20,7 +19,23 @@ struct PracticeFlowView: View {
     }
 
     var body: some View {
-        if showingOverview {
+        switch flowModel.flowState {
+        case .practicing:
+            QuestionFeedView(
+                vm: vm,
+                answers: $answers,
+                returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
+                headerTitle: headerTitle,
+                onBack: onExit,
+                onShowOverview: {
+                    flowModel.flowState = .overview
+                },
+                onAnswer: { question, answer in
+                    flowModel.submitAnswer(question: question, answer: answer)
+                }
+            )
+
+        case .overview:
             SessionOverviewView(
                 session: session,
                 answers: answers,
@@ -29,24 +44,27 @@ struct PracticeFlowView: View {
                 onSelectQuestion: { index in
                     returnToOverviewOnAnswer = true
                     vm.jump(to: index)
-                    showingOverview = false
+                    flowModel.flowState = .practicing
                 },
                 onSubmit: {
                     flowModel.finalizeSession()
                 }
             )
-        } else {
-            QuestionFeedView(
-                vm: vm,
-                answers: $answers,
-                returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
-                headerTitle: headerTitle,
-                onBack: onExit,
-                onShowOverview: {
-                    showingOverview = true
+
+        case .result(let result):
+            SessionResultView(
+                result: result,
+                onSelectQuestion: { question in
+                    flowModel.showQuestionDetail(question)
                 },
-                onAnswer: { question, answer in
-                    flowModel.submitAnswer(question: question, answer: answer)
+                onDismiss: onExit
+            )
+
+        case .questionDetail(let question):
+            QuestionDetailView(
+                question: question,
+                onBack: {
+                    flowModel.backToResult()
                 }
             )
         }
