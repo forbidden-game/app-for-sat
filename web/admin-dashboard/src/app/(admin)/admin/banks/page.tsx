@@ -45,6 +45,9 @@ export default function QuestionBanksPage() {
   const [form, setForm] = useState<QuestionBankInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
+  const [selectedBank, setSelectedBank] = useState<QuestionBank | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -101,9 +104,42 @@ export default function QuestionBanksPage() {
     [banks],
   );
 
+  function formatDateTime(value: string) {
+    return new Date(value).toLocaleString();
+  }
+
   function resetForm() {
     setForm({ ...EMPTY_FORM });
     setEditingId(null);
+  }
+
+  function openCreateDrawer() {
+    resetForm();
+    setDrawerMode("create");
+    setSelectedBank(null);
+    setDrawerOpen(true);
+  }
+
+  function openEditDrawer(bank: QuestionBank) {
+    setEditingId(bank.id);
+    setForm({
+      slug: bank.slug,
+      title: bank.title,
+      subtitle: bank.subtitle ?? "",
+      icon: bank.icon ?? "",
+      mode: bank.mode,
+      question_limit: bank.question_limit,
+      rule_json: formatRuleJson(bank.rule_json),
+      is_active: bank.is_active,
+      sort_order: bank.sort_order,
+    });
+    setDrawerMode("edit");
+    setSelectedBank(bank);
+    setDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setDrawerOpen(false);
   }
 
   async function handleSave() {
@@ -123,11 +159,13 @@ export default function QuestionBanksPage() {
       if (editingId) {
         const updated = await updateQuestionBank(session.access_token, editingId, form);
         setBanks((prev) => prev.map((bank) => (bank.id === updated.id ? updated : bank)));
+        setSelectedBank(updated);
       } else {
         const created = await createQuestionBank(session.access_token, form);
         setBanks((prev) => [created, ...prev]);
       }
       resetForm();
+      setDrawerOpen(false);
     } catch (saveError) {
       setError(
         saveError instanceof Error ? saveError.message : "Failed to save question bank.",
@@ -160,6 +198,8 @@ export default function QuestionBanksPage() {
       setBanks((prev) => prev.filter((item) => item.id !== bank.id));
       if (editingId === bank.id) {
         resetForm();
+        setSelectedBank(null);
+        setDrawerOpen(false);
       }
     } catch (deleteError) {
       setError(
@@ -170,21 +210,6 @@ export default function QuestionBanksPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function startEdit(bank: QuestionBank) {
-    setEditingId(bank.id);
-    setForm({
-      slug: bank.slug,
-      title: bank.title,
-      subtitle: bank.subtitle ?? "",
-      icon: bank.icon ?? "",
-      mode: bank.mode,
-      question_limit: bank.question_limit,
-      rule_json: formatRuleJson(bank.rule_json),
-      is_active: bank.is_active,
-      sort_order: bank.sort_order,
-    });
   }
 
   if (loading) {
@@ -216,11 +241,11 @@ export default function QuestionBanksPage() {
           </p>
         </div>
         <button
-          className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300"
-          onClick={resetForm}
+          className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+          onClick={openCreateDrawer}
           type="button"
         >
-          Reset form
+          Create bank
         </button>
       </header>
 
@@ -230,8 +255,7 @@ export default function QuestionBanksPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+      <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
           <table className="w-full text-left text-sm text-zinc-700">
             <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
               <tr>
@@ -256,7 +280,11 @@ export default function QuestionBanksPage() {
                 </tr>
               ) : (
                 sortedBanks.map((bank) => (
-                  <tr key={bank.id} className="border-t border-zinc-100">
+                  <tr
+                    key={bank.id}
+                    className="cursor-pointer border-t border-zinc-100 transition hover:bg-zinc-50"
+                    onClick={() => openEditDrawer(bank)}
+                  >
                     <td className="px-4 py-3 font-medium text-zinc-900">
                       {bank.title}
                     </td>
@@ -274,19 +302,26 @@ export default function QuestionBanksPage() {
                         <Link
                           href={`/admin/banks/${bank.id}/questions`}
                           className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+                          onClick={(event) => event.stopPropagation()}
                         >
                           Questions
                         </Link>
                         <button
                           className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
-                          onClick={() => startEdit(bank)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openEditDrawer(bank);
+                          }}
                           type="button"
                         >
                           Edit
                         </button>
                         <button
                           className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 transition hover:border-red-300"
-                          onClick={() => handleDelete(bank)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            void handleDelete(bank);
+                          }}
                           type="button"
                         >
                           Delete
@@ -298,139 +333,186 @@ export default function QuestionBanksPage() {
               )}
             </tbody>
           </table>
-        </div>
+      </section>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            {editingId ? "Edit bank" : "Create new bank"}
-          </h2>
-          <div className="mt-4 grid gap-3 text-sm text-zinc-700">
-            <label className="grid gap-1">
-              Slug
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.slug}
-                onChange={(event) => setForm({ ...form, slug: event.target.value })}
-                placeholder="sat-practice"
-              />
-            </label>
-            <label className="grid gap-1">
-              Title
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.title}
-                onChange={(event) => setForm({ ...form, title: event.target.value })}
-                placeholder="SAT Practice"
-              />
-            </label>
-            <label className="grid gap-1">
-              Subtitle
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.subtitle}
-                onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
-                placeholder="Optional description"
-              />
-            </label>
-            <label className="grid gap-1">
-              Icon
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.icon}
-                onChange={(event) => setForm({ ...form, icon: event.target.value })}
-                placeholder="sparkle"
-              />
-            </label>
-            <label className="grid gap-1">
-              Mode
-              <select
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.mode}
-                onChange={(event) => setForm({ ...form, mode: event.target.value })}
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          <button
+            className="absolute inset-0 bg-black/30"
+            onClick={closeDrawer}
+            aria-label="Close drawer"
+          />
+          <aside className="relative z-10 flex h-full w-full max-w-lg flex-col gap-4 overflow-auto bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  {drawerMode === "edit" ? "Edit bank" : "Create bank"}
+                </p>
+                <p className="text-sm font-semibold text-zinc-900">
+                  {drawerMode === "edit" ? "Update settings" : "New question bank"}
+                </p>
+              </div>
+              <button
+                className="text-xs text-zinc-400 transition hover:text-zinc-600"
+                onClick={closeDrawer}
               >
-                <option value="fixed">Fixed (manual)</option>
-                <option value="daily_mix">Daily Mix (dynamic)</option>
-              </select>
-              <span className="text-xs text-zinc-500">
-                {MODE_DESCRIPTIONS[form.mode as keyof typeof MODE_DESCRIPTIONS]}
-              </span>
-            </label>
-            <label className="grid gap-1">
-              Question limit
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                type="number"
-                value={form.question_limit}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    question_limit: Number(event.target.value),
-                  })
-                }
-              />
-            </label>
-            <label className="grid gap-1">
-              Sort order
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                type="number"
-                value={form.sort_order}
-                onChange={(event) =>
-                  setForm({ ...form, sort_order: Number(event.target.value) })
-                }
-              />
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                checked={form.is_active}
-                onChange={(event) =>
-                  setForm({ ...form, is_active: event.target.checked })
-                }
-                type="checkbox"
-              />
-              Active
-            </label>
-            {form.mode === "daily_mix" && (
+                Close
+              </button>
+            </div>
+
+            {drawerMode === "edit" && selectedBank ? (
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  Bank details
+                </p>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-xs text-zinc-500">ID</dt>
+                    <dd className="text-xs text-zinc-700">
+                      <span className="font-mono break-all">{selectedBank.id}</span>
+                    </dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-xs text-zinc-500">Created</dt>
+                    <dd className="text-xs text-zinc-700">
+                      {formatDateTime(selectedBank.created_at)}
+                    </dd>
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-xs text-zinc-500">Mode</dt>
+                    <dd className="text-xs text-zinc-700">{selectedBank.mode}</dd>
+                  </div>
+                </dl>
+              </div>
+            ) : null}
+
+            <div className="grid gap-3 text-sm text-zinc-700">
               <label className="grid gap-1">
-                <span className="flex items-center gap-2">
-                  Rule JSON
-                  <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
-                    Required for Daily Mix
-                  </span>
-                </span>
-                <textarea
-                  className="min-h-[120px] rounded-lg border border-zinc-200 px-3 py-2 font-mono text-xs"
-                  value={form.rule_json}
-                  onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
-                  placeholder='{"subjects": ["math"], "difficulty_min": 1, "difficulty_max": 5}'
+                Slug
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.slug}
+                  onChange={(event) => setForm({ ...form, slug: event.target.value })}
+                  placeholder="sat-practice"
                 />
+              </label>
+              <label className="grid gap-1">
+                Title
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.title}
+                  onChange={(event) => setForm({ ...form, title: event.target.value })}
+                  placeholder="SAT Practice"
+                />
+              </label>
+              <label className="grid gap-1">
+                Subtitle
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.subtitle}
+                  onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
+                  placeholder="Optional description"
+                />
+              </label>
+              <label className="grid gap-1">
+                Icon
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.icon}
+                  onChange={(event) => setForm({ ...form, icon: event.target.value })}
+                  placeholder="sparkle"
+                />
+              </label>
+              <label className="grid gap-1">
+                Mode
+                <select
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.mode}
+                  onChange={(event) => setForm({ ...form, mode: event.target.value })}
+                >
+                  <option value="fixed">Fixed (manual)</option>
+                  <option value="daily_mix">Daily Mix (dynamic)</option>
+                </select>
                 <span className="text-xs text-zinc-500">
-                  Filter questions by subjects, modules, difficulty range, or tag_ids.
+                  {MODE_DESCRIPTIONS[form.mode as keyof typeof MODE_DESCRIPTIONS]}
                 </span>
               </label>
-            )}
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button
-                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={saving}
-                onClick={handleSave}
-                type="button"
-              >
-                {editingId ? "Save changes" : "Create bank"}
-              </button>
-              {editingId ? (
+              <label className="grid gap-1">
+                Question limit
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  type="number"
+                  value={form.question_limit}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      question_limit: Number(event.target.value),
+                    })
+                  }
+                />
+              </label>
+              <label className="grid gap-1">
+                Sort order
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  type="number"
+                  value={form.sort_order}
+                  onChange={(event) =>
+                    setForm({ ...form, sort_order: Number(event.target.value) })
+                  }
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  checked={form.is_active}
+                  onChange={(event) =>
+                    setForm({ ...form, is_active: event.target.checked })
+                  }
+                  type="checkbox"
+                />
+                Active
+              </label>
+              {form.mode === "daily_mix" && (
+                <label className="grid gap-1">
+                  <span className="flex items-center gap-2">
+                    Rule JSON
+                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                      Required for Daily Mix
+                    </span>
+                  </span>
+                  <textarea
+                    className="min-h-[120px] rounded-lg border border-zinc-200 px-3 py-2 font-mono text-xs"
+                    value={form.rule_json}
+                    onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
+                    placeholder='{"subjects": ["math"], "difficulty_min": 1, "difficulty_max": 5}'
+                  />
+                  <span className="text-xs text-zinc-500">
+                    Filter questions by subjects, modules, difficulty range, or tag_ids.
+                  </span>
+                </label>
+              )}
+              <div className="flex flex-wrap gap-2 pt-2">
                 <button
-                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
-                  onClick={resetForm}
+                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  disabled={saving}
+                  onClick={handleSave}
                   type="button"
                 >
-                  Cancel edit
+                  {drawerMode === "edit" ? "Save changes" : "Create bank"}
                 </button>
-              ) : null}
+                <button
+                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
+                  onClick={closeDrawer}
+                  type="button"
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
-          </div>
+          </aside>
         </div>
-      </section>
+      ) : null}
     </main>
   );
 }

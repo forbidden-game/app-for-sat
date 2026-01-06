@@ -27,6 +27,9 @@ export default function TagsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("");
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
+  const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -99,6 +102,28 @@ export default function TagsPage() {
     setEditingId(null);
   }
 
+  function openCreateDrawer() {
+    resetForm();
+    setDrawerMode("create");
+    setSelectedTag(null);
+    setDrawerOpen(true);
+  }
+
+  function openEditDrawer(tag: Tag) {
+    setEditingId(tag.id);
+    setForm({
+      name: tag.name,
+      category: tag.category,
+    });
+    setDrawerMode("edit");
+    setSelectedTag(tag);
+    setDrawerOpen(true);
+  }
+
+  function closeDrawer() {
+    setDrawerOpen(false);
+  }
+
   async function handleSave() {
     if (!supabase) return;
     setSaving(true);
@@ -118,11 +143,13 @@ export default function TagsPage() {
         setTags((prev) =>
           prev.map((tag) => (tag.id === updated.id ? updated : tag)),
         );
+        setSelectedTag(updated);
       } else {
         const created = await createTag(session.access_token, form);
         setTags((prev) => [...prev, created]);
       }
       resetForm();
+      setDrawerOpen(false);
     } catch (saveError) {
       setError(
         saveError instanceof Error ? saveError.message : "Failed to save tag.",
@@ -155,6 +182,8 @@ export default function TagsPage() {
       setTags((prev) => prev.filter((item) => item.id !== tag.id));
       if (editingId === tag.id) {
         resetForm();
+        setSelectedTag(null);
+        setDrawerOpen(false);
       }
     } catch (deleteError) {
       setError(
@@ -165,14 +194,6 @@ export default function TagsPage() {
     } finally {
       setSaving(false);
     }
-  }
-
-  function startEdit(tag: Tag) {
-    setEditingId(tag.id);
-    setForm({
-      name: tag.name,
-      category: tag.category,
-    });
   }
 
   if (loading) {
@@ -217,11 +238,11 @@ export default function TagsPage() {
             ))}
           </select>
           <button
-            className="rounded-full border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-700 shadow-sm transition hover:border-zinc-300"
-            onClick={resetForm}
+            className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            onClick={openCreateDrawer}
             type="button"
           >
-            Reset form
+            Create tag
           </button>
         </div>
       </header>
@@ -232,114 +253,162 @@ export default function TagsPage() {
         </div>
       ) : null}
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="flex flex-col gap-6">
-          {Object.keys(groupedTags).length === 0 ? (
-            <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-              No tags yet. Create one using the form.
-            </div>
-          ) : (
-            Object.entries(groupedTags).map(([category, categoryTags]) => (
-              <div
-                key={category}
-                className="rounded-2xl border border-zinc-200 bg-white"
-              >
-                <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3">
-                  <h3 className="text-sm font-medium text-zinc-700 capitalize">
-                    {category}
-                  </h3>
-                </div>
-                <div className="flex flex-wrap gap-2 p-4">
-                  {categoryTags.map((tag) => (
-                    <div
-                      key={tag.id}
-                      className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
-                        editingId === tag.id
-                          ? "border-zinc-900 bg-zinc-900 text-white"
-                          : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
-                      }`}
-                    >
-                      <span>{tag.name}</span>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          className="text-xs hover:text-zinc-900"
-                          onClick={() => startEdit(tag)}
-                          type="button"
-                          title="Edit"
-                        >
-                          ✎
-                        </button>
-                        <button
-                          className="text-xs hover:text-red-600"
-                          onClick={() => handleDelete(tag)}
-                          type="button"
-                          title="Delete"
-                        >
-                          ×
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm h-fit">
-          <h2 className="text-lg font-semibold text-zinc-900">
-            {editingId ? "Edit tag" : "Create new tag"}
-          </h2>
-          <div className="mt-4 grid gap-4 text-sm text-zinc-700">
-            <label className="grid gap-1">
-              Name
-              <input
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="e.g., algebra, geometry"
-              />
-            </label>
-            <label className="grid gap-1">
-              Category
-              <select
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-              >
-                {TAG_CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex flex-wrap gap-2 pt-2">
-              <button
-                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                disabled={saving || !form.name.trim()}
-                onClick={handleSave}
-                type="button"
-              >
-                {editingId ? "Save changes" : "Create tag"}
-              </button>
-              {editingId ? (
-                <button
-                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
-                  onClick={resetForm}
-                  type="button"
-                >
-                  Cancel
-                </button>
-              ) : null}
-            </div>
+      <section className="flex flex-col gap-6">
+        {Object.keys(groupedTags).length === 0 ? (
+          <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
+            No tags yet. Create one using the button above.
           </div>
-        </div>
+        ) : (
+          Object.entries(groupedTags).map(([category, categoryTags]) => (
+            <div
+              key={category}
+              className="rounded-2xl border border-zinc-200 bg-white"
+            >
+              <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3">
+                <h3 className="text-sm font-medium text-zinc-700 capitalize">
+                  {category}
+                </h3>
+              </div>
+              <div className="flex flex-wrap gap-2 p-4">
+                {categoryTags.map((tag) => (
+                  <div
+                    key={tag.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openEditDrawer(tag)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") openEditDrawer(tag);
+                    }}
+                    className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
+                      editingId === tag.id
+                        ? "border-zinc-900 bg-zinc-900 text-white"
+                        : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
+                    }`}
+                  >
+                    <span>{tag.name}</span>
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <button
+                        className="text-xs hover:text-zinc-900"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEditDrawer(tag);
+                        }}
+                        type="button"
+                        title="Edit"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        className="text-xs hover:text-red-600"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleDelete(tag);
+                        }}
+                        type="button"
+                        title="Delete"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
+        )}
       </section>
 
       <div className="text-xs text-zinc-400">
         Total: {tags.length} tags across {Object.keys(groupedTags).length} categories
       </div>
+
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          <button
+            className="absolute inset-0 bg-black/30"
+            onClick={closeDrawer}
+            aria-label="Close drawer"
+          />
+          <aside className="relative z-10 flex h-full w-full max-w-md flex-col gap-4 overflow-auto bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  {drawerMode === "edit" ? "Edit tag" : "Create tag"}
+                </p>
+                <p className="text-sm font-semibold text-zinc-900">
+                  {drawerMode === "edit" ? "Update tag" : "New tag"}
+                </p>
+              </div>
+              <button
+                className="text-xs text-zinc-400 transition hover:text-zinc-600"
+                onClick={closeDrawer}
+              >
+                Close
+              </button>
+            </div>
+
+            {drawerMode === "edit" && selectedTag ? (
+              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  Tag details
+                </p>
+                <dl className="mt-3 space-y-2 text-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <dt className="text-xs text-zinc-500">ID</dt>
+                    <dd className="text-xs text-zinc-700">
+                      <span className="font-mono break-all">{selectedTag.id}</span>
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            ) : null}
+
+            <div className="grid gap-4 text-sm text-zinc-700">
+              <label className="grid gap-1">
+                Name
+                <input
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  placeholder="e.g., algebra, geometry"
+                />
+              </label>
+              <label className="grid gap-1">
+                Category
+                <select
+                  className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                >
+                  {TAG_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <button
+                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  disabled={saving || !form.name.trim()}
+                  onClick={handleSave}
+                  type="button"
+                >
+                  {drawerMode === "edit" ? "Save changes" : "Create tag"}
+                </button>
+                <button
+                  className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
+                  onClick={closeDrawer}
+                  type="button"
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </main>
   );
 }

@@ -4,13 +4,21 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
+  createQuestion,
   deleteQuestion,
   getDistinctValues,
+  getQuestion,
   listQuestions,
   listQuestionTypes,
+  updateQuestion,
   type ListQuestionsResult,
+  type Question,
+  type QuestionInput,
+  type OptionInput,
   type QuestionType,
 } from "./actions";
+import { QuestionForm } from "./QuestionForm";
+import { AssetUploader } from "./AssetUploader";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -33,6 +41,13 @@ export default function QuestionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
+  const [drawerLoading, setDrawerLoading] = useState(false);
+  const [drawerSaving, setDrawerSaving] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
+  const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
 
   const [search, setSearch] = useState("");
   const [subject, setSubject] = useState("");
@@ -102,6 +117,52 @@ export default function QuestionsPage() {
     loadFilters();
   }, [supabase]);
 
+  async function getAccessToken() {
+    if (!supabase) return null;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) {
+      setError("You are not signed in.");
+      return null;
+    }
+    return session.access_token;
+  }
+
+  function openCreateDrawer() {
+    setDrawerMode("create");
+    setSelectedQuestion(null);
+    setSelectedQuestionId(null);
+    setDrawerError(null);
+    setDrawerOpen(true);
+  }
+
+  async function openEditDrawer(questionId: string) {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    setDrawerMode("edit");
+    setSelectedQuestion(null);
+    setSelectedQuestionId(questionId);
+    setDrawerError(null);
+    setDrawerOpen(true);
+    setDrawerLoading(true);
+
+    try {
+      const question = await getQuestion(accessToken, questionId);
+      setSelectedQuestion(question);
+    } catch (err) {
+      setDrawerError(
+        err instanceof Error ? err.message : "Failed to load question.",
+      );
+    } finally {
+      setDrawerLoading(false);
+    }
+  }
+
+  function closeDrawer() {
+    setDrawerOpen(false);
+  }
+
   async function handleDelete(questionId: string, stem: string) {
     if (!supabase) return;
     const confirmed = window.confirm(
@@ -122,6 +183,48 @@ export default function QuestionsPage() {
     } finally {
       setDeleting(null);
     }
+  }
+
+  async function handleDrawerSubmit(
+    input: QuestionInput,
+    options: OptionInput[],
+    tagIds: string[],
+  ) {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
+
+    setDrawerSaving(true);
+    setDrawerError(null);
+
+    try {
+      if (drawerMode === "create") {
+        const created = await createQuestion(accessToken, input, options, tagIds);
+        setSelectedQuestion(created);
+        setSelectedQuestionId(created.id);
+      } else if (selectedQuestionId) {
+        const updated = await updateQuestion(
+          accessToken,
+          selectedQuestionId,
+          input,
+          options,
+          tagIds,
+        );
+        setSelectedQuestion(updated);
+      }
+
+      await loadQuestions();
+      closeDrawer();
+    } catch (err) {
+      setDrawerError(
+        err instanceof Error ? err.message : "Failed to save question.",
+      );
+    } finally {
+      setDrawerSaving(false);
+    }
+  }
+
+  function handleDrawerCancel() {
+    closeDrawer();
   }
 
   function handleSearch(e: React.FormEvent) {
@@ -166,12 +269,13 @@ export default function QuestionsPage() {
           >
             Import
           </Link>
-          <Link
-            href="/admin/questions/new"
+          <button
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800"
+            onClick={openCreateDrawer}
+            type="button"
           >
             + New Question
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -302,7 +406,8 @@ export default function QuestionsPage() {
               result?.questions.map((q) => (
                 <tr
                   key={q.id}
-                  className="border-t border-zinc-100 hover:bg-zinc-50"
+                  className="cursor-pointer border-t border-zinc-100 hover:bg-zinc-50"
+                  onClick={() => openEditDrawer(q.id)}
                 >
                   <td className="px-4 py-3">
                     <div className="font-medium text-zinc-900">
@@ -335,15 +440,22 @@ export default function QuestionsPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
-                      <Link
-                        href={`/admin/questions/${q.id}`}
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void openEditDrawer(q.id);
+                        }}
                         className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
                       >
                         Edit
-                      </Link>
+                      </button>
                       <button
                         type="button"
-                        onClick={() => handleDelete(q.id, q.stem)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleDelete(q.id, q.stem);
+                        }}
                         disabled={deleting === q.id}
                         className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 transition hover:border-red-300 disabled:opacity-50"
                       >
@@ -388,6 +500,75 @@ export default function QuestionsPage() {
           </div>
         </div>
       )}
+
+      {drawerOpen ? (
+        <div className="fixed inset-0 z-40 flex justify-end">
+          <button
+            className="absolute inset-0 bg-black/30"
+            onClick={closeDrawer}
+            aria-label="Close drawer"
+          />
+          <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col gap-4 overflow-auto bg-white p-6 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                  {drawerMode === "edit" ? "Edit question" : "Create question"}
+                </p>
+                <p className="text-sm font-semibold text-zinc-900">
+                  {drawerMode === "edit" ? "Update content" : "New question"}
+                </p>
+              </div>
+              <button
+                className="text-xs text-zinc-400 transition hover:text-zinc-600"
+                onClick={closeDrawer}
+              >
+                Close
+              </button>
+            </div>
+
+            {drawerError ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {drawerError}
+              </div>
+            ) : null}
+
+            {drawerMode === "edit" && selectedQuestionId ? (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+                <div className="text-xs text-zinc-500">
+                  ID:{" "}
+                  <span className="font-mono text-zinc-700">
+                    {selectedQuestionId}
+                  </span>
+                </div>
+                <Link
+                  href={`/admin/questions/${selectedQuestionId}`}
+                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+                >
+                  Open full editor
+                </Link>
+              </div>
+            ) : null}
+
+            {drawerLoading ? (
+              <p className="text-sm text-zinc-500">Loading question...</p>
+            ) : (
+              <QuestionForm
+                key={selectedQuestion?.id ?? "new-question"}
+                initialData={selectedQuestion ?? undefined}
+                onSubmit={handleDrawerSubmit}
+                onCancel={handleDrawerCancel}
+                saving={drawerSaving}
+              />
+            )}
+
+            {drawerMode === "edit" && selectedQuestionId ? (
+              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+                <AssetUploader questionId={selectedQuestionId} />
+              </div>
+            ) : null}
+          </aside>
+        </div>
+      ) : null}
     </main>
   );
 }

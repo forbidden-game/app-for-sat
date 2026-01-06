@@ -3,7 +3,7 @@
 日期：2026-01-06
 
 ## 总览
-- 表数量：15
+- 表数量：16
 - 视图数量：1
 - 函数/RPC：9（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC）
 
@@ -21,6 +21,23 @@
 **关系**
 - 与 `auth.users` 1:1
 - 作为 `parent_student_links` 与 `parent_invite_codes` 的主体引用
+
+---
+
+### `public.admin_audit_logs`
+**用途**：管理员在控制台的关键操作审计日志。
+
+**字段**
+- `id` uuid，PK，default `gen_random_uuid()`
+- `actor_id` uuid，FK -> `profiles.id`（on delete set null）
+- `action` text（例如：`user.create`）
+- `entity_type` text（例如：`user`）
+- `entity_id` uuid（目标实体）
+- `payload` jsonb，default `{}`
+- `created_at` timestamptz，default `now()`
+
+**关系**
+- N:1 -> `profiles`
 
 ---
 
