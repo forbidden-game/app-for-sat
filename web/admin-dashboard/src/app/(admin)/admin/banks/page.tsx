@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import {
+  parseImportText,
+  type ImportParseError,
+  type ImportPayload,
+} from "@/lib/questionImport";
 import {
   createQuestionBank,
   deleteQuestionBank,
@@ -22,6 +27,20 @@ const EMPTY_FORM: QuestionBankInput = {
   rule_json: "{}",
   is_active: true,
   sort_order: 0,
+};
+
+type ImportFormat = "csv" | "json";
+
+type ImportResult = {
+  inserted_count: number;
+  inserted_ids: string[];
+  error_count: number;
+  errors: Array<{ index: number; error: string }>;
+};
+
+type ImportSummary = ImportResult & {
+  bankId: string;
+  bankTitle: string;
 };
 
 const MODE_DESCRIPTIONS = {
@@ -48,6 +67,16 @@ export default function QuestionBanksPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
   const [selectedBank, setSelectedBank] = useState<QuestionBank | null>(null);
+  const [lastImportResult, setLastImportResult] = useState<ImportSummary | null>(null);
+
+  const [importFormat, setImportFormat] = useState<ImportFormat>("csv");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPayload, setImportPayload] = useState<ImportPayload | null>(null);
+  const [importParseErrors, setImportParseErrors] = useState<ImportParseError[]>([]);
+  const [importParseWarnings, setImportParseWarnings] = useState<string[]>([]);
+  const [importParsing, setImportParsing] = useState(false);
+  const [importPartial, setImportPartial] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -113,8 +142,18 @@ export default function QuestionBanksPage() {
     setEditingId(null);
   }
 
+  function resetImportState() {
+    setImportFile(null);
+    setImportPayload(null);
+    setImportParseErrors([]);
+    setImportParseWarnings([]);
+    setImportParsing(false);
+    setImportPartial(false);
+  }
+
   function openCreateDrawer() {
     resetForm();
+    resetImportState();
     setDrawerMode("create");
     setSelectedBank(null);
     setDrawerOpen(true);
@@ -142,6 +181,45 @@ export default function QuestionBanksPage() {
     setDrawerOpen(false);
   }
 
+  useEffect(() => {
+    if (!importFile) return;
+    void parseImportFile(importFile, importFormat);
+  }, [importFile, importFormat]);
+
+  async function parseImportFile(file: File, format: ImportFormat) {
+    setImportParsing(true);
+    setImportParseErrors([]);
+    setImportParseWarnings([]);
+    setImportPayload(null);
+
+    try {
+      const text = await file.text();
+      const parsed = parseImportText(text, format);
+      setImportParseErrors(parsed.errors);
+      setImportParseWarnings(parsed.warnings);
+      setImportPayload(parsed.payload);
+    } catch (err) {
+      setImportParseErrors([
+        { row: 0, message: err instanceof Error ? err.message : "Failed to read file." },
+      ]);
+    } finally {
+      setImportParsing(false);
+    }
+  }
+
+  function handleImportFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const selected = event.target.files?.[0] ?? null;
+    setImportFile(selected);
+    if (selected) {
+      const name = selected.name.toLowerCase();
+      if (name.endsWith(".json")) {
+        setImportFormat("json");
+      } else if (name.endsWith(".csv")) {
+        setImportFormat("csv");
+      }
+    }
+  }
+
   async function handleSave() {
     if (!supabase) return;
     setSaving(true);
@@ -163,8 +241,27 @@ export default function QuestionBanksPage() {
       } else {
         const created = await createQuestionBank(session.access_token, form);
         setBanks((prev) => [created, ...prev]);
+        if (importPayload) {
+          setImporting(true);
+          const { data, error: importError } = await supabase.rpc("import_questions_to_bank", {
+            p_payload: importPayload,
+            p_partial: importPartial,
+            p_bank_id: created.id,
+          });
+          if (importError) {
+            throw new Error(importError.message);
+          }
+          if (data) {
+            setLastImportResult({
+              ...(data as ImportResult),
+              bankId: created.id,
+              bankTitle: created.title,
+            });
+          }
+        }
       }
       resetForm();
+      resetImportState();
       setDrawerOpen(false);
     } catch (saveError) {
       setError(
@@ -172,6 +269,7 @@ export default function QuestionBanksPage() {
       );
     } finally {
       setSaving(false);
+      setImporting(false);
     }
   }
 
@@ -252,6 +350,39 @@ export default function QuestionBanksPage() {
       {error ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           {error}
+        </div>
+      ) : null}
+
+      {lastImportResult ? (
+        <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <div className="flex items-center justify-between gap-3">
+            <p className="font-medium">
+              Imported {lastImportResult.inserted_count} questions into{" "}
+              {lastImportResult.bankTitle}.
+            </p>
+            <button
+              type="button"
+              onClick={() => setLastImportResult(null)}
+              className="text-xs text-green-700 underline"
+            >
+              Dismiss
+            </button>
+          </div>
+          {lastImportResult.error_count > 0 && (
+            <ul className="mt-2 list-inside list-disc text-xs text-amber-700">
+              {lastImportResult.errors.slice(0, 5).map((err, index) => (
+                <li key={index}>
+                  Row {err.index}: {err.error}
+                </li>
+              ))}
+            </ul>
+          )}
+          <Link
+            href={`/admin/banks/${lastImportResult.bankId}/questions`}
+            className="mt-2 inline-block text-xs text-green-700 underline"
+          >
+            View bank questions
+          </Link>
         </div>
       ) : null}
 
@@ -491,10 +622,99 @@ export default function QuestionBanksPage() {
                   </span>
                 </label>
               )}
+
+              {drawerMode === "create" ? (
+                <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-700">
+                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-400 mb-2">
+                    Import from file (optional)
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <select
+                      className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                      value={importFormat}
+                      onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
+                    >
+                      <option value="csv">CSV</option>
+                      <option value="json">JSON</option>
+                    </select>
+                    <input
+                      type="file"
+                      accept=".csv,.json"
+                      onChange={handleImportFileChange}
+                      className="text-sm"
+                    />
+                    {importFile ? (
+                      <button
+                        type="button"
+                        onClick={() => resetImportState()}
+                        className="text-xs text-zinc-500 hover:text-zinc-700 underline"
+                      >
+                        Clear
+                      </button>
+                    ) : null}
+                  </div>
+
+                  {form.mode !== "fixed" ? (
+                    <p className="text-xs text-amber-600 mb-2">
+                      Import attaches questions to the bank. Daily Mix uses Rule JSON
+                      instead of fixed ordering.
+                    </p>
+                  ) : null}
+
+                  {importParsing ? (
+                    <p className="text-xs text-zinc-400 mb-2">Parsing file...</p>
+                  ) : null}
+
+                  {importParseErrors.length > 0 && (
+                    <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 mb-2">
+                      <p className="font-medium mb-1">Parse errors</p>
+                      <ul className="list-inside list-disc space-y-1">
+                        {importParseErrors.slice(0, 5).map((err, index) => (
+                          <li key={index}>
+                            Row {err.row}: {err.message}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {importParseWarnings.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 mb-2">
+                      <p className="font-medium mb-1">Warnings</p>
+                      <ul className="list-inside list-disc space-y-1">
+                        {importParseWarnings.slice(0, 4).map((warning, index) => (
+                          <li key={index}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {importPayload ? (
+                    <p className="text-xs text-zinc-600 mb-2">
+                      Parsed {importPayload.questions.length} questions.
+                    </p>
+                  ) : null}
+
+                  <label className="flex items-center gap-2 text-xs text-zinc-600">
+                    <input
+                      type="checkbox"
+                      checked={importPartial}
+                      onChange={(event) => setImportPartial(event.target.checked)}
+                    />
+                    Partial mode (continue on errors)
+                  </label>
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2 pt-2">
                 <button
                   className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-                  disabled={saving}
+                  disabled={
+                    saving ||
+                    importing ||
+                    (drawerMode === "create" &&
+                      !!importFile &&
+                      (importParsing || !importPayload || importParseErrors.length > 0))
+                  }
                   onClick={handleSave}
                   type="button"
                 >

@@ -391,6 +391,29 @@
 
 ---
 
+### `public.import_questions_to_bank(p_payload jsonb, p_partial boolean, p_bank_id uuid)`
+**用途**：批量导入题目并可选绑定到题库（按顺序追加）。
+
+**鉴权**
+- 需要 admin 角色。
+
+**参数**
+- `p_payload`：JSON 格式，包含 `questions` 数组
+- `p_partial`：是否允许部分成功（默认 false，全部失败则回滚）
+- `p_bank_id`：可选题库 ID；为空时仅导入题目
+
+**返回结构**
+```json
+{
+  "inserted_count": 10,
+  "inserted_ids": ["uuid1", "uuid2"],
+  "error_count": 0,
+  "errors": []
+}
+```
+
+---
+
 ### `public.reorder_bank_questions(p_bank_id uuid, p_items jsonb)`
 **用途**：批量更新题库内题目的顺序。
 
