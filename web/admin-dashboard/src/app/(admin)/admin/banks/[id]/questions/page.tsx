@@ -6,6 +6,7 @@ import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   addQuestionToBank,
+  getAvailableSubjects,
   getBankInfo,
   listBankQuestions,
   removeQuestionFromBank,
@@ -32,9 +33,12 @@ export default function BankQuestionsPage() {
   const [saving, setSaving] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchSubject, setSearchSubject] = useState("");
+  const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<AvailableQuestion[]>([]);
   const [searching, setSearching] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!supabase) return;
@@ -48,12 +52,14 @@ export default function BankQuestionsPage() {
     }
 
     try {
-      const [info, items] = await Promise.all([
+      const [info, items, subjects] = await Promise.all([
         getBankInfo(session.access_token, bankId),
         listBankQuestions(session.access_token, bankId),
+        getAvailableSubjects(session.access_token),
       ]);
       setBankInfo(info);
       setQuestions(items);
+      setAvailableSubjects(subjects);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load data.");
     } finally {
@@ -73,11 +79,12 @@ export default function BankQuestionsPage() {
     if (!session) return;
 
     setSearching(true);
+    setHasSearched(true);
     try {
       const results = await searchAvailableQuestions(
         session.access_token,
         bankId,
-        searchQuery,
+        { search: searchQuery, subject: searchSubject },
       );
       setSearchResults(results);
     } catch {
@@ -210,11 +217,23 @@ export default function BankQuestionsPage() {
 
       {showSearch && (
         <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-          <div className="flex gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <select
+              className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              value={searchSubject}
+              onChange={(e) => setSearchSubject(e.target.value)}
+            >
+              <option value="">All Subjects</option>
+              {availableSubjects.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
+              ))}
+            </select>
             <input
               type="text"
-              className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-              placeholder="Search questions by stem..."
+              className="flex-1 min-w-[200px] rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              placeholder="Search by question text..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -228,12 +247,12 @@ export default function BankQuestionsPage() {
               {searching ? "..." : "Search"}
             </button>
           </div>
-          {searchResults.length > 0 && (
-            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+          {searchResults.length > 0 ? (
+            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
               {searchResults.map((q) => (
                 <div
                   key={q.id}
-                  className="flex items-center justify-between rounded-lg border border-zinc-100 p-2"
+                  className="flex items-center justify-between rounded-lg border border-zinc-100 p-2 hover:bg-zinc-50"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-zinc-900 truncate">{truncate(q.stem, 60)}</p>
@@ -252,6 +271,35 @@ export default function BankQuestionsPage() {
                 </div>
               ))}
             </div>
+          ) : hasSearched ? (
+            <div className="rounded-xl border border-dashed border-zinc-200 p-6 text-center">
+              <p className="text-sm text-zinc-500 mb-2">No questions found</p>
+              <p className="text-xs text-zinc-400 mb-3">
+                {availableSubjects.length === 0
+                  ? "There are no questions in the database yet."
+                  : "Try adjusting your search filters."}
+              </p>
+              {availableSubjects.length === 0 && (
+                <div className="flex justify-center gap-2">
+                  <Link
+                    href="/admin/questions/new"
+                    className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs text-zinc-700 hover:bg-zinc-50"
+                  >
+                    Create Question
+                  </Link>
+                  <Link
+                    href="/admin/questions/import"
+                    className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs text-white"
+                  >
+                    Import Questions
+                  </Link>
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-zinc-400 text-center py-2">
+              Click Search to find questions to add
+            </p>
           )}
         </div>
       )}

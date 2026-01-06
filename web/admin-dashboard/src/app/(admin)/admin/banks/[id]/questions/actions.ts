@@ -56,10 +56,15 @@ export async function listBankQuestions(
   });
 }
 
+export type SearchFilters = {
+  search?: string;
+  subject?: string;
+};
+
 export async function searchAvailableQuestions(
   accessToken: string,
   bankId: string,
-  search: string,
+  filters: SearchFilters,
 ): Promise<AvailableQuestion[]> {
   const { supabase } = await requireAdmin(accessToken);
 
@@ -74,10 +79,14 @@ export async function searchAvailableQuestions(
     .from("questions")
     .select("id, stem, subject, module, difficulty, question_type")
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(30);
 
-  if (search) {
-    query = query.ilike("stem", `%${search}%`);
+  if (filters.search) {
+    query = query.ilike("stem", `%${filters.search}%`);
+  }
+
+  if (filters.subject) {
+    query = query.eq("subject", filters.subject);
   }
 
   if (excludeIds.length > 0) {
@@ -91,6 +100,24 @@ export async function searchAvailableQuestions(
   }
 
   return data as AvailableQuestion[];
+}
+
+export async function getAvailableSubjects(
+  accessToken: string,
+): Promise<string[]> {
+  const { supabase } = await requireAdmin(accessToken);
+
+  const { data, error } = await supabase
+    .from("questions")
+    .select("subject")
+    .order("subject");
+
+  if (error) {
+    throw new Error("Failed to load subjects.");
+  }
+
+  const uniqueSubjects = [...new Set((data ?? []).map((r: { subject: string }) => r.subject))];
+  return uniqueSubjects.filter(Boolean);
 }
 
 export async function addQuestionToBank(

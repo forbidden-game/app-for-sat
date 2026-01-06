@@ -19,10 +19,15 @@ const EMPTY_FORM: QuestionBankInput = {
   icon: "",
   mode: "fixed",
   question_limit: 10,
-  rule_json: "{\\n  \\n}",
+  rule_json: "{}",
   is_active: true,
   sort_order: 0,
 };
+
+const MODE_DESCRIPTIONS = {
+  fixed: "Questions are manually added and ordered. Students see them in the order you set.",
+  daily_mix: "Questions are selected dynamically based on rules. Define filters in Rule JSON below.",
+} as const;
 
 function formatRuleJson(value: QuestionBank["rule_json"]) {
   try {
@@ -343,9 +348,12 @@ export default function QuestionBanksPage() {
                 value={form.mode}
                 onChange={(event) => setForm({ ...form, mode: event.target.value })}
               >
-                <option value="fixed">fixed</option>
-                <option value="daily_mix">daily_mix</option>
+                <option value="fixed">Fixed (manual)</option>
+                <option value="daily_mix">Daily Mix (dynamic)</option>
               </select>
+              <span className="text-xs text-zinc-500">
+                {MODE_DESCRIPTIONS[form.mode as keyof typeof MODE_DESCRIPTIONS]}
+              </span>
             </label>
             <label className="grid gap-1">
               Question limit
@@ -382,14 +390,25 @@ export default function QuestionBanksPage() {
               />
               Active
             </label>
-            <label className="grid gap-1">
-              Rule JSON
-              <textarea
-                className="min-h-[160px] rounded-lg border border-zinc-200 px-3 py-2 font-mono text-xs"
-                value={form.rule_json}
-                onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
-              />
-            </label>
+            {form.mode === "daily_mix" && (
+              <label className="grid gap-1">
+                <span className="flex items-center gap-2">
+                  Rule JSON
+                  <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                    Required for Daily Mix
+                  </span>
+                </span>
+                <textarea
+                  className="min-h-[120px] rounded-lg border border-zinc-200 px-3 py-2 font-mono text-xs"
+                  value={form.rule_json}
+                  onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
+                  placeholder='{"subjects": ["math"], "difficulty_min": 1, "difficulty_max": 5}'
+                />
+                <span className="text-xs text-zinc-500">
+                  Filter questions by subjects, modules, difficulty range, or tag_ids.
+                </span>
+              </label>
+            )}
             <div className="flex flex-wrap gap-2 pt-2">
               <button
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
