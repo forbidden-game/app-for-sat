@@ -87,13 +87,12 @@ struct SessionResultView: View {
                 .animation(.easeOut(duration: 0.4).delay(0.4), value: appeared)
 
             ScrollView {
-                LazyVStack(spacing: 10) {
+                VStack(spacing: 10) {
                     ForEach(Array(result.questions.enumerated()), id: \.element.id) { index, questionResult in
                         questionRow(questionResult, index: index)
                             .opacity(appeared ? 1 : 0)
-                            .offset(y: appeared ? 0 : 20)
                             .animation(
-                                .spring(response: 0.4, dampingFraction: 0.8)
+                                .easeOut(duration: 0.3)
                                     .delay(0.5 + Double(index) * 0.05),
                                 value: appeared
                             )
