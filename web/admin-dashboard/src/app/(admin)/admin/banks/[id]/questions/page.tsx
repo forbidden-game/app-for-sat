@@ -1,0 +1,317 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+import { getSupabaseClient } from "@/lib/supabaseClient";
+import {
+  addQuestionToBank,
+  getBankInfo,
+  listBankQuestions,
+  removeQuestionFromBank,
+  reorderBankQuestions,
+  searchAvailableQuestions,
+  type AvailableQuestion,
+  type BankQuestion,
+} from "./actions";
+
+function truncate(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + "...";
+}
+
+export default function BankQuestionsPage() {
+  const supabase = getSupabaseClient();
+  const params = useParams();
+  const bankId = params.id as string;
+
+  const [bankInfo, setBankInfo] = useState<{ title: string; slug: string } | null>(null);
+  const [questions, setQuestions] = useState<BankQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<AvailableQuestion[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+
+  const loadData = useCallback(async () => {
+    if (!supabase) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) {
+      setError("You are not signed in.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const [info, items] = await Promise.all([
+        getBankInfo(session.access_token, bankId),
+        listBankQuestions(session.access_token, bankId),
+      ]);
+      setBankInfo(info);
+      setQuestions(items);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load data.");
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, bankId]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  async function handleSearch() {
+    if (!supabase) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return;
+
+    setSearching(true);
+    try {
+      const results = await searchAvailableQuestions(
+        session.access_token,
+        bankId,
+        searchQuery,
+      );
+      setSearchResults(results);
+    } catch {
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  }
+
+  async function handleAddQuestion(questionId: string) {
+    if (!supabase) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return;
+
+    setSaving(true);
+    try {
+      await addQuestionToBank(session.access_token, bankId, questionId);
+      setSearchResults((prev) => prev.filter((q) => q.id !== questionId));
+      await loadData();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add question.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveQuestion(questionId: string) {
+    if (!supabase) return;
+    const confirmed = window.confirm("Remove this question from the bank?");
+    if (!confirmed) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return;
+
+    setSaving(true);
+    try {
+      await removeQuestionFromBank(session.access_token, bankId, questionId);
+      setQuestions((prev) => prev.filter((q) => q.question_id !== questionId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove question.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleMoveUp(index: number) {
+    if (index <= 0) return;
+    const newQuestions = [...questions];
+    [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
+    await saveOrder(newQuestions);
+  }
+
+  async function handleMoveDown(index: number) {
+    if (index >= questions.length - 1) return;
+    const newQuestions = [...questions];
+    [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
+    await saveOrder(newQuestions);
+  }
+
+  async function saveOrder(newQuestions: BankQuestion[]) {
+    if (!supabase) return;
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return;
+
+    const items = newQuestions.map((q, i) => ({
+      question_id: q.question_id,
+      position: i + 1,
+    }));
+
+    setSaving(true);
+    try {
+      await reorderBankQuestions(session.access_token, bankId, items);
+      setQuestions(newQuestions.map((q, i) => ({ ...q, position: i + 1 })));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to reorder.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="mx-auto max-w-4xl px-6 py-12">
+        <p className="text-sm text-zinc-500">Loading...</p>
+      </main>
+    );
+  }
+
+  return (
+    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+            Admin Console
+          </p>
+          <h1 className="text-2xl font-semibold text-zinc-900">
+            {bankInfo?.title ?? "Bank"} Questions
+          </h1>
+          <p className="text-sm text-zinc-500">
+            Manage questions in this bank. Drag to reorder.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSearch(!showSearch)}
+            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
+          >
+            {showSearch ? "Hide Search" : "+ Add Questions"}
+          </button>
+          <Link
+            href="/admin/banks"
+            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
+          >
+            Back to Banks
+          </Link>
+        </div>
+      </header>
+
+      {error && (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          {error}
+        </div>
+      )}
+
+      {showSearch && (
+        <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+          <div className="flex gap-2 mb-4">
+            <input
+              type="text"
+              className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+              placeholder="Search questions by stem..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
+            <button
+              type="button"
+              onClick={handleSearch}
+              disabled={searching}
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm text-white"
+            >
+              {searching ? "..." : "Search"}
+            </button>
+          </div>
+          {searchResults.length > 0 && (
+            <div className="flex flex-col gap-2 max-h-60 overflow-y-auto">
+              {searchResults.map((q) => (
+                <div
+                  key={q.id}
+                  className="flex items-center justify-between rounded-lg border border-zinc-100 p-2"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-zinc-900 truncate">{truncate(q.stem, 60)}</p>
+                    <p className="text-xs text-zinc-500">
+                      {q.subject} / {q.module} / D{q.difficulty}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleAddQuestion(q.id)}
+                    disabled={saving}
+                    className="ml-2 rounded-full border border-green-200 px-3 py-1 text-xs text-green-700 hover:bg-green-50"
+                  >
+                    Add
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="rounded-2xl border border-zinc-200 bg-white">
+        {questions.length === 0 ? (
+          <div className="p-6 text-center text-sm text-zinc-500">
+            No questions in this bank yet.
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100">
+            {questions.map((q, index) => (
+              <div
+                key={q.question_id}
+                className="flex items-center gap-3 p-3 hover:bg-zinc-50"
+              >
+                <div className="flex flex-col gap-1">
+                  <button
+                    type="button"
+                    onClick={() => handleMoveUp(index)}
+                    disabled={index === 0 || saving}
+                    className="text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-30"
+                  >
+                    ▲
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMoveDown(index)}
+                    disabled={index === questions.length - 1 || saving}
+                    className="text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-30"
+                  >
+                    ▼
+                  </button>
+                </div>
+                <span className="w-8 text-center text-sm font-medium text-zinc-400">
+                  {q.position}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-zinc-900">{truncate(q.stem, 80)}</p>
+                  <p className="text-xs text-zinc-500">
+                    {q.subject} / {q.question_type} / D{q.difficulty}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleRemoveQuestion(q.question_id)}
+                  disabled={saving}
+                  className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 hover:bg-red-50"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="text-xs text-zinc-400">
+        Total: {questions.length} questions
+      </div>
+    </main>
+  );
+}

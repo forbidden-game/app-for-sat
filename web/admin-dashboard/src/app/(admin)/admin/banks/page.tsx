@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   createQuestionBank,
@@ -265,6 +266,12 @@ export default function QuestionBanksPage() {
                     <td className="px-4 py-3">{bank.sort_order}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
+                        <Link
+                          href={`/admin/banks/${bank.id}/questions`}
+                          className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+                        >
+                          Questions
+                        </Link>
                         <button
                           className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
                           onClick={() => startEdit(bank)}

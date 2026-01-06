@@ -37,9 +37,9 @@ export type AdminOverview = {
 };
 
 async function requireCount(
-  promise: Promise<{ count: number | null; error: unknown | null }>,
+  query: PromiseLike<{ count: number | null; error: unknown }>,
 ) {
-  const { count, error } = await promise;
+  const { count, error } = await query;
   if (error || count === null) {
     throw new Error("Failed to load admin metrics.");
   }

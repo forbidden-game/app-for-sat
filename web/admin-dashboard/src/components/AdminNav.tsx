@@ -2,7 +2,9 @@ import Link from "next/link";
 
 const links = [
   { href: "/admin", label: "Overview" },
-  { href: "/admin/banks", label: "Question banks" },
+  { href: "/admin/questions", label: "Questions" },
+  { href: "/admin/banks", label: "Banks" },
+  { href: "/admin/tags", label: "Tags" },
 ];
 
 export function AdminNav() {

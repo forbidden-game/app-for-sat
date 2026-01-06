@@ -3,9 +3,9 @@
 日期：2026-01-06
 
 ## 总览
-- 表数量：14
+- 表数量：15
 - 视图数量：1
-- 函数/RPC：6（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC）
+- 函数/RPC：9（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC）
 
 ## 表结构
 
@@ -60,6 +60,25 @@
 
 ---
 
+### `public.question_types`
+**用途**：题目类型定义表，支持自定义类型。
+
+**字段**
+- `id` uuid，PK，default `gen_random_uuid()`
+- `name` text，unique（类型标识：mcq、numeric 等）
+- `display_name` text（显示名称）
+- `answer_schema` jsonb，default `{}`（答案格式配置）
+- `scoring_type` text，enum：`exact|partial|manual`
+- `is_active` boolean，default `true`
+- `sort_order` int，default `0`
+- `created_at` timestamptz，default `now()`
+
+**预置类型**
+- `mcq`：单选题
+- `numeric`：数值题
+
+---
+
 ### `public.questions`
 **用途**：题库主表（题干、答案、元数据）。
 
@@ -68,9 +87,9 @@
 - `subject` text
 - `module` text
 - `difficulty` int
-- `question_type` text，enum：`mcq|numeric`
+- `question_type` text，FK -> `question_types.name`
 - `stem` text
-- `answer_key` jsonb
+- `answer_key` jsonb（格式：`{"correct": "B"}` 或 `{"correct": 42}`）
 - `metadata` jsonb，default `{}`
 - `created_at` timestamptz，default `now()`
 
@@ -78,6 +97,7 @@
 - 1:N -> `question_options`
 - N:M -> `tags`（通过 `question_tags`）
 - 1:N -> `question_assets`
+- N:1 -> `question_types`
 
 **备注**
 - 学生端不直接读取 `questions`，由 `start_practice_session` 返回不含答案的题目 payload。
@@ -103,7 +123,7 @@
 
 **字段**
 - `id` uuid，PK，default `gen_random_uuid()`
-- `name` text
+- `name` text，unique
 - `category` text
 
 **关系**
@@ -132,8 +152,11 @@
 **字段**
 - `id` uuid，PK，default `gen_random_uuid()`
 - `question_id` uuid，FK -> `questions.id`
-- `asset_url` text
-- `asset_type` text
+- `asset_url` text（公开访问 URL）
+- `asset_type` text（MIME 类型）
+- `storage_path` text（Supabase Storage 路径）
+- `status` text，enum：`pending|active|deleted`，default `active`
+- `created_by` uuid，FK -> `auth.users.id`
 - `created_at` timestamptz，default `now()`
 
 **关系**
@@ -273,6 +296,13 @@
 
 ## 函数 / RPC
 
+### `public.is_admin()`
+**用途**：检查当前用户是否为 admin 角色，用于 RLS policies。
+
+**返回**：boolean
+
+---
+
 ### `public.handle_new_user()`
 **用途**：auth trigger，注册时自动插入 `profiles` 行。
 
@@ -296,7 +326,7 @@
 **用途**：返回 session 结果详情（含题目、用户答案、正确答案、讲解）。
 
 **鉴权**
-- 使用 `SECURITY INVOKER` + RLS，调用者必须是 session 所有者（`session.student_id = auth.uid()`）。
+- 使用 `SECURITY DEFINER`，函数内部检查 `session.student_id = auth.uid()`。
 - 非所有者调用将抛出 `forbidden` 异常。
 
 **返回结构**
@@ -320,19 +350,46 @@
 }
 ```
 
-**字段说明**
-- `is_correct`：若用户未作答或跳过，返回 `false`
-- `user_answer`：若用户跳过或无 attempt 记录，返回 `null`
-- `correct_answer`：从 `questions.answer_key->'correct'` 提取
-- `explanation`：优先取 `ai_explanations.content`，无则返回空字符串
-- `questions` 按 `session_questions.position` 升序排列
+---
+
+### `public.import_questions(p_payload jsonb, p_partial boolean)`
+**用途**：批量导入题目（含选项、标签）。
+
+**鉴权**
+- 需要 admin 角色。
+
+**参数**
+- `p_payload`：JSON 格式，包含 `questions` 数组
+- `p_partial`：是否允许部分成功（默认 false，全部失败则回滚）
+
+**返回结构**
+```json
+{
+  "inserted_count": 10,
+  "inserted_ids": ["uuid1", "uuid2"],
+  "error_count": 0,
+  "errors": []
+}
+```
+
+---
+
+### `public.reorder_bank_questions(p_bank_id uuid, p_items jsonb)`
+**用途**：批量更新题库内题目的顺序。
+
+**鉴权**
+- 需要 admin 角色。
+
+**参数**
+- `p_bank_id`：题库 ID
+- `p_items`：数组，每项包含 `question_id` 和 `position`
 
 ---
 
 ## Edge Functions
 
 ### `submit_attempt`
-**用途**：服务端评分并保存学生作答记录。根据 `question_id` 读取答案，写入 `attempts`，并在该题目首次作答正确时递增 `sessions.correct_count`（重复提交只存 attempts，不重复计分）。
+**用途**：服务端评分并保存学生作答记录。
 
 **鉴权**
 - 需要 `Authorization: Bearer <jwt>`。
@@ -347,16 +404,36 @@
 **响应字段**
 - `isCorrect` boolean
 
-**示例**
-```json
-{
-  "session_id": "9b4638c3-1a3a-4d1b-9d7a-9aa5c94a1b2c",
-  "question_id": "ae5e7f6b-2ed2-4f0f-b38a-986c9a0a2f2c",
-  "answer": "B",
-  "duration_ms": 12000,
-  "skipped": false
-}
-```
+---
+
+### `sign-asset-upload`
+**用途**：为管理员生成图片上传签名 URL。
+
+**鉴权**
+- 需要 `Authorization: Bearer <jwt>`，且用户为 admin 角色。
+
+**请求字段**
+- `question_id` string (uuid)
+- `file_name` string
+- `content_type` string（支持：image/png, image/jpeg, image/gif, image/webp, image/svg+xml）
+
+**响应字段**
+- `signed_url` string（用于 PUT 上传）
+- `storage_path` string（存储路径）
+- `public_url` string（公开访问 URL）
+
+---
+
+## Storage Buckets
+
+### `question-assets`
+**用途**：存储题目图片/图表等资源。
+
+**配置**
+- 公开读取
+- Admin 可上传/管理
+
+---
 
 ## 显式索引
 - `attempts_student_created_at_idx` on `attempts(student_id, created_at)`
@@ -364,3 +441,4 @@
 - `question_banks_active_order_idx` on `question_banks(is_active, sort_order)`
 - `question_bank_questions_bank_position_idx` on `question_bank_questions(bank_id, position)`
 - `session_questions_session_position_idx` on `session_questions(session_id, position)`
+- `question_assets_pending_idx` on `question_assets(status, created_at)` where `status = 'pending'`
