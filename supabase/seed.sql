@@ -226,7 +226,7 @@ on conflict (question_id,tag_id) do nothing;
 
 insert into public.question_banks (id, slug, title, subtitle, icon, mode, question_limit, rule_json, is_active, sort_order)
 values
-  ('0d2e119c-3fab-4aaa-91f2-ef4d1c428d00', 'daily', 'Daily Mix', 'Warm up', 'sun.max.fill', 'daily_mix', 8, '{"subjects":["math","reading"],"difficulties":[1,2]}', true, 0),
+  ('0d2e119c-3fab-4aaa-91f2-ef4d1c428d00', 'daily', 'Daily Mix', 'Warm up', 'sun.max.fill', 'daily_mix', 50, '{"subjects":["math","reading"]}', true, 0),
   ('ae78d6b1-67dd-44a7-9bde-248004f89c09', 'math', 'Math Core', 'Algebra', 'function', 'fixed', 10, '{}', true, 1),
   ('8cf6ef75-e0b9-435e-a628-ff8dabc73584', 'reading', 'Reading', 'Passages', 'book.closed.fill', 'fixed', 10, '{}', true, 2)
 on conflict (id) do nothing;
