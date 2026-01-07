@@ -12,7 +12,11 @@ export default function LoginPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!supabase) return;
-    await supabase.auth.signInWithOtp({ email });
+    const redirectTo = `${window.location.origin}/admin`;
+    await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: redirectTo },
+    });
     setSent(true);
   }
 
