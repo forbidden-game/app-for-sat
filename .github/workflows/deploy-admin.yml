@@ -26,17 +26,33 @@ jobs:
           key: ${{ env.ADMIN_SSH_KEY }}
           port: ${{ secrets.ADMIN_SSH_PORT }}
           script: |
-            set -e
+            set -euo pipefail
             cd /root/apps/app-for-sat
             if [ -n "$(git status --porcelain)" ]; then
               echo "Working tree is dirty. Aborting deploy."
               git status --porcelain
               exit 1
             fi
+            PREV_HEAD="$(git rev-parse HEAD)"
             git fetch origin master
             git checkout master
             git pull --ff-only origin master
+            if ! git diff --name-only "$PREV_HEAD..HEAD" -- web/admin-dashboard | grep -q .; then
+              echo "No admin-dashboard changes detected. Skipping deploy."
+              exit 0
+            fi
             cd /root/apps/app-for-sat/web/admin-dashboard
-            npm ci
+            NEED_INSTALL=0
+            if [ ! -d node_modules ]; then
+              NEED_INSTALL=1
+            fi
+            if git diff --name-only "$PREV_HEAD..HEAD" -- web/admin-dashboard/package.json web/admin-dashboard/package-lock.json | grep -q .; then
+              NEED_INSTALL=1
+            fi
+            if [ "$NEED_INSTALL" -eq 1 ]; then
+              npm ci --no-fund --no-audit
+            else
+              echo "Dependencies unchanged; skipping npm ci."
+            fi
             NODE_OPTIONS=--max-old-space-size=512 npm run build
             systemctl restart admin-dashboard
