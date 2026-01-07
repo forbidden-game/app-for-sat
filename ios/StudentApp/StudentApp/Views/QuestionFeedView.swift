@@ -18,7 +18,7 @@ struct QuestionFeedView: View {
     @State private var pendingAutoAdvance: DispatchWorkItem?
     @FocusState private var isInputFocused: Bool
     @State private var showFeedback = false
-    @State private var scrollPosition: Int?
+    @State private var currentPage = 0
 
     var body: some View {
         let total = vm.session.questions.count
@@ -27,53 +27,37 @@ struct QuestionFeedView: View {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            ScrollView(.vertical) {
-                LazyVStack(spacing: 0) {
-                    ForEach(Array(vm.session.questions.enumerated()), id: \.element.id) { index, question in
-                        questionPage(question: question, index: index, total: total)
-                            .containerRelativeFrame(.vertical)
-                            .scrollTransition(.animated(.spring(response: 0.35, dampingFraction: 0.9))) { content, phase in
-                                content
-                                    .scaleEffect(1 - abs(phase.value) * 0.05)
-                                    .opacity(1 - abs(phase.value) * 0.3)
-                            }
-                    }
-                    
+            PagingScrollView(pageCount: total + 1, currentPage: $currentPage) { index in
+                if index < total {
+                    questionPage(question: vm.session.questions[index], index: index, total: total)
+                } else {
                     overviewTriggerCard(total: total)
-                        .containerRelativeFrame(.vertical)
                 }
-                .scrollTargetLayout()
             }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $scrollPosition)
-            .scrollIndicators(.hidden)
-            .scrollDismissesKeyboard(.interactively)
         }
         .onAppear {
-            scrollPosition = vm.currentIndex
+            currentPage = vm.currentIndex
             loadAnswer(for: vm.session.questions[vm.currentIndex])
         }
-        .onChange(of: scrollPosition) { _, newPosition in
-            guard let newPosition else { return }
-            
-            if newPosition >= vm.session.questions.count {
+        .onChange(of: currentPage) { _, newPage in
+            if newPage >= vm.session.questions.count {
                 triggerHaptic()
                 onShowOverview()
-                scrollPosition = vm.session.questions.count - 1
+                currentPage = vm.session.questions.count - 1
                 return
             }
             
-            if newPosition != vm.currentIndex {
+            if newPage != vm.currentIndex {
                 triggerHaptic()
                 isInputFocused = false
-                vm.jump(to: newPosition)
-                loadAnswer(for: vm.session.questions[newPosition])
+                vm.jump(to: newPage)
+                loadAnswer(for: vm.session.questions[newPage])
             }
         }
         .onChange(of: vm.currentIndex) { _, newIndex in
-            if scrollPosition != newIndex {
+            if currentPage != newIndex {
                 withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-                    scrollPosition = newIndex
+                    currentPage = newIndex
                 }
             }
         }
@@ -87,27 +71,33 @@ struct QuestionFeedView: View {
     private func questionPage(question: Question, index: Int, total: Int) -> some View {
         let progress = total > 0 ? Double(index + 1) / Double(total) : 0
         
-        return VStack(spacing: 20) {
-            header(progress: progress, index: index + 1, total: total, question: question)
+        return ZStack(alignment: .top) {
+            Color.clear
 
-            questionCard(text: question.stem)
+            VStack(spacing: 20) {
+                header(progress: progress, index: index + 1, total: total, question: question)
 
-            if let options = question.options, !options.isEmpty {
-                optionsGrid(options, questionId: question.id, questionIndex: index)
-            } else {
-                freeResponseField(questionId: question.id, questionIndex: index)
+                questionCard(text: question.stem)
+
+                if let options = question.options, !options.isEmpty {
+                    optionsGrid(options, questionId: question.id, questionIndex: index)
+                } else {
+                    freeResponseField(questionId: question.id, questionIndex: index)
+                }
+
+                Spacer()
+
             }
-
-            Spacer()
-
-            Text("Swipe up/down to change question")
-                .font(.footnote)
-                .foregroundStyle(AppTheme.textMuted)
+            .padding(.horizontal, 20)
+            .padding(.top, 12)
+            .padding(.bottom, 24)
+            .scrollTransition(.animated(.spring(response: 0.35, dampingFraction: 0.9))) { content, phase in
+                content
+                    .scaleEffect(1 - abs(phase.value) * 0.05)
+                    .opacity(1 - abs(phase.value) * 0.3)
+            }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 24)
-        .id(index)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     // MARK: - Overview Trigger Card
@@ -131,8 +121,8 @@ struct QuestionFeedView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .id(total)
     }
+
 
     // MARK: - Header
 
