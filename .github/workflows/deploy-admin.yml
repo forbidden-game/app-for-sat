@@ -11,17 +11,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Decode SSH key
+      - name: Prepare SSH key
         run: |
-          mkdir -p ~/.ssh
-          printf '%s' "${{ secrets.ADMIN_SSH_KEY_B64 }}" | base64 --decode > ~/.ssh/admin_ssh_key
-          chmod 600 ~/.ssh/admin_ssh_key
+          {
+            echo 'ADMIN_SSH_KEY<<EOF'
+            echo "${{ secrets.ADMIN_SSH_KEY_B64 }}" | base64 --decode
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.ADMIN_SSH_HOST }}
           username: ${{ secrets.ADMIN_SSH_USER }}
-          key_path: ~/.ssh/admin_ssh_key
+          key: ${{ env.ADMIN_SSH_KEY }}
           port: ${{ secrets.ADMIN_SSH_PORT }}
           script: |
             set -e
