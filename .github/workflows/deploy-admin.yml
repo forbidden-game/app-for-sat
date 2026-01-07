@@ -1,0 +1,35 @@
+name: Deploy Admin Dashboard
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "web/admin-dashboard/**"
+      - ".github/workflows/deploy-admin.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ADMIN_SSH_HOST }}
+          username: ${{ secrets.ADMIN_SSH_USER }}
+          key: ${{ secrets.ADMIN_SSH_KEY }}
+          port: ${{ secrets.ADMIN_SSH_PORT }}
+          script: |
+            set -e
+            cd /root/apps/app-for-sat
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "Working tree is dirty. Aborting deploy."
+              git status --porcelain
+              exit 1
+            fi
+            git fetch origin master
+            git checkout master
+            git pull --ff-only origin master
+            cd /root/apps/app-for-sat/web/admin-dashboard
+            npm ci
+            NODE_OPTIONS=--max-old-space-size=512 npm run build
+            systemctl restart admin-dashboard
