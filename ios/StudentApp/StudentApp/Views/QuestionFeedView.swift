@@ -35,6 +35,7 @@ struct QuestionFeedView: View {
                 }
             }
         }
+        .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
             currentPage = vm.currentIndex
             loadAnswer(for: vm.session.questions[vm.currentIndex])
