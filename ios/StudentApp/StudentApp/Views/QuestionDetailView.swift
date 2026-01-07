@@ -50,7 +50,7 @@ struct QuestionDetailView: View {
                 .clipShape(Capsule())
                 .overlay(
                     Capsule()
-                        .stroke(AppTheme.divider, lineWidth: 1)
+                        .stroke(AppTheme.dividerStrong, lineWidth: 1)
                 )
             }
             .buttonStyle(.plain)
@@ -81,7 +81,7 @@ struct QuestionDetailView: View {
         .clipShape(Capsule())
         .overlay(
             Capsule()
-                .stroke(question.isCorrect ? correctColor.opacity(0.4) : incorrectColor.opacity(0.4), lineWidth: 1)
+                .stroke(question.isCorrect ? correctColor.opacity(0.45) : incorrectColor.opacity(0.45), lineWidth: 1)
         )
     }
 
@@ -93,13 +93,13 @@ struct QuestionDetailView: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppTheme.surface)
+                    .fill(AppTheme.surfaceRaised)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppTheme.divider, lineWidth: 1)
+                    .stroke(AppTheme.dividerStrong, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.35), radius: 16, x: 0, y: 8)
+            .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
     }
 
     private func optionsList(_ options: [QuestionOption]) -> some View {
@@ -148,13 +148,13 @@ struct QuestionDetailView: View {
         .padding(.horizontal, 16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
+                .fill(AppTheme.surfaceRaised)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(rowBorder(isCorrect: showCorrect, isIncorrect: showIncorrect), lineWidth: showCorrect || showIncorrect ? 1.5 : 1)
         )
-        .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
+        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
     }
 
     private func labelForeground(isCorrect: Bool, isIncorrect: Bool) -> Color {
@@ -178,7 +178,7 @@ struct QuestionDetailView: View {
     private func rowBorder(isCorrect: Bool, isIncorrect: Bool) -> Color {
         if isCorrect { return correctColor.opacity(0.5) }
         if isIncorrect { return incorrectColor.opacity(0.5) }
-        return AppTheme.divider
+        return AppTheme.dividerStrong
     }
 
     private var numericAnswerCard: some View {
@@ -224,13 +224,13 @@ struct QuestionDetailView: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppTheme.surface)
+                .fill(AppTheme.surfaceRaised)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(AppTheme.divider, lineWidth: 1)
+                .stroke(AppTheme.dividerStrong, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.35), radius: 16, x: 0, y: 8)
+        .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
     }
 
     private var explanationSection: some View {
@@ -247,13 +247,13 @@ struct QuestionDetailView: View {
                 .padding(20)
                 .background(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(AppTheme.surface)
+                        .fill(AppTheme.surfaceRaised)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(AppTheme.divider, lineWidth: 1)
+                        .stroke(AppTheme.dividerStrong, lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.35), radius: 16, x: 0, y: 8)
+                .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
         }
     }
 }

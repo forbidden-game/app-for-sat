@@ -185,9 +185,9 @@ struct QuestionFeedView: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppTheme.divider, lineWidth: 1)
+                    .stroke(AppTheme.dividerStrong, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.45), radius: 14, x: 0, y: 8)
+            .shadow(color: AppTheme.shadowStrong, radius: 14, x: 0, y: 8)
     }
 
     // MARK: - Options Grid
@@ -230,7 +230,7 @@ struct QuestionFeedView: View {
                     .clipShape(Circle())
                     .overlay(
                         Circle()
-                            .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.divider, lineWidth: isJustSelected ? 2 : 1)
+                            .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.dividerStrong, lineWidth: isJustSelected ? 2 : 1)
                     )
 
                 Text(option.content)
@@ -243,13 +243,13 @@ struct QuestionFeedView: View {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isJustSelected ? Color(red: 0.18, green: 0.22, blue: 0.20) : (isSelected ? AppTheme.surfaceRaised : AppTheme.surface))
+                    .fill(isJustSelected ? Color(red: 0.18, green: 0.22, blue: 0.20) : (isSelected ? AppTheme.surfacePressed : AppTheme.surfaceRaised))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : (isSelected ? AppTheme.accent : AppTheme.divider), lineWidth: isJustSelected ? 2 : 1)
+                    .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
             )
-            .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
+            .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
             .scaleEffect(isJustSelected ? 0.97 : 1.0)
         }
         .buttonStyle(.plain)
@@ -283,13 +283,13 @@ struct QuestionFeedView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(showingFeedback ? Color(red: 0.18, green: 0.22, blue: 0.20) : AppTheme.surface)
+                .fill(showingFeedback ? Color(red: 0.18, green: 0.22, blue: 0.20) : AppTheme.surfaceRaised)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(showingFeedback ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.divider, lineWidth: showingFeedback ? 2 : 1)
+                .stroke(showingFeedback ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.dividerStrong, lineWidth: showingFeedback ? 2 : 1)
         )
-        .shadow(color: Color.black.opacity(0.35), radius: 10, x: 0, y: 6)
+        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
         .scaleEffect(showingFeedback ? 0.97 : 1.0)
     }
 
