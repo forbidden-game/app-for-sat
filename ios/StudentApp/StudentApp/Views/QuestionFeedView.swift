@@ -15,7 +15,6 @@ struct QuestionFeedView: View {
 
     @State private var selectedOption: String?
     @State private var freeResponse: String = ""
-    @State private var pendingAutoAdvance: DispatchWorkItem?
     @FocusState private var isInputFocused: Bool
     @State private var showFeedback = false
     @State private var currentPage = 0
@@ -61,9 +60,6 @@ struct QuestionFeedView: View {
                     currentPage = newIndex
                 }
             }
-        }
-        .onChange(of: freeResponse) { _, newValue in
-            scheduleAutoAdvanceIfNeeded(with: newValue)
         }
     }
 
@@ -317,22 +313,9 @@ struct QuestionFeedView: View {
         return questionTitle(for: question)
     }
 
-    private func scheduleAutoAdvanceIfNeeded(with newValue: String) {
-        pendingAutoAdvance?.cancel()
-        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        let question = vm.session.questions[vm.currentIndex]
-        let workItem = DispatchWorkItem {
-            commitFreeResponse(questionId: question.id)
-        }
-        pendingAutoAdvance = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6, execute: workItem)
-    }
-
     private func commitFreeResponse(questionId: String) {
         let trimmed = freeResponse.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !showFeedback else { return }
-        pendingAutoAdvance?.cancel()
         isInputFocused = false
         triggerSelectionHaptic()
         recordAnswer(trimmed, questionId: questionId)
@@ -366,14 +349,12 @@ struct QuestionFeedView: View {
     }
 
     private func resetInputs() {
-        pendingAutoAdvance?.cancel()
         selectedOption = nil
         freeResponse = ""
         isInputFocused = false
     }
 
     private func loadAnswer(for question: Question) {
-        pendingAutoAdvance?.cancel()
         if let options = question.options, !options.isEmpty {
             selectedOption = answers[question.id]
             freeResponse = ""
