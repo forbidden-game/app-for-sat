@@ -37,13 +37,13 @@ struct SessionOverviewView: View {
                                 .font(.headline)
                                 .frame(width: 48, height: 48)
                                 .background(answered ? AppTheme.accentStrong : AppTheme.surfaceRaised)
-                                .foregroundStyle(answered ? Color.black : AppTheme.textPrimary)
+                                .foregroundStyle(answered ? AppTheme.textOnAccent : AppTheme.textPrimary)
                                 .clipShape(Circle())
                                 .overlay(
                                     Circle()
                                         .stroke(AppTheme.divider, lineWidth: 1)
                                 )
-                                .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 3)
+                                .shadow(color: AppTheme.shadowSoft, radius: 6, x: 0, y: 3)
                         }
                         .buttonStyle(.plain)
                     }
@@ -52,7 +52,7 @@ struct SessionOverviewView: View {
                 if let error = submissionError {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(Color(red: 0.92, green: 0.45, blue: 0.45))
+                        .foregroundStyle(AppTheme.statusDanger)
                         .multilineTextAlignment(.center)
                 }
 
@@ -64,17 +64,21 @@ struct SessionOverviewView: View {
                     HStack {
                         if isSubmitting {
                             ProgressView()
-                                .tint(.black)
+                                .tint(AppTheme.textMuted)
                         }
                         Text(isSubmitting ? "Submitting..." : "Submit")
                             .font(.headline)
                     }
-                    .foregroundStyle(.black)
+                    .foregroundStyle(isSubmitting ? AppTheme.textMuted : AppTheme.textOnAccent)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 14)
-                    .background(AppTheme.accentStrong)
+                    .background(isSubmitting ? AppTheme.surfacePressed : AppTheme.accentStrong)
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(isSubmitting ? AppTheme.divider : AppTheme.accent, lineWidth: 1)
+                    )
+                    .shadow(color: isSubmitting ? AppTheme.shadowSoft : AppTheme.shadowStrong, radius: 10, x: 0, y: 6)
                 }
                 .disabled(isSubmitting)
             }

@@ -1,0 +1,65 @@
+# Ralph Progress Log
+## Codebase Patterns
+- Use `AppTheme` semantic tokens for iOS colors in `ios/StudentApp/StudentApp/Views/AppTheme.swift`
+- Use `AppTheme.textOnAccent` for text/icons on accent backgrounds; use `AppTheme.statusSuccess`/`AppTheme.statusDanger` for feedback states
+- Use `AppTheme.shadowStrong`/`AppTheme.shadowSoft` for scrims and shadows instead of raw `Color.black`
+
+Started: Thu Jan  8 17:42:11 2026
+---
+## 2026-01-08 18:16:34 - US-001
+Thread: not recorded
+Summary:
+- Added higher-contrast semantic color tokens (background, surface, text, accent, status) in AppTheme
+- Documented token usage rules in AppTheme
+Changes:
+- ios/StudentApp/StudentApp/Views/AppTheme.swift
+- ralph/prd.json
+- progress.txt
+Verification:
+- Verified the updated theme in the iOS simulator
+Learnings:
+- Patterns: AppTheme is the single source of truth for iOS semantic colors
+- Gotchas: xcodebuild CLI failed due to CoreSimulator/permission issues; MCP build_run_sim worked
+- Context: Bundle ID is com.xiezhao.satprep.student
+---
+## 2026-01-08 18:29:55 - US-002
+Thread: not recorded
+Summary:
+- Applied AppTheme semantic tokens to primary/secondary buttons, status icons, and input/selection feedback states
+- Added AppTheme.textOnAccent and replaced raw status colors with AppTheme status tokens
+- Adjusted disabled submit button styling for clearer contrast
+Changes:
+- ios/StudentApp/StudentApp/Views/AppTheme.swift
+- ios/StudentApp/StudentApp/Views/AuthView.swift
+- ios/StudentApp/StudentApp/Views/QuestionFeedView.swift
+- ios/StudentApp/StudentApp/Views/QuestionDetailView.swift
+- ios/StudentApp/StudentApp/Views/QuestionBankSelectionView.swift
+- ios/StudentApp/StudentApp/Views/SessionOverviewView.swift
+- ios/StudentApp/StudentApp/Views/SessionResultView.swift
+- ralph/prd.json
+- progress.txt
+Verification:
+- Not recorded
+Learnings:
+- Patterns: Prefer AppTheme.textOnAccent for text/icons on accent fills; use AppTheme.statusSuccess/statusDanger for feedback colors
+- Gotchas: Use XcodeBuildMCP build_run_sim for simulator verification
+- Context: AuthView and SessionOverviewView cover primary/secondary buttons plus input styles
+---
+## 2026-01-08 18:41:16 - US-003
+Thread: not recorded
+Summary:
+- Updated Question Bank, Results, and Side Panel styling to use higher-contrast AppTheme surfaces, borders, and shadows
+- Replaced raw scrim/shadow colors with AppTheme tokens to keep key screens consistent
+Changes:
+- ios/StudentApp/StudentApp/Views/QuestionBankSelectionView.swift
+- ios/StudentApp/StudentApp/Views/SessionResultView.swift
+- ios/StudentApp/StudentApp/Views/SidePanelView.swift
+- AGENTS.md
+- ralph/prd.json
+- progress.txt
+Verification:
+- Built and launched StudentApp in the iOS simulator via XcodeBuildMCP; captured a verification screenshot
+Learnings:
+- Patterns: Use AppTheme.shadowStrong/soft for overlays and shadow layers to avoid raw colors
+- Gotchas: xcodebuild and swift build fail under sandbox due to CoreSimulator and SwiftPM cache permissions; XcodeBuildMCP build_sim works; ios-debugger-agent skill not available via openskills in this environment
+- Context: QuestionBankSelectionView is the home screen; SessionResultView is the results screen; SidePanelView covers settings/profile actions; simulator verification was limited to the login screen without credentials

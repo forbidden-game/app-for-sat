@@ -67,7 +67,7 @@ struct SessionResultView: View {
                 .scaleEffect(appeared ? 1 : 0.8)
                 .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3), value: appeared)
             }
-            .shadow(color: Color.black.opacity(0.35), radius: 16, x: 0, y: 8)
+            .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
 
             Text("Session Complete")
                 .font(.title3.weight(.semibold))
@@ -126,7 +126,7 @@ struct SessionResultView: View {
 
                 Image(systemName: questionResult.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: 22))
-                    .foregroundStyle(questionResult.isCorrect ? Color(red: 0.4, green: 0.78, blue: 0.5) : Color(red: 0.92, green: 0.45, blue: 0.45))
+                    .foregroundStyle(questionResult.isCorrect ? AppTheme.statusSuccess : AppTheme.statusDanger)
             }
             .padding(.vertical, 14)
             .padding(.horizontal, 16)
@@ -138,7 +138,7 @@ struct SessionResultView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(AppTheme.divider, lineWidth: 1)
             )
-            .shadow(color: Color.black.opacity(0.25), radius: 8, x: 0, y: 4)
+            .shadow(color: AppTheme.shadowSoft, radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
@@ -149,12 +149,16 @@ struct SessionResultView: View {
         } label: {
             Text("Done")
                 .font(.headline)
-                .foregroundStyle(.black)
+                .foregroundStyle(AppTheme.textOnAccent)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(AppTheme.accentStrong)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppTheme.accent, lineWidth: 1)
+                )
+                .shadow(color: AppTheme.shadowStrong, radius: 10, x: 0, y: 6)
         }
         .buttonStyle(.plain)
         .opacity(appeared ? 1 : 0)

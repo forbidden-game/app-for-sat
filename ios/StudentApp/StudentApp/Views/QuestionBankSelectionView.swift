@@ -24,7 +24,7 @@ struct QuestionBankSelectionView: View {
                 if let error = errorMessage {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(Color(red: 0.92, green: 0.45, blue: 0.45))
+                        .foregroundStyle(AppTheme.statusDanger)
                         .padding(.top, 4)
                 }
 
@@ -46,7 +46,7 @@ struct QuestionBankSelectionView: View {
             .padding(.bottom, 32)
 
             if isLoading {
-                Color.black.opacity(0.35)
+                AppTheme.shadowStrong.opacity(0.55)
                     .ignoresSafeArea()
                 ProgressView()
                     .tint(AppTheme.accentStrong)
@@ -62,7 +62,7 @@ struct QuestionBankSelectionView: View {
 
             Text(dateString)
                 .font(.footnote)
-                .foregroundStyle(AppTheme.textSecondary)
+                .foregroundStyle(AppTheme.textMuted)
         }
         .padding(.top, 8)
     }
@@ -90,12 +90,13 @@ struct QuestionBankSelectionView: View {
         .padding(.vertical, 18)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppTheme.surface)
+                .fill(AppTheme.surfaceRaised)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(AppTheme.divider, lineWidth: 1)
+                .stroke(AppTheme.dividerStrong, lineWidth: 1)
         )
+        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
     }
 
     private var dayString: String {

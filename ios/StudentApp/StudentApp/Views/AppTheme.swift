@@ -3,54 +3,80 @@ import SwiftUI
 import UIKit
 #endif
 
+// Semantic color tokens (usage rules):
+// - Background: screen-level surfaces and gradients only
+// - Surface: cards, panels, and elevated containers
+// - Text: primary, secondary, muted hierarchy for legibility
+// - Accent: primary actions, highlights, and focus states
+// - Status: success, warning, danger feedback states
+// - Divider/Shadow: separation and elevation layers
+
 enum AppTheme {
-    static let backgroundTop = dynamicColor(
-        light: UIColor(red: 0.96, green: 0.97, blue: 0.99, alpha: 1),
-        dark: UIColor(red: 0.05, green: 0.06, blue: 0.09, alpha: 1)
+    static let backgroundPrimary = dynamicColor(
+        light: UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1),
+        dark: UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 1)
     )
-    static let backgroundBottom = dynamicColor(
-        light: UIColor(red: 0.93, green: 0.95, blue: 0.98, alpha: 1),
-        dark: UIColor(red: 0.08, green: 0.10, blue: 0.14, alpha: 1)
+    static let backgroundSecondary = dynamicColor(
+        light: UIColor(red: 0.90, green: 0.93, blue: 0.97, alpha: 1),
+        dark: UIColor(red: 0.05, green: 0.07, blue: 0.12, alpha: 1)
     )
+    static let backgroundTop = backgroundPrimary
+    static let backgroundBottom = backgroundSecondary
     static let surface = dynamicColor(
-        light: UIColor(red: 0.99, green: 0.99, blue: 1.0, alpha: 1),
-        dark: UIColor(red: 0.13, green: 0.16, blue: 0.22, alpha: 1)
+        light: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1),
+        dark: UIColor(red: 0.06, green: 0.10, blue: 0.17, alpha: 1)
     )
     static let surfaceRaised = dynamicColor(
-        light: UIColor(red: 0.96, green: 0.97, blue: 0.99, alpha: 1),
-        dark: UIColor(red: 0.18, green: 0.22, blue: 0.30, alpha: 1)
+        light: UIColor(red: 0.97, green: 0.98, blue: 1.0, alpha: 1),
+        dark: UIColor(red: 0.09, green: 0.13, blue: 0.22, alpha: 1)
     )
     static let surfacePressed = dynamicColor(
-        light: UIColor(red: 0.92, green: 0.94, blue: 0.97, alpha: 1),
-        dark: UIColor(red: 0.22, green: 0.27, blue: 0.36, alpha: 1)
+        light: UIColor(red: 0.90, green: 0.93, blue: 0.97, alpha: 1),
+        dark: UIColor(red: 0.12, green: 0.17, blue: 0.27, alpha: 1)
     )
     static let textPrimary = dynamicColor(
-        light: UIColor(red: 0.07, green: 0.09, blue: 0.13, alpha: 1),
-        dark: UIColor(red: 0.92, green: 0.94, blue: 0.97, alpha: 1)
+        light: UIColor(red: 0.04, green: 0.06, blue: 0.13, alpha: 1),
+        dark: UIColor(red: 0.92, green: 0.95, blue: 1.0, alpha: 1)
     )
     static let textSecondary = dynamicColor(
-        light: UIColor(red: 0.23, green: 0.26, blue: 0.33, alpha: 1),
-        dark: UIColor(red: 0.78, green: 0.82, blue: 0.88, alpha: 1)
+        light: UIColor(red: 0.12, green: 0.17, blue: 0.27, alpha: 1),
+        dark: UIColor(red: 0.72, green: 0.78, blue: 0.90, alpha: 1)
     )
     static let textMuted = dynamicColor(
-        light: UIColor(red: 0.45, green: 0.50, blue: 0.58, alpha: 1),
-        dark: UIColor(red: 0.62, green: 0.68, blue: 0.77, alpha: 1)
+        light: UIColor(red: 0.29, green: 0.35, blue: 0.47, alpha: 1),
+        dark: UIColor(red: 0.54, green: 0.60, blue: 0.72, alpha: 1)
+    )
+    static let textOnAccent = dynamicColor(
+        light: UIColor(white: 0.0, alpha: 1),
+        dark: UIColor(white: 0.0, alpha: 1)
     )
     static let accent = dynamicColor(
-        light: UIColor(red: 0.26, green: 0.49, blue: 0.86, alpha: 1),
-        dark: UIColor(red: 0.52, green: 0.70, blue: 0.98, alpha: 1)
+        light: UIColor(red: 0.18, green: 0.42, blue: 0.96, alpha: 1),
+        dark: UIColor(red: 0.43, green: 0.63, blue: 1.0, alpha: 1)
     )
     static let accentStrong = dynamicColor(
-        light: UIColor(red: 0.36, green: 0.58, blue: 0.96, alpha: 1),
-        dark: UIColor(red: 0.67, green: 0.80, blue: 1.0, alpha: 1)
+        light: UIColor(red: 0.31, green: 0.55, blue: 1.0, alpha: 1),
+        dark: UIColor(red: 0.55, green: 0.72, blue: 1.0, alpha: 1)
+    )
+    static let statusSuccess = dynamicColor(
+        light: UIColor(red: 0.09, green: 0.79, blue: 0.48, alpha: 1),
+        dark: UIColor(red: 0.22, green: 0.90, blue: 0.60, alpha: 1)
+    )
+    static let statusWarning = dynamicColor(
+        light: UIColor(red: 0.96, green: 0.77, blue: 0.32, alpha: 1),
+        dark: UIColor(red: 0.97, green: 0.82, blue: 0.42, alpha: 1)
+    )
+    static let statusDanger = dynamicColor(
+        light: UIColor(red: 0.94, green: 0.27, blue: 0.27, alpha: 1),
+        dark: UIColor(red: 1.0, green: 0.42, blue: 0.42, alpha: 1)
     )
     static let divider = dynamicColor(
-        light: UIColor(red: 0.82, green: 0.84, blue: 0.88, alpha: 1),
-        dark: UIColor(white: 1.0, alpha: 0.18)
+        light: UIColor(red: 0.78, green: 0.82, blue: 0.88, alpha: 1),
+        dark: UIColor(white: 1.0, alpha: 0.22)
     )
     static let dividerStrong = dynamicColor(
-        light: UIColor(red: 0.76, green: 0.79, blue: 0.85, alpha: 1),
-        dark: UIColor(white: 1.0, alpha: 0.32)
+        light: UIColor(red: 0.72, green: 0.77, blue: 0.85, alpha: 1),
+        dark: UIColor(white: 1.0, alpha: 0.36)
     )
     static let shadowStrong = dynamicColor(
         light: UIColor(white: 0.0, alpha: 0.14),

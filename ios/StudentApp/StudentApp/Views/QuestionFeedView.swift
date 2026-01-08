@@ -222,15 +222,15 @@ struct QuestionFeedView: View {
             HStack(spacing: 12) {
                 Text(option.label)
                     .font(.headline)
-                    .foregroundStyle(isJustSelected ? Color.black : (isSelected ? Color.black : AppTheme.textSecondary))
+                    .foregroundStyle(isJustSelected ? AppTheme.textOnAccent : (isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary))
                     .frame(width: 36, height: 36)
                     .background(
-                        isJustSelected ? Color(red: 0.6, green: 0.85, blue: 0.75) : (isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
+                        isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
                     )
                     .clipShape(Circle())
                     .overlay(
                         Circle()
-                            .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.dividerStrong, lineWidth: isJustSelected ? 2 : 1)
+                            .stroke(isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
                     )
 
                 Text(option.content)
@@ -243,11 +243,11 @@ struct QuestionFeedView: View {
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isJustSelected ? Color(red: 0.18, green: 0.22, blue: 0.20) : (isSelected ? AppTheme.surfacePressed : AppTheme.surfaceRaised))
+                    .fill(isJustSelected ? AppTheme.surfacePressed : (isSelected ? AppTheme.surfacePressed : AppTheme.surfaceRaised))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isJustSelected ? Color(red: 0.4, green: 0.75, blue: 0.65) : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
+                    .stroke(isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
             )
             .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
             .scaleEffect(isJustSelected ? 0.97 : 1.0)
@@ -261,11 +261,12 @@ struct QuestionFeedView: View {
     private func freeResponseField(questionId: String, questionIndex: Int) -> some View {
         let isCurrentQuestion = questionIndex == vm.currentIndex
         let showingFeedback = isCurrentQuestion && showFeedback
+        let isEnabled = isCurrentQuestion && !showFeedback
         
         return HStack(spacing: 12) {
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 22))
-                .foregroundStyle(showingFeedback ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.accent)
+                .foregroundStyle(showingFeedback ? AppTheme.statusSuccess : AppTheme.accent)
 
             TextField("Type your answer", text: isCurrentQuestion ? $freeResponse : .constant(answers[questionId] ?? ""))
                 .focused($isInputFocused)
@@ -277,17 +278,17 @@ struct QuestionFeedView: View {
                         commitFreeResponse(questionId: questionId)
                     }
                 }
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
                 .disabled(!isCurrentQuestion || showFeedback)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(showingFeedback ? Color(red: 0.18, green: 0.22, blue: 0.20) : AppTheme.surfaceRaised)
+                .fill(showingFeedback ? AppTheme.surfacePressed : AppTheme.surfaceRaised)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(showingFeedback ? Color(red: 0.4, green: 0.75, blue: 0.65) : AppTheme.dividerStrong, lineWidth: showingFeedback ? 2 : 1)
+                .stroke(showingFeedback ? AppTheme.statusSuccess : (isEnabled ? AppTheme.dividerStrong : AppTheme.divider), lineWidth: showingFeedback ? 2 : 1)
         )
         .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
         .scaleEffect(showingFeedback ? 0.97 : 1.0)

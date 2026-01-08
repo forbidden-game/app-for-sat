@@ -72,7 +72,7 @@ struct SidePanelView: View {
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .stroke(AppTheme.divider, lineWidth: 1)
         )
-        .shadow(color: Color.black.opacity(0.4), radius: 22, x: 0, y: 12)
+        .shadow(color: AppTheme.shadowStrong, radius: 22, x: 0, y: 12)
     }
 
     private var initials: String {
@@ -111,7 +111,7 @@ struct SidePanelHost<Content: View, Panel: View>: View {
                 content
 
                 if isPresented {
-                    Color.black.opacity(0.45)
+                    AppTheme.shadowStrong.opacity(0.6)
                         .ignoresSafeArea()
                         .onTapGesture {
                             withAnimation(.easeOut(duration: 0.2)) {

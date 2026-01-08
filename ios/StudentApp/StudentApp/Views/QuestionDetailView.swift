@@ -5,8 +5,8 @@ struct QuestionDetailView: View {
     let question: QuestionResult
     let onBack: () -> Void
 
-    private let correctColor = Color(red: 0.25, green: 0.72, blue: 0.45)
-    private let incorrectColor = Color(red: 0.85, green: 0.35, blue: 0.35)
+    private let correctColor = AppTheme.statusSuccess
+    private let incorrectColor = AppTheme.statusDanger
 
     var body: some View {
         ZStack {

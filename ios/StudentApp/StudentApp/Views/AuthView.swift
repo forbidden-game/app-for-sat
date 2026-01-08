@@ -22,7 +22,7 @@ struct AuthView: View {
                 if let error = vm.errorMessage {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(Color(red: 0.92, green: 0.45, blue: 0.45))
+                        .foregroundStyle(AppTheme.statusDanger)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 16)
                 }
@@ -93,18 +93,18 @@ struct AuthView: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(AppTheme.textPrimary)
+                .foregroundStyle(AppTheme.textOnAccent)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(AppTheme.surfaceRaised)
+                        .fill(AppTheme.accentStrong)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .stroke(AppTheme.accent, lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.4), radius: 16, x: 0, y: 8)
+                .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
         }
     }
 
@@ -112,7 +112,7 @@ struct AuthView: View {
         Button(action: action) {
             Text(title)
                 .font(.headline)
-                .foregroundStyle(AppTheme.textSecondary)
+                .foregroundStyle(AppTheme.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
                 .background(
@@ -121,9 +121,9 @@ struct AuthView: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(AppTheme.divider, lineWidth: 1)
+                        .stroke(AppTheme.dividerStrong, lineWidth: 1)
                 )
-                .shadow(color: Color.black.opacity(0.35), radius: 14, x: 0, y: 8)
+                .shadow(color: AppTheme.shadowSoft, radius: 14, x: 0, y: 8)
         }
     }
 }

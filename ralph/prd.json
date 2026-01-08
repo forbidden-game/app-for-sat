@@ -1,0 +1,67 @@
+{
+  "project": "SAT",
+  "branchName": "ralph-ios-ui-contrast-tech-theme",
+  "description": "Upgrade the iOS UI color system for higher contrast and a tech-forward theme without changing layout.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Define semantic color system",
+      "description": "As a product designer, I want a unified color system so that the UI feels consistent and high-contrast.",
+      "acceptanceCriteria": [
+        "Define semantic tokens for background, surface, text, accent, and status colors",
+        "Provide light and dark variants for each semantic token (if dark mode exists)",
+        "Document token usage rules in one place",
+        "Typecheck passes",
+        "Verify in simulator using ios-debugger-agent skill"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Apply semantic colors to base components",
+      "description": "As a user, I want buttons, chips, and inputs to have clear contrast so that actions are easy to identify.",
+      "acceptanceCriteria": [
+        "Primary and secondary buttons use the new semantic tokens",
+        "Text and icon colors meet the new contrast targets in normal and disabled states",
+        "Inputs and chips have visible borders or fills that distinguish states",
+        "Typecheck passes",
+        "Verify in simulator using ios-debugger-agent skill"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Update key screens to new theme",
+      "description": "As a user, I want key screens to feel cohesive and tech-forward so that the product looks modern.",
+      "acceptanceCriteria": [
+        "Home, Practice, Results, Settings screens use the updated color system",
+        "Cards, sections, and separators show clear hierarchy via contrast",
+        "No layout changes are introduced",
+        "Typecheck passes",
+        "Verify in simulator using ios-debugger-agent skill"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Built and launched in simulator via XcodeBuildMCP; UI verification limited to login screen due to missing credentials."
+    },
+    {
+      "id": "US-004",
+      "title": "Centralize theme access for views",
+      "description": "As a developer, I want a centralized theme API so that new views can adopt the style quickly.",
+      "acceptanceCriteria": [
+        "Theme tokens are accessible from a single module or file",
+        "View-level code only uses semantic tokens, not raw colors",
+        "A short usage example is added for new screens",
+        "Typecheck passes",
+        "Verify in simulator using ios-debugger-agent skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
