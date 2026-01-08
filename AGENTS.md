@@ -43,8 +43,13 @@ swift package clean --package-path ios/StudentCore
 
 ### iOS — StudentApp (Xcode)
 ```bash
-xcodebuild -project ios/StudentApp/StudentApp.xcodeproj \
-  -scheme StudentApp -destination 'platform=iOS Simulator,name=iPhone 16' build
+xcodebuild \
+  -project ios/StudentApp/StudentApp.xcodeproj \
+  -scheme StudentApp \
+  -sdk iphonesimulator \
+  -configuration Debug \
+  CODE_SIGNING_ALLOWED=NO \
+  build
 ```
 Prefer xcodebuild MCP tools for interactive development.
 
@@ -81,6 +86,40 @@ deno test --allow-read supabase/functions/_shared/scoring_test.ts
 - When remote resources are involved (e.g., managed databases, hosted Supabase projects), ask for the minimum required connection details and credentials, then perform the verification directly.
 - If additional access is needed (VPN, SSH, allowlist, MFA), request the missing info explicitly and proceed once provided.
 - Only ask the user to run commands when access cannot be delegated or tooling is unavailable; otherwise, automate and report results.
+
+---
+
+## Workflow & Definition of Done
+
+For any task, the work is considered **done** only when:
+- The change is verified end-to-end (repro → fix → verify), when applicable.
+- Relevant tests/builds pass locally (or via MCP tooling) **and** GitHub Actions is green.
+- Non-trivial behavior changes are covered by tests (unit/integration preferred).
+- Any newly introduced “must-run” test is wired into CI (see `.github/workflows/test.yml`).
+
+### Difficulty & impact first
+
+Before coding, explicitly assess:
+- **Difficulty**: trivial / moderate / complex (based on state, concurrency, persistence, and surface area).
+- **Impact**: public API changes, persistence format, auth boundaries, user-facing flows, and rollback risk.
+- **Acceptance criteria**: expected behavior and edge cases (turn into test cases).
+
+### Test-first (default)
+
+- For bug fixes and behavior changes: write/update tests first, then implement.
+- For purely cosmetic or mechanical changes: new tests are optional, but run the closest existing suite and keep CI green.
+- Prefer the cheapest test that proves the behavior: `StudentCore` unit tests > integration tests > UI/E2E.
+
+### iOS: MCP-first debugging
+
+- Prefer XcodeBuildMCP tooling for building, running, and Simulator debugging.
+- Prefer skills for deep-dive debugging (e.g., `ios-debugger-agent`, `swift-concurrency-expert`) instead of ad-hoc shell scripts.
+- Keep Simulator-dependent tests minimal; push logic down into `StudentCore` where unit tests are fast and deterministic.
+
+### CI expectations
+
+- CI should run all “must-run” test suites. If you add a new one, update GitHub Actions in the same change.
+- Avoid flaky tests in CI. If a test depends on timing, network, or UI, prefer refactoring into deterministic unit/integration coverage.
 
 ---
 

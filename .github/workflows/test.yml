@@ -91,7 +91,7 @@ jobs:
         run: deno test --allow-read --allow-env supabase/functions/
 
   test-ios:
-    name: iOS (StudentCore)
+    name: iOS (StudentCore + StudentApp)
     runs-on: macos-latest
 
     steps:
@@ -99,3 +99,13 @@ jobs:
 
       - name: Run Swift Tests
         run: swift test --package-path ios/StudentCore
+
+      - name: Build StudentApp (iOS Simulator)
+        run: |
+          xcodebuild \
+            -project ios/StudentApp/StudentApp.xcodeproj \
+            -scheme StudentApp \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO \
+            build
