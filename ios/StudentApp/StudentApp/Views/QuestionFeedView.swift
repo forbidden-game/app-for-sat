@@ -71,7 +71,7 @@ struct QuestionFeedView: View {
         return ZStack(alignment: .top) {
             Color.clear
 
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 header(progress: progress, index: index + 1, total: total, question: question)
 
                 questionCard(text: question.stem)
@@ -82,12 +82,10 @@ struct QuestionFeedView: View {
                     freeResponseField(questionId: question.id, questionIndex: index)
                 }
 
-                Spacer()
-
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-            .padding(.bottom, 24)
+            .padding(.bottom, 20)
             .scrollTransition(.animated(.spring(response: 0.35, dampingFraction: 0.9))) { content, phase in
                 content
                     .scaleEffect(1 - abs(phase.value) * 0.05)
@@ -124,7 +122,7 @@ struct QuestionFeedView: View {
     // MARK: - Header
 
     private func header(progress: Double, index: Int, total: Int, question: Question) -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             ZStack {
                 HStack {
                     Button(action: onBack) {
@@ -162,7 +160,7 @@ struct QuestionFeedView: View {
                 }
 
                 Text(resolvedHeaderTitle(for: question))
-                    .font(.subheadline.weight(.semibold))
+                    .font(.callout.weight(.semibold))
                     .foregroundStyle(AppTheme.textPrimary)
             }
 
@@ -175,25 +173,26 @@ struct QuestionFeedView: View {
 
     private func questionCard(text: String) -> some View {
         Text(text)
-            .font(.title2.bold())
+            .font(.title3.weight(.semibold))
+            .lineSpacing(4)
             .foregroundStyle(AppTheme.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
+            .padding(18)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(AppTheme.surface)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppTheme.dividerStrong, lineWidth: 1)
+                    .stroke(AppTheme.divider, lineWidth: 1)
             )
-            .shadow(color: AppTheme.shadowStrong, radius: 14, x: 0, y: 8)
+            .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 4)
     }
 
     // MARK: - Options Grid
 
     private func optionsGrid(_ options: [QuestionOption], questionId: String, questionIndex: Int) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             ForEach(options, id: \.label) { option in
                 optionButton(option, questionId: questionId, questionIndex: questionIndex)
             }
@@ -221,9 +220,9 @@ struct QuestionFeedView: View {
         } label: {
             HStack(spacing: 12) {
                 Text(option.label)
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isJustSelected ? AppTheme.textOnAccent : (isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary))
-                    .frame(width: 36, height: 36)
+                    .frame(width: 32, height: 32)
                     .background(
                         isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
                     )
@@ -234,12 +233,14 @@ struct QuestionFeedView: View {
                     )
 
                 Text(option.content)
-                    .font(.headline)
+                    .font(.body)
+                    .lineSpacing(2)
                     .foregroundStyle(AppTheme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .padding(.horizontal, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -249,7 +250,12 @@ struct QuestionFeedView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
             )
-            .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
+            .shadow(
+                color: (isSelected || isJustSelected) ? AppTheme.shadowSoft : Color.clear,
+                radius: (isSelected || isJustSelected) ? 8 : 0,
+                x: 0,
+                y: 4
+            )
             .scaleEffect(isJustSelected ? 0.97 : 1.0)
         }
         .buttonStyle(.plain)
@@ -290,7 +296,7 @@ struct QuestionFeedView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(showingFeedback ? AppTheme.statusSuccess : (isEnabled ? AppTheme.dividerStrong : AppTheme.divider), lineWidth: showingFeedback ? 2 : 1)
         )
-        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
+        .shadow(color: AppTheme.shadowSoft, radius: 8, x: 0, y: 4)
         .scaleEffect(showingFeedback ? 0.97 : 1.0)
     }
 

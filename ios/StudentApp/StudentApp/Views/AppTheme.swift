@@ -13,21 +13,21 @@ import UIKit
 
 enum AppTheme {
     static let backgroundPrimary = dynamicColor(
-        light: UIColor(red: 0.94, green: 0.96, blue: 0.98, alpha: 1),
+        light: UIColor(red: 0.92, green: 0.94, blue: 0.97, alpha: 1),
         dark: UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 1)
     )
     static let backgroundSecondary = dynamicColor(
-        light: UIColor(red: 0.90, green: 0.93, blue: 0.97, alpha: 1),
+        light: UIColor(red: 0.88, green: 0.91, blue: 0.95, alpha: 1),
         dark: UIColor(red: 0.05, green: 0.07, blue: 0.12, alpha: 1)
     )
     static let backgroundTop = backgroundPrimary
     static let backgroundBottom = backgroundSecondary
     static let surface = dynamicColor(
-        light: UIColor(red: 1.0, green: 1.0, blue: 1.0, alpha: 1),
+        light: UIColor(red: 0.99, green: 0.995, blue: 1.0, alpha: 1),
         dark: UIColor(red: 0.06, green: 0.10, blue: 0.17, alpha: 1)
     )
     static let surfaceRaised = dynamicColor(
-        light: UIColor(red: 0.97, green: 0.98, blue: 1.0, alpha: 1),
+        light: UIColor(red: 0.96, green: 0.975, blue: 1.0, alpha: 1),
         dark: UIColor(red: 0.09, green: 0.13, blue: 0.22, alpha: 1)
     )
     static let surfacePressed = dynamicColor(
@@ -47,8 +47,8 @@ enum AppTheme {
         dark: UIColor(red: 0.54, green: 0.60, blue: 0.72, alpha: 1)
     )
     static let textOnAccent = dynamicColor(
-        light: UIColor(white: 0.0, alpha: 1),
-        dark: UIColor(white: 0.0, alpha: 1)
+        light: UIColor(white: 1.0, alpha: 1),
+        dark: UIColor(white: 1.0, alpha: 1)
     )
     static let accent = dynamicColor(
         light: UIColor(red: 0.18, green: 0.42, blue: 0.96, alpha: 1),
@@ -71,19 +71,19 @@ enum AppTheme {
         dark: UIColor(red: 1.0, green: 0.42, blue: 0.42, alpha: 1)
     )
     static let divider = dynamicColor(
-        light: UIColor(red: 0.78, green: 0.82, blue: 0.88, alpha: 1),
+        light: UIColor(red: 0.82, green: 0.86, blue: 0.91, alpha: 1),
         dark: UIColor(white: 1.0, alpha: 0.22)
     )
     static let dividerStrong = dynamicColor(
-        light: UIColor(red: 0.72, green: 0.77, blue: 0.85, alpha: 1),
+        light: UIColor(red: 0.76, green: 0.81, blue: 0.89, alpha: 1),
         dark: UIColor(white: 1.0, alpha: 0.36)
     )
     static let shadowStrong = dynamicColor(
-        light: UIColor(white: 0.0, alpha: 0.14),
+        light: UIColor(white: 0.0, alpha: 0.12),
         dark: UIColor(white: 0.0, alpha: 0.45)
     )
     static let shadowSoft = dynamicColor(
-        light: UIColor(white: 0.0, alpha: 0.08),
+        light: UIColor(white: 0.0, alpha: 0.06),
         dark: UIColor(white: 0.0, alpha: 0.30)
     )
 
