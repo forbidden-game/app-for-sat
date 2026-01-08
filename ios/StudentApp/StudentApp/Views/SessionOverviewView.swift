@@ -9,16 +9,16 @@ struct SessionOverviewView: View {
     let onSelectQuestion: (Int) -> Void
     let onSubmit: () -> Void
 
-    private let columns = [GridItem(.adaptive(minimum: 56), spacing: 12)]
+    private let columns = [GridItem(.adaptive(minimum: AppMetrics.gridItemMinimum), spacing: AppMetrics.gridSpacing)]
 
     var body: some View {
         ZStack {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            VStack(spacing: 20) {
+            VStack(spacing: AppMetrics.sectionSpacing) {
                 Text("Session Overview")
-                    .font(.title2.bold())
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -27,7 +27,7 @@ struct SessionOverviewView: View {
                     .foregroundStyle(AppTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                LazyVGrid(columns: columns, spacing: 12) {
+                LazyVGrid(columns: columns, spacing: AppMetrics.gridSpacing) {
                     ForEach(Array(session.questions.enumerated()), id: \.offset) { index, question in
                         let answered = isAnswered(question)
                         Button {
@@ -35,7 +35,7 @@ struct SessionOverviewView: View {
                         } label: {
                             Text("\(index + 1)")
                                 .font(.headline)
-                                .frame(width: 48, height: 48)
+                                .frame(width: AppMetrics.gridButtonSize, height: AppMetrics.gridButtonSize)
                                 .background(answered ? AppTheme.accentStrong : AppTheme.surfaceRaised)
                                 .foregroundStyle(answered ? AppTheme.textOnAccent : AppTheme.textPrimary)
                                 .clipShape(Circle())
@@ -43,7 +43,7 @@ struct SessionOverviewView: View {
                                     Circle()
                                         .stroke(AppTheme.divider, lineWidth: 1)
                                 )
-                                .shadow(color: AppTheme.shadowSoft, radius: 6, x: 0, y: 3)
+                                .shadow(color: AppTheme.shadowSoft, radius: AppMetrics.rowShadowRadius, x: 0, y: AppMetrics.rowShadowY)
                         }
                         .buttonStyle(.plain)
                     }
@@ -71,20 +71,20 @@ struct SessionOverviewView: View {
                     }
                     .foregroundStyle(isSubmitting ? AppTheme.textMuted : AppTheme.textOnAccent)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, AppMetrics.primaryButtonPaddingVertical)
                     .background(isSubmitting ? AppTheme.surfacePressed : AppTheme.accentStrong)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
                             .stroke(isSubmitting ? AppTheme.divider : AppTheme.accent, lineWidth: 1)
                     )
-                    .shadow(color: isSubmitting ? AppTheme.shadowSoft : AppTheme.shadowStrong, radius: 10, x: 0, y: 6)
+                    .shadow(color: isSubmitting ? AppTheme.shadowSoft : AppTheme.shadowStrong, radius: AppMetrics.cardShadowRadius, x: 0, y: AppMetrics.cardShadowY)
                 }
                 .disabled(isSubmitting)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 16)
-            .padding(.bottom, 24)
+            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+            .padding(.top, AppMetrics.screenTopPadding)
+            .padding(.bottom, AppMetrics.screenBottomPadding)
         }
     }
 

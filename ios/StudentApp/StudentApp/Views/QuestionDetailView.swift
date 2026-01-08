@@ -14,7 +14,7 @@ struct QuestionDetailView: View {
                 .ignoresSafeArea()
 
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: AppMetrics.sectionSpacing) {
                     header
 
                     questionCard
@@ -27,9 +27,9 @@ struct QuestionDetailView: View {
 
                     explanationSection
                 }
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 40)
+                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                .padding(.top, AppMetrics.screenTopPadding)
+                .padding(.bottom, AppMetrics.screenBottomPaddingLarge)
             }
         }
     }
@@ -58,7 +58,7 @@ struct QuestionDetailView: View {
             Spacer()
 
             Text("Question \(question.position)")
-                .font(.subheadline.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .foregroundStyle(AppTheme.textPrimary)
 
             Spacer()
@@ -87,23 +87,22 @@ struct QuestionDetailView: View {
 
     private var questionCard: some View {
         Text(question.stem)
-            .font(.title2.bold())
+            .font(.title3.weight(.semibold))
+            .lineSpacing(4)
             .foregroundStyle(AppTheme.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(20)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppTheme.surfaceRaised)
+            .padding(AppMetrics.cardPadding)
+            .appSurface(
+                fill: AppTheme.surfaceRaised,
+                stroke: AppTheme.dividerStrong,
+                cornerRadius: AppMetrics.cardCornerRadius,
+                shadowRadius: AppMetrics.cardShadowRadius,
+                shadowY: AppMetrics.cardShadowY
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppTheme.dividerStrong, lineWidth: 1)
-            )
-            .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
     }
 
     private func optionsList(_ options: [QuestionOption]) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppMetrics.rowSpacing) {
             ForEach(options, id: \.label) { option in
                 optionRow(option)
             }
@@ -118,9 +117,9 @@ struct QuestionDetailView: View {
 
         return HStack(spacing: 12) {
             Text(option.label)
-                .font(.headline)
+                .font(.subheadline.weight(.semibold))
                 .foregroundStyle(labelForeground(isCorrect: showCorrect, isIncorrect: showIncorrect))
-                .frame(width: 36, height: 36)
+                .frame(width: AppMetrics.badgeSize, height: AppMetrics.badgeSize)
                 .background(labelBackground(isCorrect: showCorrect, isIncorrect: showIncorrect))
                 .clipShape(Circle())
                 .overlay(
@@ -129,8 +128,10 @@ struct QuestionDetailView: View {
                 )
 
             Text(option.content)
-                .font(.headline)
+                .font(.body)
+                .lineSpacing(2)
                 .foregroundStyle(AppTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
 
             Spacer()
 
@@ -144,17 +145,13 @@ struct QuestionDetailView: View {
                     .foregroundStyle(incorrectColor)
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surfaceRaised)
+        .padding(.vertical, AppMetrics.rowPaddingVertical)
+        .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+        .appSurface(
+            fill: AppTheme.surfaceRaised,
+            stroke: rowBorder(isCorrect: showCorrect, isIncorrect: showIncorrect),
+            showShadow: showCorrect || showIncorrect
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(rowBorder(isCorrect: showCorrect, isIncorrect: showIncorrect), lineWidth: showCorrect || showIncorrect ? 1.5 : 1)
-        )
-        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
     }
 
     private func labelForeground(isCorrect: Bool, isIncorrect: Bool) -> Color {
@@ -221,20 +218,18 @@ struct QuestionDetailView: View {
                 }
             }
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppTheme.surfaceRaised)
+        .padding(AppMetrics.cardPadding)
+        .appSurface(
+            fill: AppTheme.surfaceRaised,
+            stroke: AppTheme.dividerStrong,
+            cornerRadius: AppMetrics.cardCornerRadius,
+            shadowRadius: AppMetrics.cardShadowRadius,
+            shadowY: AppMetrics.cardShadowY
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(AppTheme.dividerStrong, lineWidth: 1)
-        )
-        .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
     }
 
     private var explanationSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppMetrics.rowSpacing) {
             Text("Explanation")
                 .font(.headline)
                 .foregroundStyle(AppTheme.textSecondary)
@@ -244,16 +239,14 @@ struct QuestionDetailView: View {
                 .font(.body)
                 .foregroundStyle(AppTheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(20)
-                .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(AppTheme.surfaceRaised)
+                .padding(AppMetrics.cardPadding)
+                .appSurface(
+                    fill: AppTheme.surfaceRaised,
+                    stroke: AppTheme.dividerStrong,
+                    cornerRadius: AppMetrics.cardCornerRadius,
+                    shadowRadius: AppMetrics.cardShadowRadius,
+                    shadowY: AppMetrics.cardShadowY
                 )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(AppTheme.dividerStrong, lineWidth: 1)
-                )
-                .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
         }
     }
 }

@@ -6,12 +6,12 @@ struct SidePanelView: View {
     let onSignOut: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        VStack(alignment: .leading, spacing: AppMetrics.sectionSpacing) {
             Capsule()
                 .fill(AppTheme.divider)
                 .frame(width: 44, height: 5)
                 .frame(maxWidth: .infinity)
-                .padding(.top, 8)
+                .padding(.top, AppMetrics.headerSpacing)
 
             VStack(spacing: 12) {
                 Circle()
@@ -38,16 +38,12 @@ struct SidePanelView: View {
                         .font(.headline)
                 }
                 .foregroundStyle(AppTheme.textPrimary)
-                .padding(.vertical, 14)
-                .padding(.horizontal, 18)
+                .padding(.vertical, AppMetrics.rowPaddingVertical)
+                .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(AppTheme.surface)
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(AppTheme.divider, lineWidth: 1)
+                .appSurface(
+                    fill: AppTheme.surface,
+                    stroke: AppTheme.divider
                 )
             }
             .buttonStyle(.plain)
@@ -60,19 +56,19 @@ struct SidePanelView: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.bottom, 12)
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 16)
+        .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+        .padding(.top, AppMetrics.headerSpacing)
+        .padding(.bottom, AppMetrics.screenBottomPadding)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: AppMetrics.panelCornerRadius, style: .continuous)
                 .fill(AppTheme.surfaceRaised)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: AppMetrics.panelCornerRadius, style: .continuous)
                 .stroke(AppTheme.divider, lineWidth: 1)
         )
-        .shadow(color: AppTheme.shadowStrong, radius: 22, x: 0, y: 12)
+        .shadow(color: AppTheme.shadowStrong, radius: AppMetrics.panelShadowRadius, x: 0, y: AppMetrics.panelShadowY)
     }
 
     private var initials: String {

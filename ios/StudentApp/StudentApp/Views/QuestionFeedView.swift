@@ -278,16 +278,14 @@ struct QuestionFeedView: View {
                 .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
                 .disabled(!isCurrentQuestion || showFeedback)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(showingFeedback ? AppTheme.surfacePressed : AppTheme.surfaceRaised)
+        .padding(.vertical, AppMetrics.fieldPaddingVertical)
+        .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
+        .appSurface(
+            fill: showingFeedback ? AppTheme.surfacePressed : AppTheme.surfaceRaised,
+            stroke: showingFeedback ? AppTheme.statusSuccess : (isEnabled ? AppTheme.dividerStrong : AppTheme.divider),
+            shadowRadius: AppMetrics.rowShadowRadius,
+            shadowY: AppMetrics.rowShadowY
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(showingFeedback ? AppTheme.statusSuccess : (isEnabled ? AppTheme.dividerStrong : AppTheme.divider), lineWidth: showingFeedback ? 2 : 1)
-        )
-        .shadow(color: AppTheme.shadowSoft, radius: 8, x: 0, y: 4)
         .scaleEffect(showingFeedback ? 0.97 : 1.0)
     }
 

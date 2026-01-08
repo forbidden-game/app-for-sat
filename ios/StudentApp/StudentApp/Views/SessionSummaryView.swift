@@ -9,9 +9,9 @@ struct SessionSummaryView: View {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            VStack(spacing: 12) {
+            VStack(spacing: AppMetrics.sectionSpacing) {
                 Text("Session Complete")
-                    .font(.title)
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(AppTheme.textPrimary)
                 Text("Score: \(correct)/\(total)")
                     .foregroundStyle(AppTheme.textSecondary)

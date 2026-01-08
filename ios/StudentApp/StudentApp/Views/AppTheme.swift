@@ -122,12 +122,30 @@ enum AppMetrics {
 
     static let badgeSize: CGFloat = 32
     static let badgeSizeSmall: CGFloat = 28
+    static let gridButtonSize: CGFloat = 48
 
+    static let fieldPaddingVertical: CGFloat = 12
+    static let fieldPaddingHorizontal: CGFloat = 16
     static let primaryButtonPaddingVertical: CGFloat = 14
 
     static let headerSpacing: CGFloat = 8
     static let sectionSpacing: CGFloat = 16
+    static let sectionSpacingLarge: CGFloat = 24
+    static let rowSpacing: CGFloat = 10
     static let pageBottomPadding: CGFloat = 20
+
+    static let screenHorizontalPadding: CGFloat = 20
+    static let screenTopPadding: CGFloat = 16
+    static let screenBottomPadding: CGFloat = 24
+    static let screenBottomPaddingLarge: CGFloat = 32
+
+    static let gridSpacing: CGFloat = 12
+    static let gridSpacingWide: CGFloat = 20
+    static let gridItemMinimum: CGFloat = 56
+
+    static let panelCornerRadius: CGFloat = 28
+    static let panelShadowRadius: CGFloat = 22
+    static let panelShadowY: CGFloat = 12
 }
 
 extension View {

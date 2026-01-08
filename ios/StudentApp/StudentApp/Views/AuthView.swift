@@ -10,10 +10,10 @@ struct AuthView: View {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            VStack(spacing: 24) {
+            VStack(spacing: AppMetrics.sectionSpacingLarge) {
                 header
 
-                VStack(spacing: 16) {
+                VStack(spacing: AppMetrics.sectionSpacing) {
                     field(icon: "envelope.fill", placeholder: "Email", text: $email, isSecure: false)
                     field(icon: "lock.fill", placeholder: "Password", text: $password, isSecure: true)
                 }
@@ -42,15 +42,15 @@ struct AuthView: View {
 
                 Spacer()
             }
-            .padding(.horizontal, 24)
-            .padding(.top, 24)
+            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+            .padding(.top, AppMetrics.screenTopPadding)
         }
     }
 
     private var header: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppMetrics.headerSpacing) {
             Text("SAT Practice")
-                .font(.title.bold())
+                .font(.title2.weight(.semibold))
                 .foregroundStyle(AppTheme.textPrimary)
 
             Text("Sign in to continue")
@@ -77,15 +77,11 @@ struct AuthView: View {
                     .foregroundStyle(AppTheme.textPrimary)
             }
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surfaceRaised)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(AppTheme.divider, lineWidth: 1)
+        .padding(.vertical, AppMetrics.fieldPaddingVertical)
+        .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
+        .appSurface(
+            fill: AppTheme.surfaceRaised,
+            stroke: AppTheme.divider
         )
     }
 
@@ -95,16 +91,16 @@ struct AuthView: View {
                 .font(.headline)
                 .foregroundStyle(AppTheme.textOnAccent)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppMetrics.primaryButtonPaddingVertical)
                 .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
                         .fill(AppTheme.accentStrong)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
                         .stroke(AppTheme.accent, lineWidth: 1)
                 )
-                .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
+                .shadow(color: AppTheme.shadowStrong, radius: AppMetrics.cardShadowRadius, x: 0, y: AppMetrics.cardShadowY)
         }
     }
 
@@ -114,16 +110,16 @@ struct AuthView: View {
                 .font(.headline)
                 .foregroundStyle(AppTheme.textPrimary)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppMetrics.primaryButtonPaddingVertical)
                 .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
                         .fill(AppTheme.surface)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(AppTheme.dividerStrong, lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
+                        .stroke(AppTheme.divider, lineWidth: 1)
                 )
-                .shadow(color: AppTheme.shadowSoft, radius: 14, x: 0, y: 8)
+                .shadow(color: AppTheme.shadowSoft, radius: AppMetrics.rowShadowRadius, x: 0, y: AppMetrics.rowShadowY)
         }
     }
 }

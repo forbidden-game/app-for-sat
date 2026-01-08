@@ -32,10 +32,25 @@ Centralize all spacing, corner radii, and sizing in `AppMetrics`.
 | `rowShadowY` | 4 | Row elevation offset |
 | `badgeSize` | 32 | Option badge size |
 | `badgeSizeSmall` | 28 | Compact badge size |
+| `gridButtonSize` | 48 | Grid button size |
+| `fieldPaddingVertical` | 12 | Text field vertical padding |
+| `fieldPaddingHorizontal` | 16 | Text field horizontal padding |
 | `primaryButtonPaddingVertical` | 14 | Primary CTA padding |
 | `headerSpacing` | 8 | Header vertical spacing |
 | `sectionSpacing` | 16 | Section vertical spacing |
+| `sectionSpacingLarge` | 24 | Large section spacing |
+| `rowSpacing` | 10 | Row stack spacing |
 | `pageBottomPadding` | 20 | Bottom padding for pages |
+| `screenHorizontalPadding` | 20 | Screen horizontal padding |
+| `screenTopPadding` | 16 | Screen top padding |
+| `screenBottomPadding` | 24 | Screen bottom padding |
+| `screenBottomPaddingLarge` | 32 | Screen bottom padding (large) |
+| `gridSpacing` | 12 | Grid spacing (compact) |
+| `gridSpacingWide` | 20 | Grid spacing (wide) |
+| `gridItemMinimum` | 56 | Minimum grid item width |
+| `panelCornerRadius` | 28 | Side panel corner radius |
+| `panelShadowRadius` | 22 | Side panel shadow radius |
+| `panelShadowY` | 12 | Side panel shadow offset |
 
 ## Typography
 Use system fonts with clear hierarchy and limited variants.

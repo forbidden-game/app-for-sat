@@ -9,8 +9,8 @@ struct QuestionBankSelectionView: View {
     let onSelect: (QuestionBank) -> Void
 
     private let columns = [
-        GridItem(.flexible(), spacing: 20),
-        GridItem(.flexible(), spacing: 20)
+        GridItem(.flexible(), spacing: AppMetrics.gridSpacingWide),
+        GridItem(.flexible(), spacing: AppMetrics.gridSpacingWide)
     ]
 
     var body: some View {
@@ -18,7 +18,7 @@ struct QuestionBankSelectionView: View {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: AppMetrics.sectionSpacingLarge) {
                 header
 
                 if let error = errorMessage {
@@ -28,7 +28,7 @@ struct QuestionBankSelectionView: View {
                         .padding(.top, 4)
                 }
 
-                LazyVGrid(columns: columns, spacing: 28) {
+                LazyVGrid(columns: columns, spacing: AppMetrics.gridSpacingWide) {
                     ForEach(banks) { bank in
                         Button {
                             onSelect(bank)
@@ -41,9 +41,9 @@ struct QuestionBankSelectionView: View {
 
                 Spacer()
             }
-            .padding(.horizontal, 22)
-            .padding(.top, 12)
-            .padding(.bottom, 32)
+            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+            .padding(.top, AppMetrics.screenTopPadding)
+            .padding(.bottom, AppMetrics.screenBottomPaddingLarge)
 
             if isLoading {
                 AppTheme.shadowStrong.opacity(0.55)
@@ -55,7 +55,7 @@ struct QuestionBankSelectionView: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: AppMetrics.headerSpacing) {
             Text(dayString)
                 .font(.system(size: 34, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppTheme.textPrimary)
@@ -87,16 +87,14 @@ struct QuestionBankSelectionView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 18)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(AppTheme.surfaceRaised)
+        .padding(.vertical, AppMetrics.cardPadding)
+        .appSurface(
+            fill: AppTheme.surfaceRaised,
+            stroke: AppTheme.divider,
+            cornerRadius: AppMetrics.cardCornerRadius,
+            shadowRadius: AppMetrics.cardShadowRadius,
+            shadowY: AppMetrics.cardShadowY
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(AppTheme.dividerStrong, lineWidth: 1)
-        )
-        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 6)
     }
 
     private var dayString: String {
