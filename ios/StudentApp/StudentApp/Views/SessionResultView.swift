@@ -113,7 +113,7 @@ struct SessionResultView: View {
                 Text("\(questionResult.position)")
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppTheme.textMuted)
-                    .frame(width: 28, height: 28)
+                    .frame(width: AppMetrics.badgeSizeSmall, height: AppMetrics.badgeSizeSmall)
                     .background(AppTheme.surfaceRaised)
                     .clipShape(Circle())
 
@@ -128,17 +128,12 @@ struct SessionResultView: View {
                     .font(.system(size: 22))
                     .foregroundStyle(questionResult.isCorrect ? AppTheme.statusSuccess : AppTheme.statusDanger)
             }
-            .padding(.vertical, 14)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(AppTheme.surface)
+            .padding(.vertical, AppMetrics.rowPaddingVertical)
+            .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+            .appSurface(
+                fill: AppTheme.surface,
+                stroke: AppTheme.divider
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(AppTheme.divider, lineWidth: 1)
-            )
-            .shadow(color: AppTheme.shadowSoft, radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
@@ -151,11 +146,11 @@ struct SessionResultView: View {
                 .font(.headline)
                 .foregroundStyle(AppTheme.textOnAccent)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, AppMetrics.primaryButtonPaddingVertical)
                 .background(AppTheme.accentStrong)
-                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
                         .stroke(AppTheme.accent, lineWidth: 1)
                 )
                 .shadow(color: AppTheme.shadowStrong, radius: 10, x: 0, y: 6)

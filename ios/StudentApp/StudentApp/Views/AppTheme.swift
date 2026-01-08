@@ -108,18 +108,66 @@ enum AppTheme {
     }
 }
 
+enum AppMetrics {
+    static let cardCornerRadius: CGFloat = 20
+    static let cardPadding: CGFloat = 18
+    static let cardShadowRadius: CGFloat = 10
+    static let cardShadowY: CGFloat = 4
+
+    static let rowCornerRadius: CGFloat = 16
+    static let rowPaddingVertical: CGFloat = 10
+    static let rowPaddingHorizontal: CGFloat = 16
+    static let rowShadowRadius: CGFloat = 8
+    static let rowShadowY: CGFloat = 4
+
+    static let badgeSize: CGFloat = 32
+    static let badgeSizeSmall: CGFloat = 28
+
+    static let primaryButtonPaddingVertical: CGFloat = 14
+
+    static let headerSpacing: CGFloat = 8
+    static let sectionSpacing: CGFloat = 16
+    static let pageBottomPadding: CGFloat = 20
+}
+
 extension View {
-    func appCard(padding: CGFloat = 16) -> some View {
+    func appCard(padding: CGFloat = AppMetrics.cardPadding) -> some View {
         self
             .padding(padding)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: AppMetrics.cardCornerRadius, style: .continuous)
                     .fill(AppTheme.surface)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppTheme.dividerStrong, lineWidth: 1)
+                RoundedRectangle(cornerRadius: AppMetrics.cardCornerRadius, style: .continuous)
+                    .stroke(AppTheme.divider, lineWidth: 1)
             )
-            .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
+            .shadow(color: AppTheme.shadowSoft, radius: AppMetrics.cardShadowRadius, x: 0, y: AppMetrics.cardShadowY)
+    }
+
+    func appSurface(
+        fill: Color,
+        stroke: Color,
+        cornerRadius: CGFloat = AppMetrics.rowCornerRadius,
+        shadow: Color = AppTheme.shadowSoft,
+        shadowRadius: CGFloat = AppMetrics.rowShadowRadius,
+        shadowY: CGFloat = AppMetrics.rowShadowY,
+        showShadow: Bool = true
+    ) -> some View {
+        self
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(fill)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(stroke, lineWidth: 1)
+            )
+            .shadow(
+                color: showShadow ? shadow : Color.clear,
+                radius: showShadow ? shadowRadius : 0,
+                x: 0,
+                y: showShadow ? shadowY : 0
+            )
     }
 }

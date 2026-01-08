@@ -71,7 +71,7 @@ struct QuestionFeedView: View {
         return ZStack(alignment: .top) {
             Color.clear
 
-            VStack(spacing: 16) {
+            VStack(spacing: AppMetrics.sectionSpacing) {
                 header(progress: progress, index: index + 1, total: total, question: question)
 
                 questionCard(text: question.stem)
@@ -85,7 +85,7 @@ struct QuestionFeedView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-            .padding(.bottom, 20)
+            .padding(.bottom, AppMetrics.pageBottomPadding)
             .scrollTransition(.animated(.spring(response: 0.35, dampingFraction: 0.9))) { content, phase in
                 content
                     .scaleEffect(1 - abs(phase.value) * 0.05)
@@ -122,7 +122,7 @@ struct QuestionFeedView: View {
     // MARK: - Header
 
     private func header(progress: Double, index: Int, total: Int, question: Question) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: AppMetrics.headerSpacing) {
             ZStack {
                 HStack {
                     Button(action: onBack) {
@@ -177,16 +177,14 @@ struct QuestionFeedView: View {
             .lineSpacing(4)
             .foregroundStyle(AppTheme.textPrimary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(18)
-            .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppTheme.surface)
+            .padding(AppMetrics.cardPadding)
+            .appSurface(
+                fill: AppTheme.surface,
+                stroke: AppTheme.divider,
+                cornerRadius: AppMetrics.cardCornerRadius,
+                shadowRadius: AppMetrics.cardShadowRadius,
+                shadowY: AppMetrics.cardShadowY
             )
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(AppTheme.divider, lineWidth: 1)
-            )
-            .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 4)
     }
 
     // MARK: - Options Grid
@@ -222,7 +220,7 @@ struct QuestionFeedView: View {
                 Text(option.label)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(isJustSelected ? AppTheme.textOnAccent : (isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary))
-                    .frame(width: 32, height: 32)
+                    .frame(width: AppMetrics.badgeSize, height: AppMetrics.badgeSize)
                     .background(
                         isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
                     )
@@ -240,21 +238,14 @@ struct QuestionFeedView: View {
 
                 Spacer()
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(isJustSelected ? AppTheme.surfacePressed : (isSelected ? AppTheme.surfacePressed : AppTheme.surfaceRaised))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
-            )
-            .shadow(
-                color: (isSelected || isJustSelected) ? AppTheme.shadowSoft : Color.clear,
-                radius: (isSelected || isJustSelected) ? 8 : 0,
-                x: 0,
-                y: 4
+            .padding(.vertical, AppMetrics.rowPaddingVertical)
+            .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+            .appSurface(
+                fill: isJustSelected ? AppTheme.surfacePressed : (isSelected ? AppTheme.surfacePressed : AppTheme.surfaceRaised),
+                stroke: isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong),
+                shadowRadius: AppMetrics.rowShadowRadius,
+                shadowY: AppMetrics.rowShadowY,
+                showShadow: isSelected || isJustSelected
             )
             .scaleEffect(isJustSelected ? 0.97 : 1.0)
         }
