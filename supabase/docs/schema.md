@@ -253,6 +253,8 @@
 - `is_correct` boolean
 - `duration_ms` int
 - `skipped` boolean，default `false`
+- `student_selected_step_index` int（可为空，AI Coach：学生选择卡点步骤）
+- `student_selected_step_is_unknown` boolean，default `false`
 - `created_at` timestamptz，default `now()`
 
 **关系**
