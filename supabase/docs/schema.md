@@ -467,6 +467,22 @@
 
 ---
 
+### `coach_chat`
+**用途**：学生向“全科老师总线程”发送一条消息（异步生成老师回复，支持流式更新）。
+
+**鉴权**
+- 需要 `Authorization: Bearer <jwt>`。
+
+**请求字段**
+- `text` string
+- `linked_attempt_id` string (uuid) | null (optional)
+
+**响应字段**
+- `ok` boolean
+- `userMessageId` string (uuid)
+
+---
+
 ### `sign-asset-upload`
 **用途**：为管理员生成图片上传签名 URL。
 
