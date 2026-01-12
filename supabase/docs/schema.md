@@ -550,5 +550,8 @@
 ### `public.claim_ai_jobs(p_worker_id text, p_limit int)`
 **用途**：worker 原子性 claim `ai_jobs`（`queued` -> `running`，`for update skip locked`）。
 
+### `public.search_procedure_candidates(p_subject text, p_query text, p_limit int)`
+**用途**：基于 trigram 相似度检索 procedure 候选（用于“先检索再创建”的护栏）。
+
 ### `public.get_attempt_for_coach(p_attempt_id uuid)`
 **用途**：仅供 service role 读取 attempt + question（含 stem/options/answer_key/tags），用于生成错题讲解。
