@@ -1,23 +1,17 @@
 import { getConfig } from "./config.js";
 import { logger } from "./logger.js";
+import { getMinimaxAnthropicModel } from "./model.js";
 import { createSupabase } from "./supabase.js";
+import { runWorker } from "./worker.js";
 
 async function main(): Promise<void> {
   const config = getConfig();
   const supabase = createSupabase(config);
+  const model = getMinimaxAnthropicModel(config.minimaxApiKey);
 
-  logger.info({ workerId: config.workerId }, "ai-coach worker starting");
+  logger.info({ workerId: config.workerId, provider: model.provider, model: model.id }, "ai-coach worker starting");
 
-  // TODO: implement job loop
-  // Placeholder to verify env + connectivity only.
-  const { data, error } = await supabase.from("profiles").select("id").limit(1);
-  if (error) {
-    logger.error({ err: error }, "supabase connectivity check failed");
-    process.exitCode = 1;
-    return;
-  }
-
-  logger.info({ sampleCount: data?.length ?? 0 }, "supabase connectivity ok");
+  await runWorker(config, supabase, model);
 }
 
 main().catch((err) => {
