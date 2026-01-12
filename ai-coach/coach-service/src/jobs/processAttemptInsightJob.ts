@@ -4,11 +4,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AttemptForCoach } from "../domain/attemptForCoach.js";
 import { buildAttemptInsightPrompt } from "../prompts/attemptInsightPrompt.js";
 import { logger } from "../logger.js";
+import { JobDeferredError } from "./jobErrors.js";
 
 export async function processAttemptInsightJob(
   supabase: SupabaseClient,
   agent: Agent,
   attemptId: string,
+  jobCreatedAtIso: string,
 ): Promise<void> {
   const { data, error } = await supabase.rpc("get_attempt_for_coach", { p_attempt_id: attemptId });
   if (error) throw new Error(error.message);
@@ -19,6 +21,22 @@ export async function processAttemptInsightJob(
   if (payload.attempt.is_correct !== false) {
     logger.info({ attemptId, isCorrect: payload.attempt.is_correct }, "skip attempt insight job (not wrong)");
     return;
+  }
+
+  const stepMissing =
+    payload.attempt.student_selected_step_is_unknown !== true && payload.attempt.student_selected_step_index === null;
+
+  if (stepMissing) {
+    const createdAt = Date.parse(jobCreatedAtIso);
+    const ageMs = Number.isFinite(createdAt) ? Date.now() - createdAt : 0;
+
+    // Give the iOS client a short window to submit the required step selection.
+    // After that, proceed with unknown.
+    if (ageMs < 2 * 60 * 1000) {
+      throw new JobDeferredError("waiting_for_step_selection", 15_000);
+    }
+
+    logger.info({ attemptId }, "step selection missing; proceeding with unknown");
   }
 
   const prompt = buildAttemptInsightPrompt(payload);

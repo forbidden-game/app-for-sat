@@ -7,6 +7,7 @@ import { logger } from "./logger.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools } from "./tools/coachTools.js";
 import { processAttemptInsightJob } from "./jobs/processAttemptInsightJob.js";
+import { JobDeferredError } from "./jobs/jobErrors.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -52,6 +53,15 @@ async function markJobError(supabase: SupabaseClient, jobId: string, err: unknow
   if (error) throw new Error(error.message);
 }
 
+async function deferJob(supabase: SupabaseClient, jobId: string, delayMs: number): Promise<void> {
+  const runAfter = new Date(Date.now() + delayMs).toISOString();
+  const { error } = await supabase
+    .from("ai_jobs")
+    .update({ status: "queued", run_after: runAfter, error: null, updated_at: new Date().toISOString() })
+    .eq("id", jobId);
+  if (error) throw new Error(error.message);
+}
+
 async function claimJobs(supabase: SupabaseClient, workerId: string, limit: number): Promise<AiJobRow[]> {
   const { data, error } = await supabase.rpc("claim_ai_jobs", {
     p_worker_id: workerId,
@@ -90,13 +100,23 @@ export async function runWorker(
         if (job.kind === "attempt_insight") {
           if (!job.attempt_id) throw new Error("missing attempt_id");
           const agent = createCoachAgent(config, supabase, model);
-          await processAttemptInsightJob(supabase, agent, job.attempt_id);
+          await processAttemptInsightJob(supabase, agent, job.attempt_id, job.created_at);
         } else {
           logger.info({ kind: job.kind }, "job kind not implemented, skipping");
         }
 
         await markJobDone(supabase, job.id);
       } catch (err) {
+        if (err instanceof JobDeferredError) {
+          logger.info({ jobId: job.id, delayMs: err.delayMs }, "job deferred");
+          try {
+            await deferJob(supabase, job.id, err.delayMs);
+          } catch (markErr) {
+            logger.error({ err: markErr, jobId: job.id }, "failed to defer job");
+          }
+          continue;
+        }
+
         logger.error({ err, jobId: job.id }, "job failed");
         try {
           await markJobError(supabase, job.id, err);
