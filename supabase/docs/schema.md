@@ -482,3 +482,73 @@
 - `question_bank_questions_bank_position_idx` on `question_bank_questions(bank_id, position)`
 - `session_questions_session_position_idx` on `session_questions(session_id, position)`
 - `question_assets_pending_idx` on `question_assets(status, created_at)` where `status = 'pending'`
+- `procedures_subject_status_idx` on `procedures(subject, status)`
+- `procedures_search_trgm_idx` on `procedures(search_text)` (GIN trigram)
+- `attempt_insights_student_procedure_step_idx` on `attempt_insights(student_id, procedure_id, error_step_index, created_at)`
+- `attempt_insights_student_created_at_idx` on `attempt_insights(student_id, created_at)`
+- `coach_thread_messages_student_created_at_idx` on `coach_thread_messages(student_id, created_at)`
+- `ai_jobs_attempt_insight_unique` on `ai_jobs(attempt_id)` where `kind = 'attempt_insight'`
+- `ai_jobs_status_run_after_idx` on `ai_jobs(status, run_after)`
+
+---
+
+## AI Coach（新增，MVP）
+
+### `public.procedures`
+**用途**：AI 自增长的“解题套路库”（SAT Math 先行），用于按步骤相似检索。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `subject` text
+- `name` text
+- `steps` jsonb（3–7 步短句）
+- `steps_version` int
+- `aliases` text[]
+- `status` text（active|merged|deprecated）
+- `merged_into` uuid
+- `search_text` 生成列（name + aliases，用于 trigram 搜索）
+
+---
+
+### `public.attempt_insights`
+**用途**：错题的结构化诊断结果（procedure + step + error_mode + short explanation + followups）。
+
+**字段**（摘要）
+- `attempt_id` uuid, PK
+- `student_id` uuid
+- `question_id` uuid
+- `procedure_id` uuid
+- `error_step_index` int
+- `student_selected_step_index` int / `student_selected_step_is_unknown` boolean
+- `error_mode_enum` text + `error_mode_detail` text
+- `evidence` jsonb
+- `explanation_short` text
+- `followups` jsonb
+
+---
+
+### `public.student_snapshots`
+**用途**：学生长期状态快照（跨题对话注入用）。
+
+---
+
+### `public.coach_thread_messages`
+**用途**：一人一个“全科老师总线程”的对话消息存档（允许跨题）。
+
+---
+
+### `public.ai_jobs`
+**用途**：异步任务队列（MVP: `attempt_insight`）。
+
+---
+
+## AI Coach 函数 / 触发器（新增）
+
+### `public.enqueue_attempt_insight_job()`
+**用途**：attempt insert 后（且 `is_correct=false`）自动插入 `ai_jobs(kind='attempt_insight')`。
+
+### `public.claim_ai_jobs(p_worker_id text, p_limit int)`
+**用途**：worker 原子性 claim `ai_jobs`（`queued` -> `running`，`for update skip locked`）。
+
+### `public.get_attempt_for_coach(p_attempt_id uuid)`
+**用途**：仅供 service role 读取 attempt + question（含 stem/options/answer_key/tags），用于生成错题讲解。
