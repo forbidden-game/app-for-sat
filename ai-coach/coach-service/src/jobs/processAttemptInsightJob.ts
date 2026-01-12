@@ -23,5 +23,33 @@ export async function processAttemptInsightJob(
 
   const prompt = buildAttemptInsightPrompt(payload);
 
+  const hasInsight = async (): Promise<boolean> => {
+    const { data, error: insightError } = await supabase
+      .from("attempt_insights")
+      .select("attempt_id")
+      .eq("attempt_id", attemptId)
+      .maybeSingle();
+
+    if (insightError) throw new Error(insightError.message);
+    return !!data?.attempt_id;
+  };
+
   await agent.prompt(prompt);
+
+  if (!(await hasInsight())) {
+    const retryPrompt = [
+      "You did not persist the insight.",
+      "Call write_attempt_insight now. Do not write free-form text.",
+      `attempt_id=${payload.attempt.id}`,
+      `student_id=${payload.attempt.student_id}`,
+      `question_id=${payload.attempt.question_id}`,
+      "Remember: explanation_short must be Chinese and <= 120 chars. followups max 2.",
+    ].join("\n");
+
+    await agent.prompt(retryPrompt);
+
+    if (!(await hasInsight())) {
+      throw new Error("attempt_insight_not_written");
+    }
+  }
 }

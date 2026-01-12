@@ -67,8 +67,6 @@ export async function runWorker(
   supabase: SupabaseClient,
   model: Model<"anthropic-messages">,
 ): Promise<void> {
-  const agent = createCoachAgent(config, supabase, model);
-
   for (;;) {
     let jobs: AiJobRow[] = [];
 
@@ -91,6 +89,7 @@ export async function runWorker(
       try {
         if (job.kind === "attempt_insight") {
           if (!job.attempt_id) throw new Error("missing attempt_id");
+          const agent = createCoachAgent(config, supabase, model);
           await processAttemptInsightJob(supabase, agent, job.attempt_id);
         } else {
           logger.info({ kind: job.kind }, "job kind not implemented, skipping");

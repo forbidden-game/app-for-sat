@@ -7,10 +7,14 @@ export function buildAttemptInsightPrompt(input: AttemptForCoach): string {
       ? "unknown"
       : String(input.attempt.student_selected_step_index);
 
+  const procedureSubject = "sat_math";
+
   return [
     "You are an SAT Math coach.",
     "Your job: for a wrong attempt, produce a SHORT, step-based correction.",
     "You MUST use tool calls.",
+    "Language: Chinese only for explanation_short and followups.",
+    "Indexing: error_step_index is 0-based.",
     "Rules:",
     "- Output must be short. explanation_short <= 120 Chinese characters.",
     "- Ask 1-2 follow-up questions max.",
@@ -20,6 +24,7 @@ export function buildAttemptInsightPrompt(input: AttemptForCoach): string {
     "Context (JSON):",
     JSON.stringify(
       {
+        procedure_subject: procedureSubject,
         attempt: {
           id: input.attempt.id,
           student_id: input.attempt.student_id,
@@ -45,9 +50,10 @@ export function buildAttemptInsightPrompt(input: AttemptForCoach): string {
     ),
     "",
     "Steps:",
-    "1) Call search_procedure_candidates(subject, query) with a short query.",
-    "2) If no candidate is a good match, call create_procedure(subject, name, description, steps).",
-    "3) Call search_similar_mistakes(student_id, procedure_id, error_step_index).",
-    "4) Call write_attempt_insight(...) with: procedure_id, error_step_index, error_mode_enum, evidence, explanation_short, followups.",
+    `1) Call search_procedure_candidates(subject=\"${procedureSubject}\", query=...) with a short query.`,
+    `2) If no candidate is a good match, call create_procedure(subject=\"${procedureSubject}\", name, description, steps).`,
+    "3) Decide error_step_index (0-based).",
+    "4) Call search_similar_mistakes(student_id, procedure_id, error_step_index).",
+    "5) Call write_attempt_insight(...) with: procedure_id, procedure_steps_version, error_step_index, error_mode_enum, evidence, explanation_short, followups.",
   ].join("\n");
 }
