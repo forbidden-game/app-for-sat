@@ -18,6 +18,7 @@ struct QuestionFeedView: View {
     @FocusState private var isInputFocused: Bool
     @State private var showFeedback = false
     @State private var currentPage = 0
+    @State private var pendingAdvanceAfterCoach = false
 
     var body: some View {
         let total = vm.session.questions.count
@@ -60,6 +61,17 @@ struct QuestionFeedView: View {
                     currentPage = newIndex
                 }
             }
+        }
+        .sheet(item: $flowModel.coachAttempt) { ctx in
+            CoachStepSheet(
+                coachAttempt: $flowModel.coachAttempt,
+                flowModel: flowModel,
+                attemptId: ctx.id,
+                onContinue: {
+                    pendingAdvanceAfterCoach = false
+                    advanceAfterAnswer()
+                }
+            )
         }
     }
 
@@ -210,11 +222,7 @@ struct QuestionFeedView: View {
                 showFeedback = true
             }
             recordAnswer(option.label, questionId: questionId)
-            Task {
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                showFeedback = false
-                advanceAfterAnswer()
-            }
+            submitAnswer(questionIndex: questionIndex, answer: option.label)
         } label: {
             HStack(spacing: 12) {
                 Text(option.label)
@@ -318,19 +326,37 @@ struct QuestionFeedView: View {
         withAnimation(.easeInOut(duration: 0.15)) {
             showFeedback = true
         }
-        Task {
-            try? await Task.sleep(nanoseconds: 500_000_000)
-            showFeedback = false
-            advanceAfterAnswer()
-        }
+        submitAnswer(questionIndex: vm.currentIndex, answer: trimmed)
     }
 
     private func recordAnswer(_ value: String, questionId: String) {
         answers[questionId] = value
-        let question = vm.session.questions.first { $0.id == questionId }
-        if let question {
-            flowModel.submitAnswer(question: question, answer: value)
+    }
+
+    private func submitAnswer(questionIndex: Int, answer: String) {
+        guard questionIndex >= 0, questionIndex < vm.session.questions.count else { return }
+        let question = vm.session.questions[questionIndex]
+
+        Task {
+            do {
+                let result = try await flowModel.submitAnswer(question: question, answer: answer, allowCoach: true)
+                try? await Task.sleep(nanoseconds: 500_000_000)
+                showFeedback = false
+
+                if result.isCorrect {
+                    advanceAfterAnswer()
+                } else {
+                    pendingAdvanceAfterCoach = true
+                }
+            } catch {
+                submissionError(error)
+            }
         }
+    }
+
+    private func submissionError(_ error: Error) {
+        showFeedback = false
+        flowModel.submissionError = error.localizedDescription
     }
 
     private func advanceAfterAnswer() {

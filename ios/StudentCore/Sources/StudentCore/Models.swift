@@ -167,3 +167,49 @@ public enum AnswerValue: Codable, Equatable {
         }
     }
 }
+
+// MARK: - AI Coach (MVP)
+
+public struct SubmitAttemptResult: Codable, Equatable {
+    public let isCorrect: Bool
+    public let attemptId: String
+
+    public init(isCorrect: Bool, attemptId: String) {
+        self.isCorrect = isCorrect
+        self.attemptId = attemptId
+    }
+}
+
+public struct AttemptFollowup: Codable, Equatable, Identifiable {
+    public let id: UUID = UUID()
+    public let question: String
+    public let expected: String?
+
+    public init(question: String, expected: String? = nil) {
+        self.question = question
+        self.expected = expected
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case question
+        case expected
+    }
+}
+
+public struct AttemptInsight: Codable, Equatable {
+    public let attemptId: String
+    public let explanationShort: String
+    public let followups: [AttemptFollowup]
+
+    public init(attemptId: String, explanationShort: String, followups: [AttemptFollowup]) {
+        self.attemptId = attemptId
+        self.explanationShort = explanationShort
+        self.followups = followups
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case attemptId = "attempt_id"
+        case explanationShort = "explanation_short"
+        case followups
+    }
+}

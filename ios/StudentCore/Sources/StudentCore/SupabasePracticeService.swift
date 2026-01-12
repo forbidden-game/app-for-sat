@@ -122,7 +122,7 @@ public final class SupabasePracticeService {
         sessionId: String,
         durationMs: Int? = nil,
         skipped: Bool? = nil
-    ) async throws -> Bool {
+    ) async throws -> SubmitAttemptResult {
         let payload = SubmitAttemptPayload(
             session_id: sessionId,
             question_id: question.id,
@@ -133,10 +133,63 @@ public final class SupabasePracticeService {
 
         struct FunctionResponse: Decodable {
             let isCorrect: Bool
+            let attemptId: String
         }
 
         let response: FunctionResponse = try await invokeFunction("submit_attempt", body: payload)
-        return response.isCorrect
+        return SubmitAttemptResult(isCorrect: response.isCorrect, attemptId: response.attemptId)
+    }
+
+    public func setAttemptStepSelection(
+        attemptId: String,
+        selectedStepIndex: Int?,
+        isUnknown: Bool
+    ) async throws {
+        let payload = SetAttemptStepPayload(
+            attempt_id: attemptId,
+            student_selected_step_index: selectedStepIndex,
+            student_selected_step_is_unknown: isUnknown
+        )
+
+        struct FunctionResponse: Decodable {
+            let ok: Bool
+        }
+
+        let response: FunctionResponse = try await invokeFunction("set_attempt_step", body: payload)
+        if response.ok != true {
+            throw NSError(
+                domain: "SupabasePracticeService",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Failed to set attempt step selection"]
+            )
+        }
+    }
+
+    public func fetchAttemptInsight(attemptId: String) async throws -> AttemptInsight? {
+        guard let uuid = UUID(uuidString: attemptId) else {
+            throw NSError(domain: "SupabasePracticeService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid attempt ID format"])
+        }
+
+        struct InsightRow: Decodable {
+            let attempt_id: UUID
+            let explanation_short: String
+            let followups: [AttemptFollowup]
+        }
+
+        let rows: [InsightRow] = try await client
+            .from("attempt_insights")
+            .select("attempt_id, explanation_short, followups")
+            .eq("attempt_id", value: uuid)
+            .limit(1)
+            .execute()
+            .value
+
+        guard let row = rows.first else { return nil }
+        return AttemptInsight(
+            attemptId: row.attempt_id.uuidString,
+            explanationShort: row.explanation_short,
+            followups: row.followups
+        )
     }
 
     public func fetchSessionResult(sessionId: String) async throws -> SessionResult {
@@ -330,6 +383,12 @@ private struct SubmitAttemptPayload: Encodable {
     let answer: FunctionAnswerValue?
     let duration_ms: Int?
     let skipped: Bool?
+}
+
+private struct SetAttemptStepPayload: Encodable {
+    let attempt_id: String
+    let student_selected_step_index: Int?
+    let student_selected_step_is_unknown: Bool
 }
 
 private enum FunctionAnswerValue: Encodable {
