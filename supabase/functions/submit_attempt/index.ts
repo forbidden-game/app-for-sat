@@ -12,6 +12,8 @@ type SubmitAttemptBody = {
   answer?: string | number | null;
   duration_ms?: number | null;
   skipped?: boolean | null;
+  student_selected_step_index?: number | null;
+  student_selected_step_is_unknown?: boolean | null;
 };
 
 type QuestionRow = {
@@ -156,17 +158,29 @@ serve(async (req) => {
       { answer: attemptAnswer },
     );
 
-  const { error: insertError } = await supabase.from("attempts").insert({
-    session_id: body.session_id,
-    question_id: body.question_id,
-    student_id: studentId,
-    answer: attemptAnswer,
-    is_correct: skipped ? null : result.isCorrect,
-    duration_ms: durationMs,
-    skipped: skipped,
-  });
+  const selectedStepIsUnknown = body.student_selected_step_is_unknown === true;
+  const selectedStepIndex =
+    selectedStepIsUnknown || typeof body.student_selected_step_index !== "number" || !Number.isFinite(body.student_selected_step_index)
+      ? null
+      : Math.trunc(body.student_selected_step_index);
 
-  if (insertError) {
+  const { data: insertedAttempt, error: insertError } = await supabase
+    .from("attempts")
+    .insert({
+      session_id: body.session_id,
+      question_id: body.question_id,
+      student_id: studentId,
+      answer: attemptAnswer,
+      is_correct: skipped ? null : result.isCorrect,
+      duration_ms: durationMs,
+      skipped: skipped,
+      student_selected_step_index: selectedStepIndex,
+      student_selected_step_is_unknown: selectedStepIsUnknown,
+    })
+    .select("id")
+    .single();
+
+  if (insertError || !insertedAttempt) {
     return jsonResponse({ error: "attempt_insert_failed" }, 500);
   }
 
@@ -206,5 +220,5 @@ serve(async (req) => {
     }
   }
 
-  return jsonResponse({ isCorrect: result.isCorrect }, 200);
+  return jsonResponse({ isCorrect: result.isCorrect, attemptId: insertedAttempt.id }, 200);
 });

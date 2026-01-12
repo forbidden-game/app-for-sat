@@ -440,9 +440,28 @@
 - `answer` string | number | null
 - `duration_ms` number | null (optional)
 - `skipped` boolean | null (optional)
+- `student_selected_step_index` number | null (optional)
+- `student_selected_step_is_unknown` boolean | null (optional)
 
 **响应字段**
 - `isCorrect` boolean
+- `attemptId` string (uuid)
+
+---
+
+### `set_attempt_step`
+**用途**：学生在错题后补充“卡点步骤”选择，写回 `attempts`，并尽量提前对应的 `ai_jobs` 运行时间。
+
+**鉴权**
+- 需要 `Authorization: Bearer <jwt>`。
+
+**请求字段**
+- `attempt_id` string (uuid)
+- `student_selected_step_index` number | null
+- `student_selected_step_is_unknown` boolean | null
+
+**响应字段**
+- `ok` boolean
 
 ---
 
