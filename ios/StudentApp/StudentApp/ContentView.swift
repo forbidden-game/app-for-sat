@@ -37,6 +37,7 @@ struct ContentView: View {
 private struct MainContainerView: View {
     @ObservedObject var vm: AppViewModel
     @State private var showPanel = false
+    @State private var showCoach = false
 
     var body: some View {
         SidePanelHost(isPresented: $showPanel) {
@@ -67,8 +68,16 @@ private struct MainContainerView: View {
                 }
             }
         } panel: {
-            SidePanelView(displayName: displayName) {
+            SidePanelView(displayName: displayName, onCoach: {
+                showCoach = true
+                showPanel = false
+            }) {
                 Task { await vm.signOut() }
+            }
+        }
+        .sheet(isPresented: $showCoach) {
+            if let studentId = vm.user?.id {
+                CoachChatView(studentId: studentId)
             }
         }
         .onChange(of: isInSession) { _, newValue in

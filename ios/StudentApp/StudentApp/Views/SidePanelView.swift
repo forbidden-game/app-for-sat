@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SidePanelView: View {
     let displayName: String
+    let onCoach: () -> Void
     let onSignOut: () -> Void
 
     var body: some View {
@@ -29,6 +30,24 @@ struct SidePanelView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.top, 4)
+
+            Button(action: onCoach) {
+                HStack(spacing: 12) {
+                    Image(systemName: "bubble.left.and.bubble.right.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("Coach")
+                        .font(.headline)
+                }
+                .foregroundStyle(AppTheme.textPrimary)
+                .padding(.vertical, AppMetrics.rowPaddingVertical)
+                .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .appSurface(
+                    fill: AppTheme.surface,
+                    stroke: AppTheme.divider
+                )
+            }
+            .buttonStyle(.plain)
 
             Button(action: onSignOut) {
                 HStack(spacing: 12) {
