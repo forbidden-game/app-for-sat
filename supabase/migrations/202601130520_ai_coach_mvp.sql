@@ -18,13 +18,29 @@ create table if not exists public.procedures (
   created_by text not null default 'ai',
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
-  search_text text generated always as (
-    trim(
-      coalesce(name, '') || ' ' || coalesce(array_to_string(aliases, ' '), '')
-    )
-  ) stored,
+  search_text text not null default '',
   unique (subject, name)
 );
+
+create or replace function public.set_procedure_search_text()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  new.search_text := trim(
+    coalesce(new.name, '') || ' ' || coalesce(array_to_string(new.aliases, ' '), '')
+  );
+  return new;
+end;
+$$;
+
+drop trigger if exists procedures_set_search_text on public.procedures;
+create trigger procedures_set_search_text
+before insert or update of name, aliases on public.procedures
+for each row
+execute function public.set_procedure_search_text();
 
 create index if not exists procedures_subject_status_idx
   on public.procedures (subject, status);

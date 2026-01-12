@@ -527,7 +527,7 @@
 - `aliases` text[]
 - `status` text（active|merged|deprecated）
 - `merged_into` uuid
-- `search_text` 生成列（name + aliases，用于 trigram 搜索）
+- `search_text` text（name + aliases，用于 trigram 搜索；由 trigger 自动维护）
 
 ---
 
