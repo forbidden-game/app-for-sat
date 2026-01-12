@@ -1,4 +1,4 @@
-export type AiJobKind = "attempt_insight" | "thread_summary" | "procedure_merge";
+export type AiJobKind = "attempt_insight" | "thread_summary" | "procedure_merge" | "coach_reply";
 
 export type AiJobStatus = "queued" | "running" | "done" | "error";
 

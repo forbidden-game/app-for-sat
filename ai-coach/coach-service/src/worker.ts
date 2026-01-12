@@ -7,6 +7,7 @@ import { logger } from "./logger.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools } from "./tools/coachTools.js";
 import { processAttemptInsightJob } from "./jobs/processAttemptInsightJob.js";
+import { processCoachReplyJob } from "./jobs/processCoachReplyJob.js";
 import { JobDeferredError } from "./jobs/jobErrors.js";
 
 function sleep(ms: number): Promise<void> {
@@ -27,6 +28,23 @@ export function createCoachAgent(
       model,
       thinkingLevel: "off",
       tools,
+      messages: [],
+    },
+    getApiKey: async (provider) => {
+      if (provider === "minimax-anthropic") return config.minimaxApiKey;
+      return undefined;
+    },
+  });
+}
+
+export function createChatAgent(config: CoachConfig, model: Model<"anthropic-messages">): Agent {
+  return new Agent({
+    initialState: {
+      systemPrompt:
+        "你是一位严格、精要的 SAT 全科老师。默认用中文，先给最小可执行下一步，再问一个澄清问题。避免长篇大论。",
+      model,
+      thinkingLevel: "off",
+      tools: [],
       messages: [],
     },
     getApiKey: async (provider) => {
@@ -108,6 +126,9 @@ export async function runWorker(
           if (!job.attempt_id) throw new Error("missing attempt_id");
           const agent = createCoachAgent(config, supabase, model);
           await processAttemptInsightJob(supabase, agent, job.attempt_id, job.created_at);
+        } else if (job.kind === "coach_reply") {
+          const agent = createChatAgent(config, model);
+          await processCoachReplyJob(supabase, agent, job);
         } else {
           logger.info({ kind: job.kind }, "job kind not implemented, skipping");
         }
