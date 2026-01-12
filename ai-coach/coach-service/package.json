@@ -12,6 +12,7 @@
   "dependencies": {
     "@mariozechner/pi-agent-core": "^0.44.0",
     "@mariozechner/pi-ai": "^0.44.0",
+    "@sinclair/typebox": "^0.34.41",
     "@supabase/supabase-js": "^2.49.0",
     "dotenv": "^16.4.5",
     "pino": "^9.6.0"

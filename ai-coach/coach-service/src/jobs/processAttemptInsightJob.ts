@@ -1,33 +1,9 @@
 import type { Agent } from "@mariozechner/pi-agent-core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { AttemptForCoach } from "../domain/attemptForCoach.js";
 import { buildAttemptInsightPrompt } from "../prompts/attemptInsightPrompt.js";
 import { logger } from "../logger.js";
-
-type AttemptForCoach = {
-  attempt: {
-    id: string;
-    student_id: string;
-    question_id: string;
-    is_correct: boolean | null;
-    answer: unknown;
-    duration_ms: number | null;
-    skipped: boolean;
-    student_selected_step_index: number | null;
-    student_selected_step_is_unknown: boolean;
-    created_at: string;
-  };
-  question: {
-    subject: string;
-    stem: string;
-    options: { label: string; content: string }[];
-    answer_key: unknown;
-    module: string;
-    difficulty: number;
-    question_type: string;
-    tags: { id: string; name: string; category: string }[];
-  };
-};
 
 export async function processAttemptInsightJob(
   supabase: SupabaseClient,
