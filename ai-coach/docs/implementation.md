@@ -40,3 +40,18 @@ The worker claims jobs via:
 ## iOS Flow (MVP)
 - On submit: call `submit_attempt` and store `attemptId`.
 - If wrong: show required step-selection sheet, then call `set_attempt_step` and poll `attempt_insights` for `explanation_short`.
+
+## Troubleshooting
+
+### CI fails during `supabase db reset` with `generation expression is not immutable`
+Symptom (GitHub Actions / local Supabase): migration fails with an error like:
+- `ERROR: generation expression is not immutable (SQLSTATE 42P17)`
+
+Cause:
+- Postgres **generated columns** (`generated always as (...) stored`) require the expression to be **IMMUTABLE**.
+- Some seemingly “pure” helpers (notably ones involving arrays / text normalization) are not marked immutable by Postgres.
+
+Fix we use in AI Coach:
+- Avoid generated columns for `procedures.search_text`.
+- Store `search_text` as a normal column and maintain it via a `before insert/update` trigger.
+- This keeps trigram search fast (`GIN ... gin_trgm_ops`) without violating immutability rules.
