@@ -62,7 +62,12 @@ struct QuestionFeedView: View {
                 }
             }
         }
-        .sheet(item: $flowModel.coachAttempt) { ctx in
+        .sheet(item: $flowModel.coachAttempt, onDismiss: {
+            if pendingAdvanceAfterCoach {
+                pendingAdvanceAfterCoach = false
+                advanceAfterAnswer()
+            }
+        }) { ctx in
             CoachStepSheet(
                 coachAttempt: $flowModel.coachAttempt,
                 flowModel: flowModel,
