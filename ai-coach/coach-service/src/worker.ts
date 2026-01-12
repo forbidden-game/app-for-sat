@@ -57,7 +57,14 @@ async function deferJob(supabase: SupabaseClient, jobId: string, delayMs: number
   const runAfter = new Date(Date.now() + delayMs).toISOString();
   const { error } = await supabase
     .from("ai_jobs")
-    .update({ status: "queued", run_after: runAfter, error: null, updated_at: new Date().toISOString() })
+    .update({
+      status: "queued",
+      run_after: runAfter,
+      error: null,
+      locked_at: null,
+      locked_by: null,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", jobId);
   if (error) throw new Error(error.message);
 }
