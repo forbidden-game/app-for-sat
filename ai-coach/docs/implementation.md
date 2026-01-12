@@ -26,9 +26,17 @@ Run:
 - `npm install`
 - `npm run dev`
 
+## Edge Functions
+- `submit_attempt`: scores + inserts an `attempts` row and returns `{ isCorrect, attemptId }`.
+- `set_attempt_step`: updates `attempts.student_selected_step_*` after the student selects a step, and bumps `ai_jobs.run_after` to speed up processing.
+
 ## Trigger
 When a wrong attempt is inserted (`attempts.is_correct=false`), a job is enqueued automatically:
 - `ai_jobs(kind='attempt_insight', status='queued', attempt_id=...)`
 
 The worker claims jobs via:
 - `public.claim_ai_jobs(p_worker_id, p_limit)`
+
+## iOS Flow (MVP)
+- On submit: call `submit_attempt` and store `attemptId`.
+- If wrong: show required step-selection sheet, then call `set_attempt_step` and poll `attempt_insights` for `explanation_short`.
