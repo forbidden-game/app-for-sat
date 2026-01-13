@@ -28,6 +28,8 @@ final class PracticeFlowViewModel: ObservableObject {
     let sessionId: String
 
     private let practiceService: SupabasePracticeService
+    private let insightCache = AttemptInsightCache.shared
+    private var insightPrefetchTasks: [String: Task<Void, Never>] = [:]
     private var pendingAnswers: [String: String] = [:]
 
     init(session: PracticeSession, sessionId: String, practiceService: SupabasePracticeService = SupabasePracticeService()) {
@@ -48,8 +50,11 @@ final class PracticeFlowViewModel: ObservableObject {
         correctByQuestion[question.id] = result.isCorrect
         pendingAnswers.removeValue(forKey: question.id)
 
-        if allowCoach, result.isCorrect == false {
-            coachAttempt = CoachAttemptContext(id: result.attemptId, questionId: question.id, answer: answer)
+        if result.isCorrect == false {
+            prefetchAttemptInsight(attemptId: result.attemptId)
+            if allowCoach {
+                coachAttempt = CoachAttemptContext(id: result.attemptId, questionId: question.id, answer: answer)
+            }
         }
 
         return result
@@ -63,8 +68,35 @@ final class PracticeFlowViewModel: ObservableObject {
         )
     }
 
+    func cachedAttemptInsight(attemptId: String) -> AttemptInsight? {
+        insightCache.load(attemptId: attemptId)
+    }
+
     func fetchAttemptInsight(attemptId: String) async throws -> AttemptInsight? {
-        try await practiceService.fetchAttemptInsight(attemptId: attemptId)
+        let insight = try await practiceService.fetchAttemptInsight(attemptId: attemptId)
+        if let insight {
+            insightCache.save(insight)
+        }
+        return insight
+    }
+
+    func prefetchAttemptInsight(attemptId: String) {
+        if insightCache.load(attemptId: attemptId) != nil { return }
+        if insightPrefetchTasks[attemptId] != nil { return }
+
+        let task = Task { [weak self] in
+            guard let self else { return }
+            defer { self.insightPrefetchTasks[attemptId] = nil }
+            for _ in 0..<12 {
+                if Task.isCancelled { return }
+                if let insight = try? await self.fetchAttemptInsight(attemptId: attemptId), insight != nil {
+                    return
+                }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+            }
+        }
+
+        insightPrefetchTasks[attemptId] = task
     }
 
     func finalizeSession() {

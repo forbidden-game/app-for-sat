@@ -272,6 +272,11 @@ struct CoachStepSheet: View {
     private func submitSelection() {
         phase = .loadingInsight
 
+        if let cached = flowModel.cachedAttemptInsight(attemptId: attemptId) {
+            insight = cached
+            phase = .ready
+        }
+
         Task {
             do {
                 try await flowModel.setAttemptStepSelection(
@@ -291,8 +296,10 @@ struct CoachStepSheet: View {
 
                 phase = .ready
             } catch {
-                errorMessage = error.localizedDescription
-                phase = .selectStep
+                if self.insight == nil {
+                    errorMessage = error.localizedDescription
+                    phase = .selectStep
+                }
             }
         }
     }

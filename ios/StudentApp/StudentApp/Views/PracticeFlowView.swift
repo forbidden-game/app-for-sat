@@ -64,6 +64,8 @@ struct PracticeFlowView: View {
         case .questionDetail(let question):
             QuestionDetailView(
                 question: question,
+                studentId: studentId,
+                flowModel: flowModel,
                 onBack: {
                     flowModel.backToResult()
                 }

@@ -19,7 +19,6 @@ struct QuestionFeedView: View {
     @FocusState private var isInputFocused: Bool
     @State private var showFeedback = false
     @State private var currentPage = 0
-    @State private var pendingAdvanceAfterCoach = false
 
     var body: some View {
         let total = vm.session.questions.count
@@ -62,23 +61,6 @@ struct QuestionFeedView: View {
                     currentPage = newIndex
                 }
             }
-        }
-        .sheet(item: $flowModel.coachAttempt, onDismiss: {
-            if pendingAdvanceAfterCoach {
-                pendingAdvanceAfterCoach = false
-                advanceAfterAnswer()
-            }
-        }) { ctx in
-            CoachStepSheet(
-                coachAttempt: $flowModel.coachAttempt,
-                flowModel: flowModel,
-                studentId: studentId,
-                attemptId: ctx.id,
-                onContinue: {
-                    pendingAdvanceAfterCoach = false
-                    advanceAfterAnswer()
-                }
-            )
         }
     }
 
@@ -352,15 +334,10 @@ struct QuestionFeedView: View {
 
         Task {
             do {
-                let result = try await flowModel.submitAnswer(question: question, answer: answer, allowCoach: true)
+                _ = try await flowModel.submitAnswer(question: question, answer: answer, allowCoach: false)
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 showFeedback = false
-
-                if result.isCorrect {
-                    advanceAfterAnswer()
-                } else {
-                    pendingAdvanceAfterCoach = true
-                }
+                advanceAfterAnswer()
             } catch {
                 submissionError(error)
             }

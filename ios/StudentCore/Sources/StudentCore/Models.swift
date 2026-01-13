@@ -88,6 +88,7 @@ public struct SessionResult: Codable, Equatable {
 
 public struct QuestionResult: Codable, Equatable, Identifiable {
     public let questionId: String
+    public let attemptId: String?
     public let position: Int
     public let isCorrect: Bool
     public let userAnswer: AnswerValue?
@@ -100,6 +101,7 @@ public struct QuestionResult: Codable, Equatable, Identifiable {
 
     public init(
         questionId: String,
+        attemptId: String? = nil,
         position: Int,
         isCorrect: Bool,
         userAnswer: AnswerValue?,
@@ -109,6 +111,7 @@ public struct QuestionResult: Codable, Equatable, Identifiable {
         explanation: String
     ) {
         self.questionId = questionId
+        self.attemptId = attemptId
         self.position = position
         self.isCorrect = isCorrect
         self.userAnswer = userAnswer
@@ -120,6 +123,7 @@ public struct QuestionResult: Codable, Equatable, Identifiable {
 
     enum CodingKeys: String, CodingKey {
         case questionId = "question_id"
+        case attemptId = "attempt_id"
         case position
         case isCorrect = "is_correct"
         case userAnswer = "user_answer"

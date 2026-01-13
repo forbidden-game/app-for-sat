@@ -3,7 +3,12 @@ import StudentCore
 
 struct QuestionDetailView: View {
     let question: QuestionResult
+    let studentId: String
+    @ObservedObject var flowModel: PracticeFlowViewModel
     let onBack: () -> Void
+
+    @State private var coachAttempt: CoachAttemptContext?
+    @State private var showCoachChat = false
 
     private let correctColor = AppTheme.statusSuccess
     private let incorrectColor = AppTheme.statusDanger
@@ -31,6 +36,20 @@ struct QuestionDetailView: View {
                 .padding(.top, AppMetrics.screenTopPadding)
                 .padding(.bottom, AppMetrics.screenBottomPaddingLarge)
             }
+
+            coachFloatingButton
+        }
+        .sheet(item: $coachAttempt) { ctx in
+            CoachStepSheet(
+                coachAttempt: $coachAttempt,
+                flowModel: flowModel,
+                studentId: studentId,
+                attemptId: ctx.id,
+                onContinue: {}
+            )
+        }
+        .fullScreenCover(isPresented: $showCoachChat) {
+            CoachChatView(studentId: studentId)
         }
     }
 
@@ -248,5 +267,51 @@ struct QuestionDetailView: View {
                     shadowY: AppMetrics.cardShadowY
                 )
         }
+    }
+
+    private var coachFloatingButton: some View {
+        VStack {
+            Spacer()
+
+            HStack {
+                Spacer()
+
+                Button {
+                    handleCoachTap()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14, weight: .semibold))
+
+                        Text("AI老师")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(AppTheme.textOnAccent)
+                    .padding(.vertical, 12)
+                    .padding(.horizontal, 14)
+                    .background(AppTheme.accent)
+                    .clipShape(Capsule())
+                    .shadow(color: AppTheme.shadowStrong, radius: 10, x: 0, y: 6)
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 20)
+                .padding(.bottom, 22)
+            }
+        }
+    }
+
+    private func handleCoachTap() {
+        if question.isCorrect {
+            showCoachChat = true
+            return
+        }
+
+        guard let attemptId = question.attemptId else {
+            showCoachChat = true
+            return
+        }
+
+        let answer = question.userAnswer?.displayString ?? ""
+        coachAttempt = CoachAttemptContext(id: attemptId, questionId: question.questionId, answer: answer)
     }
 }

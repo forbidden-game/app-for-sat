@@ -357,6 +357,7 @@
   "questions": [
     {
       "question_id": "uuid",
+      "attempt_id": "uuid",
       "position": 1,
       "is_correct": true,
       "user_answer": "B",

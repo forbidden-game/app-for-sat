@@ -110,6 +110,13 @@ Before coding, explicitly assess:
 - For purely cosmetic or mechanical changes: new tests are optional, but run the closest existing suite and keep CI green.
 - Prefer the cheapest test that proves the behavior: `StudentCore` unit tests > integration tests > UI/E2E.
 
+### TDD (red-green-refactor)
+
+- Start by writing a failing test that captures expected behavior and edge cases.
+- Implement the minimal change to pass the test; avoid unrelated refactors.
+- Refactor for clarity/performance while keeping tests green.
+- For UI flows, prefer unit tests on view models or `StudentCore` decoding before UI/E2E.
+
 ### iOS: MCP-first debugging
 
 - Prefer XcodeBuildMCP tooling for building, running, and Simulator debugging.
