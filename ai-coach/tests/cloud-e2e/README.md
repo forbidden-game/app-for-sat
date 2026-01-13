@@ -17,6 +17,12 @@ source web/admin-dashboard/.env.local
 set +a
 ```
 
+If migrations/functions are not deployed yet:
+
+```bash
+ENV_FILE=web/admin-dashboard/.env.local ai-coach/scripts/deploy-cloud.sh
+```
+
 Required variables:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
