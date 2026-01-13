@@ -527,6 +527,8 @@
 - `coach_thread_messages_student_created_at_idx` on `coach_thread_messages(student_id, created_at)`
 - `ai_jobs_attempt_insight_unique` on `ai_jobs(attempt_id)` where `kind = 'attempt_insight'`
 - `ai_jobs_status_run_after_idx` on `ai_jobs(status, run_after)`
+- `push_tokens_student_idx` on `push_tokens(student_id, updated_at)`
+- `notification_events_status_idx` on `notification_events(status, created_at)`
 
 ---
 
@@ -576,7 +578,31 @@
 ---
 
 ### `public.ai_jobs`
-**用途**：异步任务队列（MVP: `attempt_insight`）。
+**用途**：异步任务队列（MVP: `attempt_insight` + `coach_reply`）。
+
+---
+
+### `public.push_tokens`
+**用途**：设备推送 token（APNs/FCM）存储。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `student_id` uuid
+- `device_token` text
+- `platform` text (`apns` | `fcm`)
+- `last_seen_at` timestamptz
+
+---
+
+### `public.notification_events`
+**用途**：推送通知待发送队列（由 worker 入队）。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `student_id` uuid
+- `event_type` text (`attempt_insight_ready` | `coach_reply_ready`)
+- `payload` jsonb
+- `status` text (`queued` | `sent` | `error`)
 
 ---
 
