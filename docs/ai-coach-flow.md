@@ -44,7 +44,7 @@ When a student selects a step (or changes it), `set_attempt_step` requeues the `
 
 ## Notifications (Draft)
 - `notification_events` is an outbox table for push notifications.
-- A future sender should read `notification_events` where `status = 'queued'`, send APNs/FCM, then mark as `sent` or `error`.
+- Sender worker claims queued events via `claim_notification_events`, sends APNs/FCM, then marks as `sent` or `error`.
 - `push_tokens` stores per-student device tokens. `register_push_token` Edge Function upserts tokens.
 
 ## Environment Variables

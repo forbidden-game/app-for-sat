@@ -8,6 +8,7 @@ Migrations added:
 - `supabase/migrations/202601130530_ai_coach_procedure_search.sql`
 - `supabase/migrations/202601130610_ai_coach_chat.sql`
 - `supabase/migrations/202601140200_ai_coach_reports.sql`
+- `supabase/migrations/202601140320_notification_sender.sql`
 
 Local apply:
 - `supabase start`
@@ -32,6 +33,20 @@ Run:
 
 Notes:
 - Worker will periodically enqueue `snapshot_refresh` + `progress_report` jobs (interval via `AI_COACH_SCHEDULE_INTERVAL_MS`).
+
+## Notification Sender
+Location: `ai-coach/notification-sender/`
+
+Setup:
+- Copy `ai-coach/notification-sender/.env.example` to `ai-coach/notification-sender/.env`
+- Fill:
+  - `SUPABASE_URL`
+  - `SUPABASE_SERVICE_ROLE_KEY`
+
+Run:
+- `cd ai-coach/notification-sender`
+- `npm install`
+- `npm run dev`
 
 ## Edge Functions
 - `submit_attempt`: scores + inserts an `attempts` row and returns `{ isCorrect, attemptId }`.

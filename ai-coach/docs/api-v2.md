@@ -82,6 +82,10 @@ RLS：
 用途：拉取近 N 天有练习记录的学生列表（调度用）。
 权限：service_role only。
 
+### 3.3 `claim_notification_events(p_worker_id, p_limit)`
+用途：通知发送 worker 领取 `notification_events`。
+权限：service_role only。
+
 ---
 
 ## 4. Job 设计

@@ -5,7 +5,7 @@
 ## 总览
 - 表数量：17
 - 视图数量：1
-- 函数/RPC：11（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC、2 个 AI Coach 统计 RPC）
+- 函数/RPC：12（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC、3 个 AI Coach 统计/队列 RPC）
 
 ## 表结构
 
@@ -531,6 +531,7 @@
 - `student_reports_student_created_at_idx` on `student_reports(student_id, created_at desc)`
 - `push_tokens_student_idx` on `push_tokens(student_id, updated_at)`
 - `notification_events_status_idx` on `notification_events(status, created_at)`
+- `notification_events_status_updated_at_idx` on `notification_events(status, updated_at)`
 
 ---
 
@@ -630,7 +631,9 @@
 - `student_id` uuid
 - `event_type` text (`attempt_insight_ready` | `coach_reply_ready` | `progress_report_ready`)
 - `payload` jsonb
-- `status` text (`queued` | `sent` | `error`)
+- `status` text (`queued` | `sending` | `sent` | `error`)
+- `locked_at` timestamptz
+- `locked_by` text
 
 ---
 
@@ -653,3 +656,6 @@
 
 ### `public.list_active_students(p_since timestamptz)`
 **用途**：返回近 N 天有练习记录的学生，用于定期报告调度。
+
+### `public.claim_notification_events(p_worker_id text, p_limit int)`
+**用途**：通知发送 worker 原子性 claim `notification_events`（`queued` -> `sending`）。
