@@ -87,7 +87,8 @@ Prereq: the cloud project credentials are in `web/admin-dashboard/.env.local` (d
   - [ ] `cd ai-coach/coach-service && npm run dev`
 - [ ] Run cloud E2E smoke tests (creates + cleans up temp data; use staging project):
   - [ ] `deno test --allow-env --allow-net ai-coach/tests/cloud-e2e/`
-- [ ] iOS manual flow: submit wrong attempt → choose step → see insight → tap “Ask Coach” → observe streaming reply in chat.
+  - [x] Covered paths: `submit_attempt` job enqueue, `set_attempt_step` bump, `coach_chat` enqueue, `linked_attempt_id`.
+- [ ] iOS manual flow: submit wrong attempt → choose step → see insight → tap “去问全科老师” → observe streaming reply in chat.
 
 ---
 
