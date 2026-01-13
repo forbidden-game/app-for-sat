@@ -9,6 +9,7 @@ struct QuestionDetailView: View {
 
     @State private var coachAttempt: CoachAttemptContext?
     @State private var showCoachChat = false
+    @State private var coachChatAttemptId: String?
 
     private let correctColor = AppTheme.statusSuccess
     private let incorrectColor = AppTheme.statusDanger
@@ -49,7 +50,7 @@ struct QuestionDetailView: View {
             )
         }
         .fullScreenCover(isPresented: $showCoachChat) {
-            CoachChatView(studentId: studentId)
+            CoachChatView(studentId: studentId, linkedAttemptId: coachChatAttemptId)
         }
     }
 
@@ -301,12 +302,16 @@ struct QuestionDetailView: View {
     }
 
     private func handleCoachTap() {
+        let resolvedAttemptId = question.attemptId ?? flowModel.attemptId(for: question.questionId)
+
         if question.isCorrect {
+            coachChatAttemptId = resolvedAttemptId
             showCoachChat = true
             return
         }
 
-        guard let attemptId = question.attemptId else {
+        guard let attemptId = resolvedAttemptId else {
+            coachChatAttemptId = nil
             showCoachChat = true
             return
         }

@@ -30,6 +30,7 @@ final class PracticeFlowViewModel: ObservableObject {
     private let practiceService: SupabasePracticeService
     private let insightCache = AttemptInsightCache.shared
     private var insightPrefetchTasks: [String: Task<Void, Never>] = [:]
+    private var attemptIdsByQuestion: [String: String] = [:]
     private var pendingAnswers: [String: String] = [:]
 
     init(session: PracticeSession, sessionId: String, practiceService: SupabasePracticeService = SupabasePracticeService()) {
@@ -48,6 +49,7 @@ final class PracticeFlowViewModel: ObservableObject {
         )
 
         correctByQuestion[question.id] = result.isCorrect
+        attemptIdsByQuestion[question.id] = result.attemptId
         pendingAnswers.removeValue(forKey: question.id)
 
         if result.isCorrect == false {
@@ -58,6 +60,16 @@ final class PracticeFlowViewModel: ObservableObject {
         }
 
         return result
+    }
+
+    func attemptId(for questionId: String) -> String? {
+        if let attemptId = attemptIdsByQuestion[questionId] {
+            return attemptId
+        }
+        if let result = sessionResult {
+            return result.questions.first(where: { $0.questionId == questionId })?.attemptId
+        }
+        return nil
     }
 
     func setAttemptStepSelection(attemptId: String, selectedStepIndex: Int?, isUnknown: Bool) async throws {
@@ -112,11 +124,17 @@ final class PracticeFlowViewModel: ObservableObject {
                             sessionId: sessionId
                         )
                         correctByQuestion[question.id] = result.isCorrect
+                        attemptIdsByQuestion[question.id] = result.attemptId
                     }
                 }
                 pendingAnswers.removeAll()
 
                 let result = try await practiceService.fetchSessionResult(sessionId: sessionId)
+                for question in result.questions {
+                    if let attemptId = question.attemptId {
+                        attemptIdsByQuestion[question.questionId] = attemptId
+                    }
+                }
                 sessionResult = result
                 flowState = .result(result)
             } catch {

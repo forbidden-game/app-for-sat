@@ -10,12 +10,20 @@ final class CoachChatViewModel: ObservableObject {
     @Published var isSending = false
 
     private let studentId: String
+    private let linkedAttemptId: String?
     private let service: SupabaseCoachService
     private var pollingTask: Task<Void, Never>?
 
-    init(studentId: String, service: SupabaseCoachService = SupabaseCoachService()) {
+    init(
+        studentId: String,
+        linkedAttemptId: String? = nil,
+        initialDraftText: String? = nil,
+        service: SupabaseCoachService = SupabaseCoachService()
+    ) {
         self.studentId = studentId
+        self.linkedAttemptId = linkedAttemptId
         self.service = service
+        self.draftText = initialDraftText ?? ""
     }
 
     func load() async {
@@ -50,7 +58,7 @@ final class CoachChatViewModel: ObservableObject {
         defer { isSending = false }
 
         do {
-            _ = try await service.sendMessage(text: text)
+            _ = try await service.sendMessage(text: text, linkedAttemptId: linkedAttemptId)
             draftText = ""
         } catch {
             errorMessage = UserFacingError.message(error)

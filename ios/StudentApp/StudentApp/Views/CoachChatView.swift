@@ -6,8 +6,14 @@ struct CoachChatView: View {
 
     @StateObject private var vm: CoachChatViewModel
 
-    init(studentId: String) {
-        _vm = StateObject(wrappedValue: CoachChatViewModel(studentId: studentId))
+    init(studentId: String, linkedAttemptId: String? = nil, initialDraftText: String? = nil) {
+        _vm = StateObject(
+            wrappedValue: CoachChatViewModel(
+                studentId: studentId,
+                linkedAttemptId: linkedAttemptId,
+                initialDraftText: initialDraftText
+            )
+        )
     }
 
     var body: some View {
