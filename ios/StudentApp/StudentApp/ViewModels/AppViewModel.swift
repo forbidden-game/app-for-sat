@@ -45,7 +45,7 @@ final class AppViewModel: ObservableObject {
             selectedBank = nil
             banks = []
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(error)
         }
     }
 
@@ -64,7 +64,7 @@ final class AppViewModel: ObservableObject {
             user = authedUser
             await loadBanks()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(error)
         }
         isLoading = false
     }
@@ -75,7 +75,7 @@ final class AppViewModel: ObservableObject {
         do {
             banks = try await practiceService.fetchQuestionBanks()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(error)
         }
         isLoading = false
     }
@@ -91,7 +91,7 @@ final class AppViewModel: ObservableObject {
             session = newSession
             sessionId = newSession.id
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(error)
             selectedBank = nil
         }
         isLoading = false

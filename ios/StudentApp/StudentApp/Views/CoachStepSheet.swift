@@ -311,7 +311,7 @@ struct CoachStepSheet: View {
             _ = try await service.sendMessage(text: messageText, linkedAttemptId: attemptId)
             showCoachChat = true
         } catch {
-            askCoachErrorMessage = error.localizedDescription
+            askCoachErrorMessage = UserFacingError.message(error)
         }
     }
 

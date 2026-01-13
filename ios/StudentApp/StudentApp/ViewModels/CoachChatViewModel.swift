@@ -11,6 +11,7 @@ final class CoachChatViewModel: ObservableObject {
 
     private let studentId: String
     private let service: SupabaseCoachService
+    private var pollingTask: Task<Void, Never>?
 
     init(studentId: String, service: SupabaseCoachService = SupabaseCoachService()) {
         self.studentId = studentId
@@ -21,7 +22,7 @@ final class CoachChatViewModel: ObservableObject {
         do {
             messages = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(error)
         }
 
         do {
@@ -30,11 +31,14 @@ final class CoachChatViewModel: ObservableObject {
                 self.upsertMessage(msg)
             }
         } catch {
-            errorMessage = error.localizedDescription
+            // Realtime is best-effort; if it fails (e.g. websocket blocked), fall back to polling.
+            startPolling()
         }
     }
 
     func stop() async {
+        pollingTask?.cancel()
+        pollingTask = nil
         await service.stopRealtime()
     }
 
@@ -49,7 +53,7 @@ final class CoachChatViewModel: ObservableObject {
             _ = try await service.sendMessage(text: text)
             draftText = ""
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(error)
         }
     }
 
@@ -59,6 +63,30 @@ final class CoachChatViewModel: ObservableObject {
         } else {
             messages.append(msg)
             messages.sort(by: { $0.createdAt < $1.createdAt })
+        }
+    }
+
+    private func startPolling() {
+        if pollingTask != nil {
+            return
+        }
+
+        let studentId = self.studentId
+        let service = self.service
+
+        pollingTask = Task { [weak self] in
+            while !Task.isCancelled {
+                do {
+                    let latest = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
+                    await MainActor.run {
+                        self?.messages = latest
+                    }
+                } catch {
+                    // Best-effort: keep polling silently; UI can still send.
+                }
+
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
         }
     }
 }
