@@ -1,23 +1,89 @@
 # AI Coach Plan
 
-## Goals (MVP)
-- Process wrong attempts (`attempts.is_correct=false`) asynchronously.
-- For each wrong attempt, produce:
-  - `procedure_id` + `steps` (create/merge guardrails)
-  - `error_step_index` + `error_mode_enum`
-  - short explanation + 1–2 follow-up questions
-  - similar mistakes evidence (procedure + step)
-- Persist results to DB (`attempt_insights`) and update `student_snapshot`.
-- Provide a Coach Service (Node/TS worker) that claims jobs from DB and runs the agent.
+## Product Goal
+Build an “AI Coach” per student:
+1) Wrong-answer coaching: short, strict step-based correction for SAT Math.
+2) One global thread per student (“全科老师总线程”): cross-question chat with long-term learning state.
 
-## Milestones
-1. DB migrations + schema doc update
-2. Coach Service skeleton (config, DB client, job loop)
-3. Attempt insight agent + tool implementations
-4. (Later) iOS UI: step selection + coach thread UI
+Key constraints:
+- Similar-mistake key: `procedure_id + error_step_index` primary; `error_mode` secondary.
+- iOS step selection required by default (with an “unknown” option).
+- All new feature code/docs live under `ai-coach/`.
 
-## Tracking
-- [ ] Milestone 1
-- [ ] Milestone 2
-- [ ] Milestone 3
-- [ ] Milestone 4
+---
+
+## Current Status
+
+### Done (MVP: Wrong Attempt → Insight)
+- [x] Supabase schema + RLS for AI Coach tables (`procedures`, `attempt_insights`, `student_snapshots`, `coach_thread_messages`, `ai_jobs`).
+- [x] Job system: enqueue on wrong attempt, claim + process in worker.
+- [x] Worker: tool-based agent writes `attempt_insights` + updates `student_snapshots`.
+- [x] Edge functions:
+  - [x] `submit_attempt` returns `{ isCorrect, attemptId }` and persists step selection if present.
+  - [x] `set_attempt_step` updates step selection post-attempt and bumps `ai_jobs.run_after`.
+- [x] iOS:
+  - [x] `CoachStepSheet` required step selection + polling for `attempt_insights`.
+  - [x] Practice flow integration: show coach sheet on wrong and advance on dismiss.
+
+### Done (MVP: 全科老师总线程 Chat)
+- [x] Migration `supabase/migrations/202601130610_ai_coach_chat.sql`:
+  - [x] Allow `ai_jobs.kind = 'coach_reply'`.
+  - [x] Add `coach_thread_messages` (and optional `attempt_insights`) to `supabase_realtime` publication.
+- [x] Edge function `supabase/functions/coach_chat`:
+  - [x] Verify JWT via `Authorization: Bearer <token>` using `auth.getUser`.
+  - [x] Insert user message into `coach_thread_messages`.
+  - [x] Enqueue `ai_jobs(kind='coach_reply')`.
+- [x] Worker:
+  - [x] Process `coach_reply` jobs.
+  - [x] Insert assistant message with streaming status then update content incrementally (realtime-friendly).
+- [x] iOS:
+  - [x] `CoachChatView` + `CoachChatViewModel`.
+  - [x] Realtime subscription (insert/update) on `coach_thread_messages` to render streaming replies.
+  - [x] Entry point in side panel.
+
+### Verified
+- [x] Local: `swift test --package-path ios/StudentCore` passes.
+- [x] Local: `xcodebuild ... build` passes.
+- [x] CI: GitHub Actions `Test` green after chat + docs.
+
+---
+
+## Next Steps (prioritized)
+
+### P0 — Connect “wrong attempt coaching” → “global thread chat”
+- [ ] Add a CTA in `CoachStepSheet`: “Ask Coach” / “继续追问”.
+- [ ] Send a message via `coach_chat` with `linked_attempt_id = attemptId` and a short structured prompt (e.g. “我卡在第 X 步，错因是什么？给我下一步训练题”).
+- [ ] Open `CoachChatView` focused on the new message.
+
+### P0 — Chat reliability + UX basics
+- [ ] Initial history load (last N messages) before realtime subscription.
+- [ ] Stable streaming UX: explicit `status`/`isStreaming` in assistant messages, stop conditions, and error fallback.
+- [ ] Retry path for failed `coach_chat` calls (network/auth).
+
+### P1 — Job hygiene (avoid spam + improve latency)
+- [ ] Coalesce/merge `coach_reply` jobs per student (e.g., ignore queued replies if a newer user message exists).
+- [ ] Add minimal rate limiting / cooldown to prevent runaway costs.
+
+### P1 — Context management (thread summary)
+- [ ] Implement `ai_jobs(kind='thread_summary')`:
+  - [ ] Summarize older messages into a compact memory blob.
+  - [ ] Ensure `coach_reply` prompt uses summary + recent messages + `student_snapshots`.
+
+### P2 — Observability + ops
+- [ ] Add structured logging fields: `job_id`, `student_id`, `attempt_id`.
+- [ ] Track basic metrics (counts, latency, error rate) via DB columns or logs.
+
+---
+
+## Local End-to-End Validation (now that Docker is available)
+- [ ] `supabase start` and `supabase db reset`.
+- [ ] `supabase functions serve coach_chat` (and existing functions).
+- [ ] Run worker: `cd ai-coach/coach-service && npm run dev`.
+- [ ] iOS: submit a wrong attempt → choose step → see insight → tap “Ask Coach” → observe streaming reply in chat.
+
+---
+
+## Definition of Done (for next increment)
+- The step sheet can deep-link into chat and include the attempt context (`linked_attempt_id`).
+- Chat shows history + streaming without duplicates or missing updates.
+- CI remains green.
