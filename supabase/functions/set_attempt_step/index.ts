@@ -86,16 +86,40 @@ serve(async (req) => {
     return jsonResponse({ error: "attempt_not_found" }, 404);
   }
 
-  const { error: bumpJobError } = await supabase
+  const now = new Date().toISOString();
+
+  const { data: requeued, error: requeueError } = await supabase
     .from("ai_jobs")
-    .update({ run_after: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({
+      status: "queued",
+      run_after: now,
+      updated_at: now,
+      locked_at: null,
+      locked_by: null,
+      error: null,
+    })
     .eq("attempt_id", body.attempt_id)
     .eq("kind", "attempt_insight")
-    .eq("status", "queued");
+    .select("id")
+    .maybeSingle();
 
-  if (bumpJobError) {
-    // Best-effort: attempt step is already saved.
-    console.warn("Failed to bump ai job run_after", bumpJobError.message);
+  if (requeueError) {
+    console.warn("Failed to requeue ai job", requeueError.message);
+  }
+
+  if (!requeued) {
+    const { error: insertJobError } = await supabase.from("ai_jobs").insert({
+      kind: "attempt_insight",
+      status: "queued",
+      attempt_id: body.attempt_id,
+      student_id: studentId,
+      payload: { attempt_id: body.attempt_id },
+      run_after: now,
+    });
+
+    if (insertJobError) {
+      console.warn("Failed to insert ai job", insertJobError.message);
+    }
   }
 
   return jsonResponse({ ok: true }, 200);
