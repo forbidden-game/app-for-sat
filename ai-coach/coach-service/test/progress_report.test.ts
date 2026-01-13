@@ -464,9 +464,14 @@ describe("processProgressReportJob", () => {
   });
 
   const minimaxKey = process.env.MINIMAX_API_KEY;
-  const llmIt = minimaxKey ? it : it.skip;
+  if (!minimaxKey) {
+    it("requires MINIMAX_API_KEY for LLM integration tests", () => {
+      throw new Error("MINIMAX_API_KEY is required for LLM integration tests");
+    });
+    return;
+  }
 
-  llmIt(
+  it(
     "minimax integration: generates non-empty summary and plan (weekly)",
     async () => {
       const current = makeStats({ attempts: { total: 10, correct: 6, accuracy: 0.6 } });
@@ -507,7 +512,7 @@ describe("processProgressReportJob", () => {
     { timeout: 120_000 },
   );
 
-  llmIt(
+  it(
     "minimax integration: generates non-empty summary and plan (monthly)",
     async () => {
       const current = makeStats({ attempts: { total: 18, correct: 12, accuracy: 0.67 } });

@@ -407,9 +407,14 @@ describe("processCoachReplyJob", () => {
   });
 
   const minimaxKey = process.env.MINIMAX_API_KEY;
-  const llmIt = minimaxKey ? it : it.skip;
+  if (!minimaxKey) {
+    it("requires MINIMAX_API_KEY for LLM integration tests", () => {
+      throw new Error("MINIMAX_API_KEY is required for LLM integration tests");
+    });
+    return;
+  }
 
-  llmIt("LLM integration inserts assistant reply", async () => {
+  it("LLM integration inserts assistant reply", async () => {
     const model = resolveModel("minimax/MiniMax-M2.1", "minimax");
     const agent = new Agent({
       initialState: {
