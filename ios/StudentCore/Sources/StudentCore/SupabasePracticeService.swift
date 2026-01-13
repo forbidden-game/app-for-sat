@@ -229,7 +229,10 @@ public final class SupabasePracticeService {
             return try await client.functions.invoke(
                 name,
                 options: FunctionInvokeOptions(
-                    headers: ["Authorization": "Bearer \(session.accessToken)"],
+                    headers: [
+                        "Authorization": "Bearer \(session.accessToken)",
+                        "apikey": SupabaseConfig.anonKey,
+                    ],
                     body: body
                 )
             )

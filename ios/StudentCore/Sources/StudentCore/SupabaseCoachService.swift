@@ -65,7 +65,10 @@ public final class SupabaseCoachService {
         let response: FunctionResponse = try await client.functions.invoke(
             "coach_chat",
             options: FunctionInvokeOptions(
-                headers: ["Authorization": "Bearer \(session.accessToken)"],
+                headers: [
+                    "Authorization": "Bearer \(session.accessToken)",
+                    "apikey": SupabaseConfig.anonKey,
+                ],
                 body: Payload(text: trimmed, linked_attempt_id: linkedAttemptId)
             )
         )
