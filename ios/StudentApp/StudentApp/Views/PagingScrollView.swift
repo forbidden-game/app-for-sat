@@ -25,7 +25,8 @@ struct PagingScrollView<Page: View>: UIViewRepresentable {
         scrollView.isPagingEnabled = true
         scrollView.showsVerticalScrollIndicator = false
         scrollView.showsHorizontalScrollIndicator = false
-        scrollView.alwaysBounceVertical = pageCount > 1
+        scrollView.alwaysBounceHorizontal = pageCount > 1
+        scrollView.alwaysBounceVertical = false
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.keyboardDismissMode = .interactive
         scrollView.delegate = context.coordinator
@@ -34,7 +35,7 @@ struct PagingScrollView<Page: View>: UIViewRepresentable {
         context.coordinator.startKeyboardObservers()
 
         let stackView = UIStackView()
-        stackView.axis = .vertical
+        stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
         stackView.spacing = 0
@@ -47,7 +48,7 @@ struct PagingScrollView<Page: View>: UIViewRepresentable {
             stackView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
             stackView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             stackView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
-            stackView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
+            stackView.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor)
         ])
 
         context.coordinator.stackView = stackView
@@ -64,8 +65,8 @@ struct PagingScrollView<Page: View>: UIViewRepresentable {
         }
 
         let clampedPage = max(0, min(currentPage, max(pageCount - 1, 0)))
-        let targetOffset = CGPoint(x: 0, y: CGFloat(clampedPage) * scrollView.bounds.height)
-        if scrollView.bounds.height > 0, scrollView.contentOffset != targetOffset {
+        let targetOffset = CGPoint(x: CGFloat(clampedPage) * scrollView.bounds.width, y: 0)
+        if scrollView.bounds.width > 0, scrollView.contentOffset != targetOffset {
             context.coordinator.isProgrammaticScroll = true
             scrollView.setContentOffset(targetOffset, animated: true)
         }
@@ -85,7 +86,7 @@ struct PagingScrollView<Page: View>: UIViewRepresentable {
             controller.view.translatesAutoresizingMaskIntoConstraints = false
             stackView.addArrangedSubview(controller.view)
 
-            controller.view.heightAnchor.constraint(equalTo: scrollView.frameLayoutGuide.heightAnchor).isActive = true
+            controller.view.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor).isActive = true
             context.coordinator.hostingControllers.append(controller)
         }
 
@@ -158,17 +159,17 @@ struct PagingScrollView<Page: View>: UIViewRepresentable {
         }
 
         private func snapToCurrentPage() {
-            guard let scrollView, scrollView.bounds.height > 0 else { return }
+            guard let scrollView, scrollView.bounds.width > 0 else { return }
             let clampedPage = max(0, min(currentPage.wrappedValue, max(pageCount - 1, 0)))
-            let targetOffset = CGPoint(x: 0, y: CGFloat(clampedPage) * scrollView.bounds.height)
+            let targetOffset = CGPoint(x: CGFloat(clampedPage) * scrollView.bounds.width, y: 0)
             if scrollView.contentOffset != targetOffset {
                 scrollView.setContentOffset(targetOffset, animated: false)
             }
         }
 
         private func updateCurrentPage(_ scrollView: UIScrollView) {
-            guard !isProgrammaticScroll, scrollView.bounds.height > 0 else { return }
-            let page = Int(round(scrollView.contentOffset.y / scrollView.bounds.height))
+            guard !isProgrammaticScroll, scrollView.bounds.width > 0 else { return }
+            let page = Int(round(scrollView.contentOffset.x / scrollView.bounds.width))
             if currentPage.wrappedValue != page {
                 currentPage.wrappedValue = page
             }

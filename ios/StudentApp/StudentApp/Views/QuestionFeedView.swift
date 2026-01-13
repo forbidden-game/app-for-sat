@@ -93,18 +93,24 @@ struct QuestionFeedView: View {
             VStack(spacing: AppMetrics.sectionSpacing) {
                 header(progress: progress, index: index + 1, total: total, question: question)
 
-                questionCard(text: question.stem)
+                ScrollView {
+                    VStack(spacing: AppMetrics.sectionSpacing) {
+                        questionCard(text: question.stem)
 
-                if let options = question.options, !options.isEmpty {
-                    optionsGrid(options, questionId: question.id, questionIndex: index)
-                } else {
-                    freeResponseField(questionId: question.id, questionIndex: index)
+                        if let options = question.options, !options.isEmpty {
+                            optionsGrid(options, questionId: question.id, questionIndex: index)
+                        } else {
+                            freeResponseField(questionId: question.id, questionIndex: index)
+                        }
+
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.bottom, AppMetrics.pageBottomPadding)
                 }
-
+                .scrollIndicators(.hidden)
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-            .padding(.bottom, AppMetrics.pageBottomPadding)
             .scrollTransition(.animated(.spring(response: 0.35, dampingFraction: 0.9))) { content, phase in
                 content
                     .scaleEffect(1 - abs(phase.value) * 0.05)
@@ -128,7 +134,7 @@ struct QuestionFeedView: View {
                 .font(.title2.bold())
                 .foregroundStyle(AppTheme.textPrimary)
             
-            Text("Swipe up to see overview")
+            Text("Swipe left to see overview")
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.textMuted)
             
