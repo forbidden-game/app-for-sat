@@ -75,11 +75,18 @@ Key constraints:
 
 ---
 
-## Local End-to-End Validation (now that Docker is available)
-- [ ] `supabase start` and `supabase db reset`.
-- [ ] `supabase functions serve coach_chat` (and existing functions).
-- [ ] Run worker: `cd ai-coach/coach-service && npm run dev`.
-- [ ] iOS: submit a wrong attempt → choose step → see insight → tap “Ask Coach” → observe streaming reply in chat.
+## Cloud End-to-End Validation (Supabase Cloud)
+Prereq: the cloud project credentials are in `web/admin-dashboard/.env.local` (do not commit).
+
+- [ ] Export env vars for local tools/tests:
+  - [ ] `set -a; source web/admin-dashboard/.env.local; set +a`
+- [ ] Ensure Edge Functions + migrations are deployed to the cloud project.
+- [ ] Run worker against cloud:
+  - [ ] Create `ai-coach/coach-service/.env` with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MINIMAX_API_KEY`.
+  - [ ] `cd ai-coach/coach-service && npm run dev`
+- [ ] Run cloud E2E smoke tests (creates + cleans up temp data; use staging project):
+  - [ ] `deno test --allow-env --allow-net ai-coach/tests/cloud-e2e/`
+- [ ] iOS manual flow: submit wrong attempt → choose step → see insight → tap “Ask Coach” → observe streaming reply in chat.
 
 ---
 
