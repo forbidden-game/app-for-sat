@@ -5,3 +5,21 @@ port = 54321
 
 [db]
 port = 54322
+
+[functions.submit_attempt]
+verify_jwt = false
+
+[functions.set_attempt_step]
+verify_jwt = false
+
+[functions.coach_chat]
+verify_jwt = false
+
+[functions.register_push_token]
+verify_jwt = false
+
+[functions.process_ai_jobs]
+verify_jwt = false
+
+[functions.sign-asset-upload]
+verify_jwt = false

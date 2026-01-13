@@ -7,9 +7,11 @@ public struct PracticeSessionRow: Decodable {
 
 public final class SupabasePracticeService {
     private let client: SupabaseClient
+    private let tokenProvider: SupabaseAuthTokenProvider
 
     public init(client: SupabaseClient = SupabaseService.shared.client) {
         self.client = client
+        self.tokenProvider = SupabaseAuthTokenProvider(client: client)
     }
 
     public func fetchQuestionBanks() async throws -> [QuestionBank] {
@@ -222,33 +224,82 @@ public final class SupabasePracticeService {
     private func invokeFunction<Response: Decodable, Body: Encodable>(
         _ name: String,
         body: Body,
+        accessToken: String? = nil,
         retryOnUnauthorized: Bool = true
     ) async throws -> Response {
         do {
-            let session = try await client.auth.session
+            let token: String
+            if let accessToken {
+                token = accessToken
+            } else {
+                token = try await tokenProvider.accessToken()
+            }
+#if DEBUG
+            let session = client.auth.currentSession
+            let sessionState = session == nil ? "missing" : "present"
+            let exp = session.map { Int($0.expiresAt) }
+            let jwtSummary = session.flatMap { JwtUtils.debugSummary(from: $0.accessToken) } ?? "jwt=missing"
+            print("[SupabasePracticeService] invoke \(name) session=\(sessionState) exp=\(exp.map(String.init) ?? "n/a") \(jwtSummary)")
+#endif
             return try await client.functions.invoke(
                 name,
                 options: FunctionInvokeOptions(
                     headers: [
-                        "Authorization": "Bearer \(session.accessToken)",
+                        "Authorization": "Bearer \(token)",
                         "apikey": SupabaseConfig.anonKey,
                     ],
                     body: body
                 )
             )
+        } catch let error as AuthError {
+            if error == .sessionMissing {
+                try? await client.auth.signOut()
+                throw NSError(
+                    domain: "SupabasePracticeService",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "Authentication expired. Please sign in again."]
+                )
+            }
+            throw error
         } catch let error as FunctionsError {
             guard case let .httpError(code, data) = error else {
                 throw error
             }
 
             if code == 401, retryOnUnauthorized {
-                _ = try? await client.auth.refreshSession()
-                return try await invokeFunction(name, body: body, retryOnUnauthorized: false)
+#if DEBUG
+                let message = decodeFunctionError(from: data) ?? "unknown"
+                print("[SupabasePracticeService] 401 retrying after refresh: \(message)")
+#endif
+                do {
+                    let refreshedToken = try await tokenProvider.refreshAccessToken()
+                    return try await invokeFunction(
+                        name,
+                        body: body,
+                        accessToken: refreshedToken,
+                        retryOnUnauthorized: false
+                    )
+                } catch {
+                    try? await client.auth.signOut()
+                    throw NSError(
+                        domain: "SupabasePracticeService",
+                        code: code,
+                        userInfo: [NSLocalizedDescriptionKey: "Authentication expired. Please sign in again."]
+                    )
+                }
             }
 
             let message = decodeFunctionError(from: data)
             let rawBody = decodeRawBody(from: data)
             let sessionDebug = currentSessionDebug()
+            if code == 401, isInvalidJwt(message: message, rawBody: rawBody) {
+                try? await client.auth.signOut()
+                throw NSError(
+                    domain: "SupabasePracticeService",
+                    code: code,
+                    userInfo: [NSLocalizedDescriptionKey: "Authentication expired. Please sign in again."]
+                )
+            }
             let description = formatFunctionError(
                 code: code,
                 message: message,
@@ -268,10 +319,33 @@ public final class SupabasePracticeService {
             let error: String?
         }
 
-        guard let payload = try? JSONDecoder().decode(FunctionErrorPayload.self, from: data) else {
-            return nil
+        struct FunctionMessagePayload: Decodable {
+            let message: String?
         }
-        return payload.error
+
+        if let payload = try? JSONDecoder().decode(FunctionErrorPayload.self, from: data),
+           let error = payload.error,
+           !error.isEmpty {
+            return error
+        }
+
+        if let payload = try? JSONDecoder().decode(FunctionMessagePayload.self, from: data),
+           let message = payload.message,
+           !message.isEmpty {
+            return message
+        }
+
+        if let object = try? JSONSerialization.jsonObject(with: data),
+           let dict = object as? [String: Any] {
+            if let error = dict["error"] as? String, !error.isEmpty {
+                return error
+            }
+            if let message = dict["message"] as? String, !message.isEmpty {
+                return message
+            }
+        }
+
+        return nil
     }
 
     private func decodeRawBody(from data: Data) -> String? {
@@ -292,19 +366,18 @@ public final class SupabasePracticeService {
 #else
         suffix = ""
 #endif
-        switch message {
-        case "missing_authorization", "invalid_authorization":
+        if isInvalidJwt(message: message, rawBody: rawBody) {
             return "Authentication expired. Please sign in again."
-        default:
-            if let message, !message.isEmpty {
-                return "Edge function error (\(code)): \(message)\(suffix)"
-            }
-            if let rawBody {
-                let preview = String(rawBody.prefix(200))
-                return "Edge function error (\(code)): \(preview)\(suffix)"
-            }
-            return "Edge function error (\(code)).\(suffix)"
         }
+
+        if let message, !message.isEmpty {
+            return "Edge function error (\(code)): \(message)\(suffix)"
+        }
+        if let rawBody {
+            let preview = String(rawBody.prefix(200))
+            return "Edge function error (\(code)): \(preview)\(suffix)"
+        }
+        return "Edge function error (\(code)).\(suffix)"
     }
 
     private func currentSessionDebug() -> String? {
@@ -313,37 +386,39 @@ public final class SupabasePracticeService {
         }
         let expired = session.isExpired ? "expired" : "valid"
         let tokenLength = session.accessToken.count
-        let jwtInfo = decodeJwtInfo(from: session.accessToken) ?? "jwt=unreadable"
-        return "session=\(expired),tokenLength=\(tokenLength),\(jwtInfo)"
+        let jwtInfo = JwtUtils.debugSummary(from: session.accessToken) ?? "jwt=unreadable"
+        let now = Int(Date().timeIntervalSince1970)
+        let exp = JwtUtils.expiration(from: session.accessToken).map { Int($0) }
+        let expDelta = exp.map { $0 - now }
+        let timing = expDelta.map { "now=\(now),expIn=\($0)s" } ?? "now=\(now)"
+        return "session=\(expired),tokenLength=\(tokenLength),\(jwtInfo),\(timing)"
     }
 
-    private func decodeJwtInfo(from token: String) -> String? {
-        let parts = token.split(separator: ".")
-        guard parts.count >= 2 else { return nil }
-        let payloadPart = String(parts[1])
-        guard let payloadData = base64URLDecode(payloadPart) else { return nil }
-        guard
-            let object = try? JSONSerialization.jsonObject(with: payloadData),
-            let dict = object as? [String: Any]
-        else {
-            return nil
-        }
-        let iss = dict["iss"] as? String ?? "unknown"
-        let aud = dict["aud"] as? String ?? "unknown"
-        let role = dict["role"] as? String ?? "unknown"
-        let exp = dict["exp"] as? TimeInterval ?? 0
-        return "jwt=iss:\(iss),aud:\(aud),role:\(role),exp:\(Int(exp))"
-    }
+    private func isInvalidJwt(message: String?, rawBody: String?) -> Bool {
+        let normalizedMessage = message?.lowercased()
+        let normalizedRaw = rawBody?.lowercased()
 
-    private func base64URLDecode(_ value: String) -> Data? {
-        var base64 = value
-            .replacingOccurrences(of: "-", with: "+")
-            .replacingOccurrences(of: "_", with: "/")
-        let padding = 4 - (base64.count % 4)
-        if padding < 4 {
-            base64.append(String(repeating: "=", count: padding))
+        if normalizedMessage == "missing_authorization"
+            || normalizedMessage == "invalid_authorization"
+            || normalizedMessage?.contains("invalid jwt") == true
+            || normalizedMessage?.contains("jwt expired") == true {
+            return true
         }
-        return Data(base64Encoded: base64)
+
+        if normalizedRaw?.contains("invalid jwt") == true {
+            return true
+        }
+
+        if let rawBody,
+           let data = rawBody.data(using: .utf8),
+           let object = try? JSONSerialization.jsonObject(with: data),
+           let dict = object as? [String: Any],
+           let message = dict["message"] as? String,
+           message.lowercased().contains("invalid jwt") == true {
+            return true
+        }
+
+        return false
     }
 }
 
