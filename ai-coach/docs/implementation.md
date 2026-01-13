@@ -7,6 +7,7 @@ Migrations added:
 - `supabase/migrations/202601130520_ai_coach_mvp.sql`
 - `supabase/migrations/202601130530_ai_coach_procedure_search.sql`
 - `supabase/migrations/202601130610_ai_coach_chat.sql`
+- `supabase/migrations/202601140200_ai_coach_reports.sql`
 
 Local apply:
 - `supabase start`
@@ -21,11 +22,16 @@ Setup:
   - `SUPABASE_URL`
   - `SUPABASE_SERVICE_ROLE_KEY`
   - `MINIMAX_API_KEY`
+  - `AI_COACH_MODEL_DEFAULT` (optional; defaults to `minimax/MiniMax-M2.1`)
+  - `AI_COACH_MODEL_INSIGHT` / `AI_COACH_MODEL_CHAT` / `AI_COACH_MODEL_REPORT` (optional overrides)
 
 Run:
 - `cd ai-coach/coach-service`
 - `npm install`
 - `npm run dev`
+
+Notes:
+- Worker will periodically enqueue `snapshot_refresh` + `progress_report` jobs (interval via `AI_COACH_SCHEDULE_INTERVAL_MS`).
 
 ## Edge Functions
 - `submit_attempt`: scores + inserts an `attempts` row and returns `{ isCorrect, attemptId }`.

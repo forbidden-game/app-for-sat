@@ -1,11 +1,11 @@
 # Supabase Schema（MVP）
 
-日期：2026-01-06
+日期：2026-01-14
 
 ## 总览
-- 表数量：16
+- 表数量：17
 - 视图数量：1
-- 函数/RPC：9（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC）
+- 函数/RPC：11（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC、2 个 AI Coach 统计 RPC）
 
 ## 表结构
 
@@ -527,6 +527,8 @@
 - `coach_thread_messages_student_created_at_idx` on `coach_thread_messages(student_id, created_at)`
 - `ai_jobs_attempt_insight_unique` on `ai_jobs(attempt_id)` where `kind = 'attempt_insight'`
 - `ai_jobs_status_run_after_idx` on `ai_jobs(status, run_after)`
+- `ai_jobs_kind_dedupe_key_unique` on `ai_jobs(kind, dedupe_key)` where `dedupe_key is not null`
+- `student_reports_student_created_at_idx` on `student_reports(student_id, created_at desc)`
 - `push_tokens_student_idx` on `push_tokens(student_id, updated_at)`
 - `notification_events_status_idx` on `notification_events(status, created_at)`
 
@@ -572,13 +574,39 @@
 
 ---
 
+### `public.student_reports`
+**用途**：周报/月报存档（阶段对比 + 下一步学习计划）。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `student_id` uuid
+- `period_kind` text (`weekly` | `monthly`)
+- `period_key` text（去重键）
+- `period_start` / `period_end` timestamptz
+- `metrics` jsonb
+- `delta` jsonb
+- `summary` text
+- `plan` jsonb
+- `model` text
+- `prompt_version` text
+- `cost_usd` numeric
+
+**约束**
+- unique `(student_id, period_key)`
+
+---
+
 ### `public.coach_thread_messages`
 **用途**：一人一个“全科老师总线程”的对话消息存档（允许跨题）。
 
 ---
 
 ### `public.ai_jobs`
-**用途**：异步任务队列（MVP: `attempt_insight` + `coach_reply`）。
+**用途**：异步任务队列（`attempt_insight` / `coach_reply` / `snapshot_refresh` / `progress_report` 等）。
+
+**字段**（摘要）
+- `kind` text
+- `dedupe_key` text（可空，同类任务去重）
 
 ---
 
@@ -600,7 +628,7 @@
 **字段**（摘要）
 - `id` uuid, PK
 - `student_id` uuid
-- `event_type` text (`attempt_insight_ready` | `coach_reply_ready`)
+- `event_type` text (`attempt_insight_ready` | `coach_reply_ready` | `progress_report_ready`)
 - `payload` jsonb
 - `status` text (`queued` | `sent` | `error`)
 
@@ -619,3 +647,9 @@
 
 ### `public.get_attempt_for_coach(p_attempt_id uuid)`
 **用途**：仅供 service role 读取 attempt + question（含 stem/options/answer_key/tags），用于生成错题讲解。
+
+### `public.get_student_period_stats(p_student_id uuid, p_start timestamptz, p_end timestamptz)`
+**用途**：生成学生周期统计（attempts / mistakes / coverage），仅 service role 可调用。
+
+### `public.list_active_students(p_since timestamptz)`
+**用途**：返回近 N 天有练习记录的学生，用于定期报告调度。

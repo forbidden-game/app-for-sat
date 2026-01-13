@@ -21,7 +21,7 @@ The draft worker runs as an Edge Function (`supabase/functions/process_ai_jobs`)
 
 ### Job Processing
 - Claims jobs via `claim_ai_jobs` (service role only).
-- Handles two kinds:
+- Handles kinds:
   - `attempt_insight`
     - Calls `get_attempt_for_coach` for full attempt + question context.
     - Builds a draft insight with `buildAttemptInsightDraft`.
@@ -33,6 +33,11 @@ The draft worker runs as an Edge Function (`supabase/functions/process_ai_jobs`)
     - Builds a draft reply via `buildCoachReplyDraft`.
     - Inserts an assistant message with `status: "streaming"`, then updates it in a few chunks.
     - Inserts a `notification_events` row (`coach_reply_ready`).
+  - `snapshot_refresh`
+    - Calls `get_student_period_stats` (7/30/90 days) and updates `student_snapshots`.
+  - `progress_report`
+    - Computes current + previous period stats, generates summary/plan, writes `student_reports`.
+    - Inserts a `notification_events` row (`progress_report_ready`).
 
 ### Regeneration Behavior
 When a student selects a step (or changes it), `set_attempt_step` requeues the `attempt_insight` job. The worker always upserts the insight, so the new attempt-step selection overwrites the previous result.

@@ -33,6 +33,7 @@
 - `ai-coach/docs/agent-tools.md`：工具调用契约（Tool schemas）。
 - `ai-coach/docs/error-modes.md`：SAT Math 初始 `error_mode_enum`（带 Unknown）。
 - `ai-coach/docs/procedures.md`：procedure/steps 自增长规则与模板。
+- `ai-coach/docs/api-v2.md`：AI Coach v2 API / Jobs 规范。
 
 ## 下一步（实现顺序建议）
 1. 先落 DB 表 + 最小 API：写入 insight、查询相似错误、读 student snapshot。
