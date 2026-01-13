@@ -23,7 +23,7 @@ export function parseModelSpec(spec: string, fallbackProvider: KnownProvider = "
 
 export function resolveModel(spec: string, fallbackProvider: KnownProvider = "minimax"): Model<any> {
   const parsed = parseModelSpec(spec, fallbackProvider);
-  const model = getModel(parsed.provider, parsed.modelId as any);
+  const model = (getModel as any)(parsed.provider, parsed.modelId) as Model<any>;
   if (!model) {
     throw new Error(`Unknown model: ${parsed.provider}/${parsed.modelId}`);
   }
