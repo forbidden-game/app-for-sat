@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/sh
+set -eu
 
 SERVICE_NAME="ai-coach-worker.service"
 ENV_FILE="/etc/app-for-sat/ai-coach.env"
@@ -7,21 +7,21 @@ WORKER_DIR="/root/apps/app-for-sat/ai-coach/coach-service"
 LOG_FILE="/var/log/ai-coach-healthcheck.log"
 
 log() {
-  local msg="$1"
+  msg="$1"
   printf "%s %s\n" "$(date -u +"%Y-%m-%dT%H:%M:%SZ")" "$msg" | tee -a "$LOG_FILE"
 }
 
-if [[ ! -f "$ENV_FILE" ]]; then
+if [ ! -f "$ENV_FILE" ]; then
   log "ERROR: missing env file $ENV_FILE"
   exit 1
 fi
 
 set -a
 # shellcheck disable=SC1090
-source "$ENV_FILE"
+. "$ENV_FILE"
 set +a
 
-if [[ -z "${SUPABASE_URL:-}" || -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]]; then
+if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
   log "ERROR: missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY"
   exit 1
 fi
@@ -32,7 +32,7 @@ if ! systemctl is-active --quiet "$SERVICE_NAME"; then
   exit 1
 fi
 
-if [[ ! -d "$WORKER_DIR" ]]; then
+if [ ! -d "$WORKER_DIR" ]; then
   log "ERROR: missing worker dir $WORKER_DIR"
   exit 1
 fi
