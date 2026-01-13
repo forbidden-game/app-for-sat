@@ -4,6 +4,7 @@ import SwiftUI
 struct SidePanelView: View {
     let displayName: String
     let onCoach: () -> Void
+    let onReports: () -> Void
     let onSignOut: () -> Void
 
     var body: some View {
@@ -36,6 +37,24 @@ struct SidePanelView: View {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 16, weight: .semibold))
                     Text("Coach")
+                        .font(.headline)
+                }
+                .foregroundStyle(AppTheme.textPrimary)
+                .padding(.vertical, AppMetrics.rowPaddingVertical)
+                .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .appSurface(
+                    fill: AppTheme.surface,
+                    stroke: AppTheme.divider
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onReports) {
+                HStack(spacing: 12) {
+                    Image(systemName: "doc.text.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("Reports")
                         .font(.headline)
                 }
                 .foregroundStyle(AppTheme.textPrimary)

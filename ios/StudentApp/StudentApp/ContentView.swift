@@ -10,6 +10,7 @@ import StudentCore
 
 struct ContentView: View {
     @StateObject private var vm = AppViewModel()
+    @StateObject private var pushTokenManager = PushTokenManager()
 
     var body: some View {
         Group {
@@ -27,6 +28,12 @@ struct ContentView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            pushTokenManager.updateAuth(userId: vm.user?.id)
+        }
+        .onChange(of: vm.user?.id) { _, newValue in
+            pushTokenManager.updateAuth(userId: newValue)
+        }
     }
 }
 
@@ -38,6 +45,7 @@ private struct MainContainerView: View {
     @ObservedObject var vm: AppViewModel
     @State private var showPanel = false
     @State private var showCoach = false
+    @State private var showReports = false
 
     var body: some View {
         SidePanelHost(isPresented: $showPanel) {
@@ -71,6 +79,9 @@ private struct MainContainerView: View {
             SidePanelView(displayName: displayName, onCoach: {
                 showCoach = true
                 showPanel = false
+            }, onReports: {
+                showReports = true
+                showPanel = false
             }) {
                 Task { await vm.signOut() }
             }
@@ -78,6 +89,11 @@ private struct MainContainerView: View {
         .sheet(isPresented: $showCoach) {
             if let studentId = vm.user?.id {
                 CoachChatView(studentId: studentId)
+            }
+        }
+        .sheet(isPresented: $showReports) {
+            if let studentId = vm.user?.id {
+                CoachReportsView(studentId: studentId)
             }
         }
         .onChange(of: isInSession) { _, newValue in
