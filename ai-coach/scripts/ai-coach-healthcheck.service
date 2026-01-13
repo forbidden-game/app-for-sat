@@ -1,0 +1,7 @@
+[Unit]
+Description=AI Coach Healthcheck
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ai-coach-healthcheck.sh

@@ -1,0 +1,10 @@
+[Unit]
+Description=Run AI Coach Healthcheck every 5 minutes
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=ai-coach-healthcheck.service
+
+[Install]
+WantedBy=timers.target
