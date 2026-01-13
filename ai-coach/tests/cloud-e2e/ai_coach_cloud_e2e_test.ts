@@ -35,6 +35,13 @@ type BankAndQuestion = {
   questionId: string;
 };
 
+type TestResources = {
+  userId?: string;
+  bankId?: string;
+  questionId?: string;
+  sessionId?: string;
+};
+
 async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -150,12 +157,39 @@ async function createBankAndQuestion(): Promise<BankAndQuestion> {
   return { bankId, bankSlug, questionId };
 }
 
-async function cleanupResources(resources: {
-  userId?: string;
-  bankId?: string;
-  questionId?: string;
-  sessionId?: string;
-}) {
+async function createSessionWithQuestion(studentId: string, bank: BankAndQuestion): Promise<string> {
+  const { data: session, error: sessionError } = await admin
+    .from("sessions")
+    .insert({
+      student_id: studentId,
+      mode: "practice",
+      total_questions: 1,
+      correct_count: 0,
+      bank_id: bank.bankId,
+    })
+    .select("id")
+    .single();
+
+  if (sessionError || !session) {
+    throw new Error(`Failed to create session: ${sessionError?.message ?? "unknown"}`);
+  }
+
+  const sessionId = session.id as string;
+
+  const { error: sessionQuestionError } = await admin.from("session_questions").insert({
+    session_id: sessionId,
+    question_id: bank.questionId,
+    position: 1,
+  });
+
+  if (sessionQuestionError) {
+    throw new Error(`Failed to create session question: ${sessionQuestionError.message}`);
+  }
+
+  return sessionId;
+}
+
+async function cleanupResources(resources: TestResources) {
   const { userId, bankId, questionId, sessionId } = resources;
 
   if (sessionId) {
@@ -190,12 +224,39 @@ async function postEdgeFunction(name: string, accessToken: string, body: Record<
   return { status: res.status, json };
 }
 
+function requireFunctionDeployed(status: number, json: unknown, functionName: string) {
+  const payload = JSON.stringify(json);
+  if (status === 404 && payload.includes("Requested function was not found")) {
+    throw new Error(
+      `${functionName} is not deployed to this Supabase project. Deploy the edge function before running cloud E2E.
+Run: ENV_FILE=web/admin-dashboard/.env.local ai-coach/scripts/deploy-cloud.sh`,
+    );
+  }
+}
+
+function parseAttemptIdAndCorrect(json: unknown): { attemptId: string; isCorrect: boolean } {
+  const payload = json as Record<string, unknown>;
+  const attemptId = (payload.attemptId ?? payload.attempt_id) as string | undefined;
+  const isCorrect = (payload.isCorrect ?? payload.is_correct) as boolean | undefined;
+
+  if (typeof isCorrect !== "boolean") {
+    throw new Error(`submit_attempt response missing isCorrect. Keys: ${Object.keys(payload).join(", ")}`);
+  }
+  if (typeof attemptId !== "string" || attemptId.length === 0) {
+    throw new Error(
+      `submit_attempt response missing attemptId. Keys: ${Object.keys(payload).join(", ")}. Deploy updated submit_attempt.`,
+    );
+  }
+
+  return { attemptId, isCorrect };
+}
+
 Deno.test({
   name: "cloud e2e: submit_attempt enqueues attempt_insight job",
   sanitizeResources: false,
   sanitizeOps: false,
   fn: async () => {
-    const resources: { userId?: string; bankId?: string; questionId?: string; sessionId?: string } = {};
+    const resources: TestResources = {};
 
     try {
       const testUser = await createTestUser();
@@ -205,42 +266,12 @@ Deno.test({
       resources.bankId = bank.bankId;
       resources.questionId = bank.questionId;
 
-      const { data: session, error: sessionError } = await admin
-        .from("sessions")
-        .insert({
-          student_id: testUser.id,
-          mode: "practice",
-          total_questions: 1,
-          correct_count: 0,
-          bank_id: bank.bankId,
-        })
-        .select("id")
-        .single();
-
-      if (sessionError || !session) {
-        throw new Error(`Failed to create session: ${sessionError?.message ?? "unknown"}`);
-      }
-
-      const sessionId = session.id as string;
+      const sessionId = await createSessionWithQuestion(testUser.id, bank);
       resources.sessionId = sessionId;
-
-      const { error: sessionQuestionError } = await admin.from("session_questions").insert({
-        session_id: sessionId,
-        question_id: bank.questionId,
-        position: 1,
-      });
-
-      if (sessionQuestionError) {
-        throw new Error(`Failed to create session question: ${sessionQuestionError.message}`);
-      }
-
-      const questionId = bank.questionId;
-      assertExists(sessionId);
-      assertExists(questionId);
 
       const { status, json } = await postEdgeFunction("submit_attempt", testUser.accessToken, {
         session_id: sessionId,
-        question_id: questionId,
+        question_id: bank.questionId,
         answer: "B",
         duration_ms: 5000,
         skipped: false,
@@ -249,31 +280,11 @@ Deno.test({
       });
 
       if (status !== 200) {
-        const payload = JSON.stringify(json);
-        if (status === 404 && payload.includes("Requested function was not found")) {
-          throw new Error(
-            "submit_attempt is not deployed to this Supabase project. Deploy the edge function before running cloud E2E.",
-          );
-        }
-        throw new Error(`submit_attempt failed: HTTP ${status} ${payload}`);
+        requireFunctionDeployed(status, json, "submit_attempt");
+        throw new Error(`submit_attempt failed: HTTP ${status} ${JSON.stringify(json)}`);
       }
 
-      const payload = json as Record<string, unknown>;
-      const attemptId = (payload.attemptId ?? payload.attempt_id) as string | undefined;
-      const isCorrect = (payload.isCorrect ?? payload.is_correct) as boolean | undefined;
-
-      if (typeof isCorrect !== "boolean") {
-        throw new Error(
-          `submit_attempt response missing isCorrect. Keys: ${Object.keys(payload).join(", ")}`,
-        );
-      }
-      if (typeof attemptId !== "string" || attemptId.length === 0) {
-        throw new Error(
-          `submit_attempt response missing attemptId. Keys: ${Object.keys(payload).join(", ")}. ` +
-            "Deploy the updated submit_attempt edge function to Supabase Cloud.",
-        );
-      }
-
+      const { attemptId, isCorrect } = parseAttemptIdAndCorrect(json);
       assertEquals(isCorrect, false);
 
       const job = await retry(async () => {
@@ -301,11 +312,123 @@ Deno.test({
 });
 
 Deno.test({
+  name: "cloud e2e: set_attempt_step updates attempt selection and bumps job",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  fn: async () => {
+    const resources: TestResources = {};
+
+    try {
+      const testUser = await createTestUser();
+      resources.userId = testUser.id;
+
+      const bank = await createBankAndQuestion();
+      resources.bankId = bank.bankId;
+      resources.questionId = bank.questionId;
+
+      const sessionId = await createSessionWithQuestion(testUser.id, bank);
+      resources.sessionId = sessionId;
+
+      const { status, json } = await postEdgeFunction("submit_attempt", testUser.accessToken, {
+        session_id: sessionId,
+        question_id: bank.questionId,
+        answer: "B",
+        duration_ms: 5000,
+        skipped: false,
+        // No step selection initially.
+      });
+
+      if (status !== 200) {
+        requireFunctionDeployed(status, json, "submit_attempt");
+        throw new Error(`submit_attempt failed: HTTP ${status} ${JSON.stringify(json)}`);
+      }
+
+      const { attemptId, isCorrect } = parseAttemptIdAndCorrect(json);
+      assertEquals(isCorrect, false);
+
+      const jobBefore = await retry(async () => {
+        const { data, error } = await admin
+          .from("ai_jobs")
+          .select("id, status, kind, run_after")
+          .eq("attempt_id", attemptId)
+          .eq("kind", "attempt_insight")
+          .maybeSingle();
+        if (error) {
+          throw new Error(error.message);
+        }
+        if (!data) {
+          throw new Error("job_not_found");
+        }
+        return data as { id: string; status: string; kind: string; run_after: string };
+      });
+
+      await delay(1100);
+
+      const { status: setStatus, json: setJson } = await postEdgeFunction("set_attempt_step", testUser.accessToken, {
+        attempt_id: attemptId,
+        student_selected_step_index: 2,
+        student_selected_step_is_unknown: false,
+      });
+
+      if (setStatus !== 200) {
+        requireFunctionDeployed(setStatus, setJson, "set_attempt_step");
+        throw new Error(`set_attempt_step failed: HTTP ${setStatus} ${JSON.stringify(setJson)}`);
+      }
+
+      const attemptRow = await retry(async () => {
+        const { data, error } = await admin
+          .from("attempts")
+          .select("id, student_selected_step_index, student_selected_step_is_unknown")
+          .eq("id", attemptId)
+          .maybeSingle();
+        if (error) {
+          throw new Error(error.message);
+        }
+        if (!data) {
+          throw new Error("attempt_not_found");
+        }
+        return data as {
+          id: string;
+          student_selected_step_index: number | null;
+          student_selected_step_is_unknown: boolean;
+        };
+      });
+
+      assertEquals(attemptRow.student_selected_step_index, 2);
+      assertEquals(attemptRow.student_selected_step_is_unknown, false);
+
+      const { data: jobAfter, error: jobAfterError } = await admin
+        .from("ai_jobs")
+        .select("id, status, run_after")
+        .eq("id", jobBefore.id)
+        .maybeSingle();
+
+      if (jobAfterError) {
+        throw new Error(jobAfterError.message);
+      }
+
+      if (jobAfter && jobAfter.status === "queued") {
+        // If a worker is running, job may have moved to running/done. In that case, we only assert the attempt update.
+        const before = new Date(jobBefore.run_after).getTime();
+        const after = new Date(jobAfter.run_after as string).getTime();
+        if (Number.isFinite(before) && Number.isFinite(after)) {
+          if (after < before) {
+            throw new Error(`Expected run_after to bump forward (before=${jobBefore.run_after}, after=${jobAfter.run_after})`);
+          }
+        }
+      }
+    } finally {
+      await cleanupResources(resources);
+    }
+  },
+});
+
+Deno.test({
   name: "cloud e2e: coach_chat writes user message and enqueues coach_reply job",
   sanitizeResources: false,
   sanitizeOps: false,
   fn: async () => {
-    const resources: { userId?: string } = {};
+    const resources: TestResources = {};
 
     try {
       const testUser = await createTestUser();
@@ -318,13 +441,8 @@ Deno.test({
       });
 
       if (status !== 200) {
-        const payload = JSON.stringify(json);
-        if (status === 404 && payload.includes("Requested function was not found")) {
-          throw new Error(
-            "coach_chat is not deployed to this Supabase project. Deploy the edge function before running cloud E2E.",
-          );
-        }
-        throw new Error(`coach_chat failed: HTTP ${status} ${payload}`);
+        requireFunctionDeployed(status, json, "coach_chat");
+        throw new Error(`coach_chat failed: HTTP ${status} ${JSON.stringify(json)}`);
       }
 
       const userMessageId = (json as Record<string, unknown>).userMessageId as string;
@@ -374,6 +492,85 @@ Deno.test({
 
       assertEquals(job.kind, "coach_reply");
       assertExists(job.id);
+    } finally {
+      await cleanupResources(resources);
+    }
+  },
+});
+
+Deno.test({
+  name: "cloud e2e: coach_chat supports linked_attempt_id",
+  sanitizeResources: false,
+  sanitizeOps: false,
+  fn: async () => {
+    const resources: TestResources = {};
+
+    try {
+      const testUser = await createTestUser();
+      resources.userId = testUser.id;
+
+      const bank = await createBankAndQuestion();
+      resources.bankId = bank.bankId;
+      resources.questionId = bank.questionId;
+
+      const sessionId = await createSessionWithQuestion(testUser.id, bank);
+      resources.sessionId = sessionId;
+
+      const { status: submitStatus, json: submitJson } = await postEdgeFunction("submit_attempt", testUser.accessToken, {
+        session_id: sessionId,
+        question_id: bank.questionId,
+        answer: "B",
+        duration_ms: 1000,
+        skipped: false,
+        student_selected_step_is_unknown: true,
+      });
+
+      if (submitStatus !== 200) {
+        requireFunctionDeployed(submitStatus, submitJson, "submit_attempt");
+        throw new Error(`submit_attempt failed: HTTP ${submitStatus} ${JSON.stringify(submitJson)}`);
+      }
+
+      const { attemptId } = parseAttemptIdAndCorrect(submitJson);
+
+      const text = `E2E linked attempt (${Date.now()})`;
+      const { status: chatStatus, json: chatJson } = await postEdgeFunction("coach_chat", testUser.accessToken, {
+        text,
+        linked_attempt_id: attemptId,
+      });
+
+      if (chatStatus !== 200) {
+        requireFunctionDeployed(chatStatus, chatJson, "coach_chat");
+        throw new Error(`coach_chat failed: HTTP ${chatStatus} ${JSON.stringify(chatJson)}`);
+      }
+
+      const userMessageId = (chatJson as Record<string, unknown>).userMessageId as string;
+      assertExists(userMessageId);
+
+      const message = await retry(async () => {
+        const { data, error } = await admin
+          .from("coach_thread_messages")
+          .select("id, student_id, role, content, linked_attempt_id")
+          .eq("id", userMessageId)
+          .maybeSingle();
+        if (error) {
+          throw new Error(error.message);
+        }
+        if (!data) {
+          throw new Error("message_not_found");
+        }
+        return data as {
+          id: string;
+          student_id: string;
+          role: string;
+          content: { text?: string };
+          linked_attempt_id: string | null;
+        };
+      });
+
+      assertEquals(message.student_id, testUser.id);
+      assertEquals(message.role, "user");
+      assertEquals(message.content.text, text);
+      assertEquals(message.linked_attempt_id, attemptId);
     } finally {
       await cleanupResources(resources);
     }
