@@ -81,6 +81,7 @@ Prereq: the cloud project credentials are in `web/admin-dashboard/.env.local` (d
 - [ ] Export env vars for local tools/tests:
   - [ ] `set -a; source web/admin-dashboard/.env.local; set +a`
 - [ ] Ensure Edge Functions + migrations are deployed to the cloud project.
+  - [ ] Recommended: `ENV_FILE=web/admin-dashboard/.env.local ai-coach/scripts/deploy-cloud.sh` (requires adding `SUPABASE_ACCESS_TOKEN` + `SUPABASE_DB_PASSWORD` locally).
 - [ ] Run worker against cloud:
   - [ ] Create `ai-coach/coach-service/.env` with `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `MINIMAX_API_KEY`.
   - [ ] `cd ai-coach/coach-service && npm run dev`
