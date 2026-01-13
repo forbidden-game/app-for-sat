@@ -3,6 +3,7 @@ import StudentCore
 
 struct PracticeFlowView: View {
     private let session: PracticeSession
+    private let studentId: String
     @StateObject private var vm: QuestionFeedViewModel
     @StateObject private var flowModel: PracticeFlowViewModel
     @State private var answers: [String: String] = [:]
@@ -10,8 +11,9 @@ struct PracticeFlowView: View {
     let headerTitle: String?
     let onExit: () -> Void
 
-    init(session: PracticeSession, sessionId: String, headerTitle: String?, onExit: @escaping () -> Void) {
+    init(session: PracticeSession, sessionId: String, studentId: String, headerTitle: String?, onExit: @escaping () -> Void) {
         self.session = session
+        self.studentId = studentId
         _vm = StateObject(wrappedValue: QuestionFeedViewModel(session: session))
         _flowModel = StateObject(wrappedValue: PracticeFlowViewModel(session: session, sessionId: sessionId))
         self.headerTitle = headerTitle
@@ -22,6 +24,7 @@ struct PracticeFlowView: View {
         switch flowModel.flowState {
         case .practicing:
             QuestionFeedView(
+                studentId: studentId,
                 vm: vm,
                 answers: $answers,
                 returnToOverviewOnAnswer: $returnToOverviewOnAnswer,

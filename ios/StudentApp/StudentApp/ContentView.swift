@@ -89,8 +89,8 @@ private struct MainContainerView: View {
 
     @ViewBuilder
     private var contentView: some View {
-        if let session = vm.session, let sessionId = vm.sessionId {
-            PracticeFlowView(session: session, sessionId: sessionId, headerTitle: vm.selectedBank?.title) {
+        if let session = vm.session, let sessionId = vm.sessionId, let studentId = vm.user?.id {
+            PracticeFlowView(session: session, sessionId: sessionId, studentId: studentId, headerTitle: vm.selectedBank?.title) {
                 vm.exitSession()
             }
         } else {

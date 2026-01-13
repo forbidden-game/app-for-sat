@@ -16,6 +16,7 @@ struct CoachStepSheet: View {
     @Binding var coachAttempt: CoachAttemptContext?
     @ObservedObject var flowModel: PracticeFlowViewModel
 
+    let studentId: String
     let attemptId: String
     let onContinue: () -> Void
 
@@ -24,6 +25,10 @@ struct CoachStepSheet: View {
     @State private var selectedUnknown = false
     @State private var insight: AttemptInsight?
     @State private var errorMessage: String?
+
+    @State private var isSendingCoachMessage = false
+    @State private var askCoachErrorMessage: String?
+    @State private var showCoachChat = false
 
     private let steps: [Step] = [
         Step(id: 0, title: "识别目标与已知条件"),
@@ -60,6 +65,9 @@ struct CoachStepSheet: View {
             .padding(.bottom, 24)
         }
         .interactiveDismissDisabled(phase == .selectStep)
+        .fullScreenCover(isPresented: $showCoachChat) {
+            CoachChatView(studentId: studentId)
+        }
     }
 
     private var header: some View {
@@ -202,6 +210,45 @@ struct CoachStepSheet: View {
 
     private var footer: some View {
         VStack(spacing: 10) {
+            if let askCoachErrorMessage {
+                Text(askCoachErrorMessage)
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.statusDanger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Button {
+                Task { await askCoach() }
+            } label: {
+                HStack(spacing: 10) {
+                    if isSendingCoachMessage {
+                        ProgressView()
+                            .tint(AppTheme.textPrimary)
+                    } else {
+                        Image(systemName: "message.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+
+                    Text("去问全科老师")
+                        .font(.headline)
+
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(AppTheme.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .padding(.horizontal, 14)
+                .appSurface(
+                    fill: AppTheme.surfaceRaised,
+                    stroke: AppTheme.dividerStrong,
+                    cornerRadius: 14,
+                    shadowRadius: 6,
+                    shadowY: 2
+                )
+            }
+            .buttonStyle(.plain)
+            .disabled(phase == .selectStep || isSendingCoachMessage)
+
             Button {
                 coachAttempt = nil
                 onContinue()
@@ -248,5 +295,35 @@ struct CoachStepSheet: View {
                 phase = .selectStep
             }
         }
+    }
+
+    private func askCoach() async {
+        askCoachErrorMessage = nil
+
+        let messageText = defaultCoachMessage()
+        guard !messageText.isEmpty else { return }
+
+        isSendingCoachMessage = true
+        defer { isSendingCoachMessage = false }
+
+        do {
+            let service = SupabaseCoachService()
+            _ = try await service.sendMessage(text: messageText, linkedAttemptId: attemptId)
+            showCoachChat = true
+        } catch {
+            askCoachErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func defaultCoachMessage() -> String {
+        if selectedUnknown {
+            return "我不确定从哪一步开始错了。请用 2-3 步指出我的第一处错误，并给我一个同类型小练习题（不要长篇解释）。"
+        }
+
+        if let selectedStepIndex, let step = steps.first(where: { $0.id == selectedStepIndex }) {
+            return "我卡在「\(step.title)」。请用 2-3 步纠正我，并给我一个同类型小练习题（不要长篇解释）。"
+        }
+
+        return "请用 2-3 步告诉我这题的关键步骤，并给我一个同类型小练习题（不要长篇解释）。"
     }
 }

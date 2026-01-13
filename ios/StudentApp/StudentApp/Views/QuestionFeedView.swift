@@ -5,6 +5,7 @@ import UIKit
 #endif
 
 struct QuestionFeedView: View {
+    let studentId: String
     @StateObject var vm: QuestionFeedViewModel
     @Binding var answers: [String: String]
     @Binding var returnToOverviewOnAnswer: Bool
@@ -71,6 +72,7 @@ struct QuestionFeedView: View {
             CoachStepSheet(
                 coachAttempt: $flowModel.coachAttempt,
                 flowModel: flowModel,
+                studentId: studentId,
                 attemptId: ctx.id,
                 onContinue: {
                     pendingAdvanceAfterCoach = false
