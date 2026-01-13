@@ -1,4 +1,10 @@
-export type AiJobKind = "attempt_insight" | "thread_summary" | "procedure_merge" | "coach_reply";
+export type AiJobKind =
+  | "attempt_insight"
+  | "thread_summary"
+  | "procedure_merge"
+  | "coach_reply"
+  | "snapshot_refresh"
+  | "progress_report";
 
 export type AiJobStatus = "queued" | "running" | "done" | "error";
 
@@ -13,6 +19,7 @@ export type AiJobRow = {
   locked_at: string | null;
   locked_by: string | null;
   run_after: string | null;
+  dedupe_key: string | null;
   created_at: string;
   updated_at: string;
 };

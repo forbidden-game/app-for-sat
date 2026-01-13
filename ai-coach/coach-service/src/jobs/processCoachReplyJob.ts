@@ -72,6 +72,22 @@ export async function processCoachReplyJob(
     .maybeSingle();
   if (snapshotError) throw new Error(snapshotError.message);
 
+  const { data: recentReports, error: reportError } = await supabase
+    .from("student_reports")
+    .select("id, period_kind, period_key, period_start, period_end, summary, plan, metrics, delta, created_at")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(2);
+  if (reportError) throw new Error(reportError.message);
+
+  const { data: recentInsights, error: insightError } = await supabase
+    .from("attempt_insights")
+    .select("attempt_id, procedure_id, error_step_index, error_mode_enum, explanation_short, created_at")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(5);
+  if (insightError) throw new Error(insightError.message);
+
   const { data: recentMessages, error: msgError } = await supabase
     .from("coach_thread_messages")
     .select("id,student_id,role,content,created_at,linked_attempt_id")
@@ -90,14 +106,14 @@ export async function processCoachReplyJob(
 
   let linkedAttemptInsight: unknown | null = null;
   if (linkedAttemptId) {
-    const { data: insight, error: insightError } = await supabase
+    const { data: insight, error: linkedError } = await supabase
       .from("attempt_insights")
       .select("attempt_id,explanation_short,followups,error_step_index,error_mode_enum,procedure_id")
       .eq("attempt_id", linkedAttemptId)
       .maybeSingle();
 
-    if (insightError) {
-      logger.warn({ err: insightError, linkedAttemptId }, "failed to load linked attempt insight");
+    if (linkedError) {
+      logger.warn({ err: linkedError, linkedAttemptId }, "failed to load linked attempt insight");
     } else {
       linkedAttemptInsight = insight ?? null;
     }
@@ -135,13 +151,14 @@ export async function processCoachReplyJob(
     const prompt = buildCoachReplyPrompt({
       studentId,
       snapshot: snapshotRow ?? null,
+      reports: recentReports ?? [],
+      recentInsights: recentInsights ?? [],
       messages,
       linkedAttemptInsight,
     });
 
     await agent.prompt(prompt);
 
-    // Final flush
     await flush("done", true);
   } catch (err) {
     logger.error({ err, jobId: job.id }, "coach reply generation failed");

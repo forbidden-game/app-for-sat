@@ -4,22 +4,52 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "./config.js";
 import { logger } from "./logger.js";
+import { resolveModel } from "./model.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools } from "./tools/coachTools.js";
 import { processAttemptInsightJob } from "./jobs/processAttemptInsightJob.js";
 import { processCoachReplyJob } from "./jobs/processCoachReplyJob.js";
+import { processSnapshotRefreshJob } from "./jobs/processSnapshotRefreshJob.js";
+import { processProgressReportJob } from "./jobs/processProgressReportJob.js";
+import { scheduleRecurringJobs } from "./scheduler.js";
 import { JobDeferredError } from "./jobs/jobErrors.js";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function getStudentId(job: AiJobRow): string | null {
+  if (job.student_id) return job.student_id;
+  const payload = (job.payload ?? {}) as Record<string, unknown>;
+  return typeof payload.student_id === "string" ? payload.student_id : null;
+}
+
+const modelCache = new Map<string, Model<any>>();
+
+function modelForSpec(spec: string): Model<any> {
+  const cached = modelCache.get(spec);
+  if (cached) return cached;
+  const model = resolveModel(spec, "minimax");
+  modelCache.set(spec, model);
+  return model;
+}
+
+function resolveJobModel(config: CoachConfig, kind: AiJobRow["kind"]): Model<any> {
+  if (kind === "attempt_insight") return modelForSpec(config.modelInsight);
+  if (kind === "coach_reply") return modelForSpec(config.modelChat);
+  if (kind === "progress_report") return modelForSpec(config.modelReport);
+  return modelForSpec(config.modelDefault);
+}
+
 export function createCoachAgent(
   config: CoachConfig,
   supabase: SupabaseClient,
-  model: Model<"anthropic-messages">,
+  model: Model<any>,
 ): Agent {
-  const tools = buildCoachTools(supabase);
+  const tools = buildCoachTools(supabase, {
+    modelId: model.id,
+    promptVersion: "ai-coach-insight-v2",
+  });
 
   return new Agent({
     initialState: {
@@ -31,13 +61,13 @@ export function createCoachAgent(
       messages: [],
     },
     getApiKey: async (provider) => {
-      if (provider === "minimax-anthropic") return config.minimaxApiKey;
+      if (provider === "minimax") return config.minimaxApiKey;
       return undefined;
     },
   });
 }
 
-export function createChatAgent(config: CoachConfig, model: Model<"anthropic-messages">): Agent {
+export function createChatAgent(config: CoachConfig, model: Model<any>): Agent {
   return new Agent({
     initialState: {
       systemPrompt:
@@ -48,7 +78,7 @@ export function createChatAgent(config: CoachConfig, model: Model<"anthropic-mes
       messages: [],
     },
     getApiKey: async (provider) => {
-      if (provider === "minimax-anthropic") return config.minimaxApiKey;
+      if (provider === "minimax") return config.minimaxApiKey;
       return undefined;
     },
   });
@@ -97,12 +127,20 @@ async function claimJobs(supabase: SupabaseClient, workerId: string, limit: numb
   return (data ?? []) as AiJobRow[];
 }
 
-export async function runWorker(
-  config: CoachConfig,
-  supabase: SupabaseClient,
-  model: Model<"anthropic-messages">,
-): Promise<void> {
+export async function runWorker(config: CoachConfig, supabase: SupabaseClient): Promise<void> {
+  let lastScheduleAt = 0;
+
   for (;;) {
+    const now = Date.now();
+    if (now - lastScheduleAt >= config.scheduleIntervalMs) {
+      try {
+        await scheduleRecurringJobs(config, supabase);
+      } catch (err) {
+        logger.warn({ err }, "scheduler failed");
+      }
+      lastScheduleAt = now;
+    }
+
     let jobs: AiJobRow[] = [];
 
     try {
@@ -124,11 +162,22 @@ export async function runWorker(
       try {
         if (job.kind === "attempt_insight") {
           if (!job.attempt_id) throw new Error("missing attempt_id");
+          const model = resolveJobModel(config, job.kind);
           const agent = createCoachAgent(config, supabase, model);
           await processAttemptInsightJob(supabase, agent, job.attempt_id, job.created_at);
         } else if (job.kind === "coach_reply") {
+          const model = resolveJobModel(config, job.kind);
           const agent = createChatAgent(config, model);
           await processCoachReplyJob(supabase, agent, job);
+        } else if (job.kind === "snapshot_refresh") {
+          const studentId = getStudentId(job);
+          if (!studentId) throw new Error("missing student_id");
+          const payload = (job.payload ?? {}) as Record<string, unknown>;
+          const periodEnd = typeof payload.period_end === "string" ? payload.period_end : null;
+          await processSnapshotRefreshJob(supabase, studentId, periodEnd);
+        } else if (job.kind === "progress_report") {
+          const model = resolveJobModel(config, job.kind);
+          await processProgressReportJob(supabase, config, model, (job.payload ?? {}) as Record<string, unknown>);
         } else {
           logger.info({ kind: job.kind }, "job kind not implemented, skipping");
         }

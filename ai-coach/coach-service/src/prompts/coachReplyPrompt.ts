@@ -1,6 +1,8 @@
 export type CoachReplyContext = {
   studentId: string;
   snapshot: unknown | null;
+  reports: unknown[];
+  recentInsights: unknown[];
   messages: { role: "user" | "assistant" | "tool"; text: string; created_at: string }[];
   linkedAttemptInsight?: unknown | null;
 };
@@ -8,7 +10,8 @@ export type CoachReplyContext = {
 export function buildCoachReplyPrompt(ctx: CoachReplyContext): string {
   return [
     "你是一位严格、精要的 SAT 全科老师。",
-    "目标：用最短的文字帮学生继续推进思考。",
+    "目标：用最短的文字帮助学生继续推进思考。",
+    "优先使用学生个人数据库（长期快照 + 最近报告 + 历史错题）。",
     "输出要求：",
     "- 只用中文。",
     "- 先给 1 个最关键结论/下一步。",
@@ -18,15 +21,17 @@ export function buildCoachReplyPrompt(ctx: CoachReplyContext): string {
     "学生长期快照（JSON，可能为空）：",
     JSON.stringify(ctx.snapshot ?? {}, null, 2),
     "",
+    "最近进展报告（JSON，最多 2 条）：",
+    JSON.stringify(ctx.reports ?? [], null, 2),
+    "",
+    "最近错题洞察（JSON，最多 5 条）：",
+    JSON.stringify(ctx.recentInsights ?? [], null, 2),
+    "",
     "最近对话（按时间顺序）：",
     JSON.stringify(ctx.messages, null, 2),
     "",
     ctx.linkedAttemptInsight
-      ? [
-          "关联错题洞察（JSON）：",
-          JSON.stringify(ctx.linkedAttemptInsight, null, 2),
-          "",
-        ].join("\n")
+      ? ["关联错题洞察（JSON）：", JSON.stringify(ctx.linkedAttemptInsight, null, 2), ""].join("\n")
       : "",
     "现在请以老师身份回复学生最后一条消息。",
   ]

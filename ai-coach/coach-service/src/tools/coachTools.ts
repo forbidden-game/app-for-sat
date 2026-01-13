@@ -24,56 +24,29 @@ type SimilarMistake = {
   student_selected_step_is_unknown: boolean;
 };
 
-type SnapshotEntry = {
-  key: string;
-  count: number;
+export type CoachToolOptions = {
+  modelId?: string;
+  promptVersion?: string;
 };
 
-async function upsertStudentSnapshot(supabase: SupabaseClient, studentId: string): Promise<void> {
-  const { data: insights, error } = await supabase
-    .from("attempt_insights")
-    .select("procedure_id,error_step_index,error_mode_enum,created_at")
-    .eq("student_id", studentId)
-    .order("created_at", { ascending: false })
-    .limit(200);
-
-  if (error) throw new Error(error.message);
-
-  const procedureCounts = new Map<string, number>();
-  const stepCounts = new Map<string, number>();
-  const modeCounts = new Map<string, number>();
-
-  for (const row of insights ?? []) {
-    procedureCounts.set(row.procedure_id, (procedureCounts.get(row.procedure_id) ?? 0) + 1);
-    const stepKey = `${row.procedure_id}#${row.error_step_index}`;
-    stepCounts.set(stepKey, (stepCounts.get(stepKey) ?? 0) + 1);
-    modeCounts.set(row.error_mode_enum, (modeCounts.get(row.error_mode_enum) ?? 0) + 1);
-  }
-
-  const toTop = (m: Map<string, number>, limit: number): SnapshotEntry[] =>
-    [...m.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .map(([key, count]) => ({ key, count }));
-
-  const weakProceduresTop = toTop(procedureCounts, 10);
-  const weakStepsTop = toTop(stepCounts, 10);
-  const commonErrorModesTop = toTop(modeCounts, 10);
-
-  const { error: upsertError } = await supabase.from("student_snapshots").upsert({
+async function enqueueSnapshotRefresh(supabase: SupabaseClient, studentId: string): Promise<void> {
+  const dedupeKey = `snapshot:${studentId}:${new Date().toISOString().slice(0, 10)}`;
+  const { error } = await supabase.from("ai_jobs").insert({
+    kind: "snapshot_refresh",
+    status: "queued",
     student_id: studentId,
-    subject_scope: "all",
-    weak_procedures_top: weakProceduresTop,
-    weak_steps_top: weakStepsTop,
-    common_error_modes_top: commonErrorModesTop,
-    recent_trend: {},
-    updated_at: new Date().toISOString(),
+    payload: { student_id: studentId },
+    run_after: new Date().toISOString(),
+    dedupe_key: dedupeKey,
   });
 
-  if (upsertError) throw new Error(upsertError.message);
+  if (error) {
+    if (error.code === "23505") return;
+    logger.warn({ err: error, studentId }, "failed to enqueue snapshot_refresh");
+  }
 }
 
-export function buildCoachTools(supabase: SupabaseClient): AgentTool<any>[] {
+export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOptions = {}): AgentTool<any>[] {
   const searchProcedureCandidates: AgentTool<
     typeof SearchProcedureCandidatesSchema,
     { candidates: SearchProcedureCandidate[] }
@@ -180,17 +153,17 @@ export function buildCoachTools(supabase: SupabaseClient): AgentTool<any>[] {
         explanation_short: params.explanation_short,
         followups: params.followups,
         confidence: params.confidence ?? null,
-        model: null,
-        prompt_version: "ai-coach-v1",
+        model: options.modelId ?? null,
+        prompt_version: options.promptVersion ?? "ai-coach-insight-v2",
         cost_usd: null,
       });
 
       if (error) throw new Error(error.message);
 
       try {
-        await upsertStudentSnapshot(supabase, params.student_id);
+        await enqueueSnapshotRefresh(supabase, params.student_id);
       } catch (e) {
-        logger.warn({ err: e, studentId: params.student_id }, "failed to update student snapshot");
+        logger.warn({ err: e, studentId: params.student_id }, "failed to enqueue snapshot refresh");
       }
 
       return {
