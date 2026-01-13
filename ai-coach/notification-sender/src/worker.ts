@@ -13,7 +13,7 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function claimEvents(
+export async function claimEvents(
   supabase: SupabaseClient,
   workerId: string,
   limit: number,
@@ -27,7 +27,10 @@ async function claimEvents(
   return (data ?? []) as NotificationEventRow[];
 }
 
-async function loadPushTokens(supabase: SupabaseClient, studentId: string): Promise<PushTokenRow[]> {
+export async function loadPushTokens(
+  supabase: SupabaseClient,
+  studentId: string,
+): Promise<PushTokenRow[]> {
   const { data, error } = await supabase
     .from("push_tokens")
     .select("device_token, platform")
@@ -37,7 +40,7 @@ async function loadPushTokens(supabase: SupabaseClient, studentId: string): Prom
   return (data ?? []) as PushTokenRow[];
 }
 
-async function markSent(supabase: SupabaseClient, eventId: string): Promise<void> {
+export async function markSent(supabase: SupabaseClient, eventId: string): Promise<void> {
   const { error } = await supabase
     .from("notification_events")
     .update({ status: "sent", error: null, updated_at: new Date().toISOString() })
@@ -46,7 +49,11 @@ async function markSent(supabase: SupabaseClient, eventId: string): Promise<void
   if (error) throw new Error(error.message);
 }
 
-async function markError(supabase: SupabaseClient, eventId: string, message: string): Promise<void> {
+export async function markError(
+  supabase: SupabaseClient,
+  eventId: string,
+  message: string,
+): Promise<void> {
   const { error } = await supabase
     .from("notification_events")
     .update({ status: "error", error: message, updated_at: new Date().toISOString() })
@@ -55,7 +62,7 @@ async function markError(supabase: SupabaseClient, eventId: string, message: str
   if (error) throw new Error(error.message);
 }
 
-async function handleEvent(
+export async function handleEvent(
   supabase: SupabaseClient,
   config: SenderConfig,
   event: NotificationEventRow,
