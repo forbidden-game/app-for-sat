@@ -117,11 +117,21 @@ async function deferJob(supabase: SupabaseClient, jobId: string, delayMs: number
   if (error) throw new Error(error.message);
 }
 
-async function claimJobs(supabase: SupabaseClient, workerId: string, limit: number): Promise<AiJobRow[]> {
-  const { data, error } = await supabase.rpc("claim_ai_jobs", {
+async function claimJobs(
+  supabase: SupabaseClient,
+  workerId: string,
+  limit: number,
+  jobKinds: AiJobRow["kind"][] | null,
+): Promise<AiJobRow[]> {
+  const params: Record<string, unknown> = {
     p_worker_id: workerId,
     p_limit: limit,
-  });
+  };
+  if (jobKinds && jobKinds.length > 0) {
+    params.p_kinds = jobKinds;
+  }
+
+  const { data, error } = await supabase.rpc("claim_ai_jobs", params);
 
   if (error) throw new Error(error.message);
   return (data ?? []) as AiJobRow[];
@@ -132,7 +142,7 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
 
   for (;;) {
     const now = Date.now();
-    if (now - lastScheduleAt >= config.scheduleIntervalMs) {
+    if (config.enableScheduler && now - lastScheduleAt >= config.scheduleIntervalMs) {
       try {
         await scheduleRecurringJobs(config, supabase);
       } catch (err) {
@@ -144,7 +154,7 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
     let jobs: AiJobRow[] = [];
 
     try {
-      jobs = await claimJobs(supabase, config.workerId, config.claimLimit);
+      jobs = await claimJobs(supabase, config.workerId, config.claimLimit, config.jobKinds);
     } catch (err) {
       logger.error({ err }, "failed to claim jobs");
       await sleep(config.pollIntervalMs);

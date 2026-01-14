@@ -7,7 +7,14 @@ async function main(): Promise<void> {
   const config = getConfig();
   const supabase = createSupabase(config);
 
-  logger.info({ workerId: config.workerId }, "ai-coach worker starting");
+  logger.info(
+    {
+      workerId: config.workerId,
+      jobKinds: config.jobKinds ?? "all",
+      scheduler: config.enableScheduler,
+    },
+    "ai-coach worker starting",
+  );
 
   await runWorker(config, supabase);
 }

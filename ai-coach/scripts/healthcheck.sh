@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-SERVICE_NAME="ai-coach-worker.service"
+SERVICE_NAMES=${AI_COACH_SERVICE_NAMES:-"ai-coach-chat-worker.service ai-coach-insight-worker.service"}
 ENV_FILE="/etc/app-for-sat/ai-coach.env"
 WORKER_DIR="/root/apps/app-for-sat/ai-coach/coach-service"
 LOG_FILE="/var/log/ai-coach-healthcheck.log"
@@ -26,11 +26,13 @@ if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
   exit 1
 fi
 
-if ! systemctl is-active --quiet "$SERVICE_NAME"; then
-  log "ERROR: $SERVICE_NAME is not active"
-  systemctl --no-pager status "$SERVICE_NAME" || true
-  exit 1
-fi
+for service in $SERVICE_NAMES; do
+  if ! systemctl is-active --quiet "$service"; then
+    log "ERROR: $service is not active"
+    systemctl --no-pager status "$service" || true
+    exit 1
+  fi
+done
 
 if [ ! -d "$WORKER_DIR" ]; then
   log "ERROR: missing worker dir $WORKER_DIR"

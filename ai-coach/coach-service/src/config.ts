@@ -1,4 +1,5 @@
 import * as dotenv from "dotenv";
+import type { AiJobKind } from "./types.js";
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ export type CoachConfig = {
   modelInsight: string;
   modelChat: string;
   modelReport: string;
+  jobKinds: AiJobKind[] | null;
+  enableScheduler: boolean;
 };
 
 function requireEnv(name: string): string {
@@ -40,6 +43,41 @@ function readString(name: string, fallback: string): string {
   return value.length > 0 ? value : fallback;
 }
 
+function readBool(name: string, fallback: boolean): boolean {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const normalized = raw.trim().toLowerCase();
+  if (["1", "true", "yes", "y"].includes(normalized)) return true;
+  if (["0", "false", "no", "n"].includes(normalized)) return false;
+  throw new Error(`Invalid bool env var: ${name}=${raw}`);
+}
+
+const allowedJobKinds: AiJobKind[] = [
+  "attempt_insight",
+  "thread_summary",
+  "procedure_merge",
+  "coach_reply",
+  "snapshot_refresh",
+  "progress_report",
+];
+
+function parseJobKinds(): AiJobKind[] | null {
+  const raw = process.env["AI_COACH_JOB_KINDS"];
+  if (!raw) return null;
+  const parts = raw
+    .split(",")
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
+  if (parts.length === 0) return null;
+
+  const invalid = parts.filter((value) => !allowedJobKinds.includes(value as AiJobKind));
+  if (invalid.length > 0) {
+    throw new Error(`Invalid AI_COACH_JOB_KINDS entries: ${invalid.join(", ")}`);
+  }
+
+  return Array.from(new Set(parts)) as AiJobKind[];
+}
+
 export function getConfig(): CoachConfig {
   const defaultModel = readString("AI_COACH_MODEL_DEFAULT", "minimax/MiniMax-M2.1");
 
@@ -58,5 +96,7 @@ export function getConfig(): CoachConfig {
     modelInsight: readString("AI_COACH_MODEL_INSIGHT", defaultModel),
     modelChat: readString("AI_COACH_MODEL_CHAT", defaultModel),
     modelReport: readString("AI_COACH_MODEL_REPORT", defaultModel),
+    jobKinds: parseJobKinds(),
+    enableScheduler: readBool("AI_COACH_ENABLE_SCHEDULER", true),
   };
 }

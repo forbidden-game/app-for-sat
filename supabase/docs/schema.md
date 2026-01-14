@@ -642,8 +642,8 @@
 ### `public.enqueue_attempt_insight_job()`
 **用途**：attempt insert 后（且 `is_correct=false`）自动插入 `ai_jobs(kind='attempt_insight')`。
 
-### `public.claim_ai_jobs(p_worker_id text, p_limit int)`
-**用途**：worker 原子性 claim `ai_jobs`（`queued` -> `running`，`for update skip locked`）。
+### `public.claim_ai_jobs(p_worker_id text, p_limit int, p_kinds text[] default null)`
+**用途**：worker 原子性 claim `ai_jobs`（`queued` -> `running`，`for update skip locked`）。`p_kinds` 可选，用于仅领取指定 kind 的任务。
 
 ### `public.search_procedure_candidates(p_subject text, p_query text, p_limit int)`
 **用途**：基于 trigram 相似度检索 procedure 候选（用于“先检索再创建”的护栏）。
