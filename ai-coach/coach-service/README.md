@@ -1,4 +1,5 @@
 # Coach Service (Worker)
+日期：2026-01-14
 
 Purpose: power the per-student AI teacher (wrong-answer coaching + followups + long-term tracking).
 

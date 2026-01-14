@@ -1,4 +1,5 @@
 # AI Coach Cloud E2E (Smoke)
+日期：2026-01-14
 
 Purpose: validate the per-student AI teacher loop in cloud wiring.
 

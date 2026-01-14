@@ -1,4 +1,5 @@
 # Parent Dashboard (SAT)
+日期：2026-01-14
 
 Purpose: parent-facing view of the AI teacher's long-term tracking (trends, strengths, risks).
 

@@ -1,4 +1,5 @@
 # iOS UI Design System (StudentApp)
+日期：2026-01-14
 
 ## Goals
 - Maintain a calm, focused study experience with clear hierarchy and low visual noise.

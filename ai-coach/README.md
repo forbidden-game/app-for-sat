@@ -1,4 +1,5 @@
 # ai-coach
+日期：2026-01-14
 
 North Star: one AI teacher per student, with wrong-answer coaching, followup dialog, and long-term tracking.
 

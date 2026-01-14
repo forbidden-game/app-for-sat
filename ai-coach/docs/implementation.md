@@ -1,4 +1,5 @@
 # Implementation Notes
+日期：2026-01-14
 
 North Star: per-student AI teacher (wrong-answer coaching + followups + long-term tracking). Implementation should keep that loop intact.
 

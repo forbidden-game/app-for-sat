@@ -1,4 +1,5 @@
 # Procedures（自增长规则 + steps 模板）
+日期：2026-01-14
 
 北极星：procedure/steps 作为 AI 老师的长期记忆骨架，支撑可追问讲解与重复错题复盘。
 

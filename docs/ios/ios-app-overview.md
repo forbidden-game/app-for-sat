@@ -1,4 +1,5 @@
 # iOS Student App Overview
+日期：2026-01-14
 
 ## 概览
 当前 iOS 端是一个面向学生的 SAT 练习 App，核心目标是让每个学生拥有一个专属 AI 老师（错题讲解、可反复追问、长期追踪）。应用采用 SwiftUI + StudentCore（SPM 包）分层，UI 负责展示与交互，业务与数据访问集中在 `StudentCore`。

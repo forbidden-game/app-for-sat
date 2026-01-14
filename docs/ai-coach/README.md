@@ -1,4 +1,5 @@
 # AI Coach docs moved
+日期：2026-01-14
 
 North Star: per-student AI teacher (wrong-answer coaching + followup dialog + long-term tracking).
 

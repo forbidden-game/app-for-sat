@@ -1,4 +1,5 @@
 # Admin Dashboard (SAT)
+日期：2026-01-14
 
 Purpose: internal console to manage question bank and operations that power the per-student AI teacher.
 
