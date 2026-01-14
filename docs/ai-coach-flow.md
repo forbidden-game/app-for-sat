@@ -1,5 +1,8 @@
 # AI Coach Backend Flow (Draft)
 
+## North Star
+Per-student AI teacher: immediate wrong-answer coaching, multi-turn followups, long-term learning tracking. This flow exists to power that teacher.
+
 ## Overview
 This document describes the current backend draft for the AI coach pipeline and how it connects to the iOS app. The implementation is intentionally stubbed: it provides deterministic placeholder outputs so the front end can be exercised while the real model integration is built.
 

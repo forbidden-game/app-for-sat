@@ -9,8 +9,8 @@ web/
 ```
 
 ## 应用说明
-`parent-dashboard` 面向家长，提供学习进度与学生详情等功能。  
-`admin-dashboard` 面向运维/业务管理者，提供题库、用户与运营概览。
+`parent-dashboard` 面向家长，提供学习进度与学生详情等功能，核心是呈现 AI 老师的长期追踪成果。  
+`admin-dashboard` 面向运维/业务管理者，提供题库、用户与运营概览，保障 AI 老师的数据与运营供给。
 
 ## 环境变量
 `parent-dashboard`：

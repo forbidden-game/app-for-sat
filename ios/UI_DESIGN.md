@@ -4,6 +4,7 @@
 - Maintain a calm, focused study experience with clear hierarchy and low visual noise.
 - Keep cards and controls consistent across screens.
 - Use semantic tokens for color and metrics to avoid one-off styling.
+- Keep AI teacher surfaces (wrong-answer coach + followup dialog) clear and conversational.
 
 ## Color Tokens (AppTheme)
 Use `AppTheme` colors only. Do not hardcode colors in views.

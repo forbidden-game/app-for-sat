@@ -1,5 +1,7 @@
 # Flows（MVP）
 
+北极星：每个学生一个 AI 老师（错题讲解 + 追问对话 + 长期追踪）。以下流程以此为中心。
+
 ## A) 错题处理流（attempt -> insight）
 触发：`attempts.is_correct = false` 写入后。
 

@@ -3,7 +3,7 @@
 Date: 2026-01-05
 
 ## Purpose
-Define the minimal data contract and aggregation expectations for the parent dashboard MVP. This spec complements the product design doc and is intended for backend implementation alignment.
+Define the minimal data contract and aggregation expectations for the parent dashboard MVP. This spec complements the product design doc and is intended for backend implementation alignment. The dashboard should reflect the AI teacher's long-term tracking, not just recent scores.
 
 ## Scope
 - Student overview metrics (7d window)

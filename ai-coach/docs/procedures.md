@@ -1,5 +1,7 @@
 # Procedures（自增长规则 + steps 模板）
 
+北极星：procedure/steps 作为 AI 老师的长期记忆骨架，支撑可追问讲解与重复错题复盘。
+
 本页描述 procedure taxonomy 的自增长方式，以及 steps 的统一格式要求。
 
 ## 1) Procedure 的定义

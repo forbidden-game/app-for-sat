@@ -1,5 +1,7 @@
 # AI Coach Cloud E2E (Smoke)
 
+Purpose: validate the per-student AI teacher loop in cloud wiring.
+
 These tests run against a **Supabase Cloud** project and validate the AI Coach integration points:
 - Edge Functions auth + writes (`submit_attempt`, `set_attempt_step`, `coach_chat`)
   - Note: these tests expect the **new** `submit_attempt` response shape including `attemptId`.

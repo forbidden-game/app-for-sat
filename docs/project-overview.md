@@ -1,12 +1,15 @@
 # SAT Prep Project Overview
 
-最后更新：2026-01-05
+最后更新：2026-01-14
+
+## 核心北极星
+每个学生都有一个专属 AI 老师：当下错题讲解、可反复追问的对话、长期学习追踪与个性化指导。iOS/Web/后端的所有功能都围绕这位老师服务。
 
 ## 项目定位
-面向 SAT 备考的学习系统，由学生端练习应用与家长端/管理端的 Web 仪表盘组成。核心价值是：
-- 学生端高频刷题与即时反馈。
-- 家长端可视化的学习进度与薄弱点洞察。
-- 后端统一记录所有练习数据，支持分析与 AI 讲解。
+面向 SAT 备考的学习系统，核心是“每个学生一个 AI 老师”。其他模块为其提供数据与运营支撑：
+- 学生端：刷题与即时反馈，承接 AI 老师的错题讲解与追问对话。
+- 家长端：可视化长期学习趋势与薄弱点，反映 AI 老师的长期跟踪结果。
+- 后端：统一记录练习与对话数据，支撑 AI 老师的长期记忆与个性化。
 
 ## 用户与角色
 - Student：进行练习、提交答案、查看讲解与个人统计。
@@ -38,7 +41,10 @@
 3. **查看讲解**
    - 调用 Edge Function `generate_explanation`（当前为 stub，后续接入 LLM）。
    - 缓存结果写入 `ai_explanations`。
-4. **家长仪表盘**
+4. **错题追问与老师对话**
+   - 错题选择卡点步骤，写入 `attempt_insights`（AI 老师短讲解 + 追问）。
+   - 学生可进入“全科老师”总线程进行多轮对话。
+5. **家长仪表盘**
    - 调用 `get_parent_dashboard` RPC，一次性返回聚合数据。
 
 ## 数据模型要点（摘要）
@@ -75,12 +81,11 @@
 - 管理端 Web：`web/admin-dashboard`。
 - Supabase Schema：`supabase/migrations` + `supabase/docs/schema.md`。
 - Edge Functions：`supabase/functions/submit_attempt`、`supabase/functions/generate_explanation`。
+- AI Coach：`ai-coach/`（docs + worker）。
 
 ## 文档索引（建议先读）
-- 业务与架构设计：`docs/plans/2026-01-04-sat-prep-app-design.md`
-- 后端实现计划：`docs/plans/2026-01-04-sat-prep-implementation-plan.md`
-- iOS 学生端计划：`docs/plans/2026-01-04-sat-prep-ios-student-plan.md`
-- 家长端计划：`docs/plans/2026-01-04-sat-prep-parent-web-plan.md`
+- 文档入口与规范：`docs/README.md`
+- AI Coach 规格入口：`ai-coach/docs/README.md`
 - Supabase Schema：`supabase/docs/schema.md`
 - Web 说明：`web/docs/README.md`
 
@@ -89,4 +94,3 @@
 - **Backend Agent**：Supabase schema/RLS、RPC、Edge Functions、数据一致性。
 - **Web Parent Agent**：Dashboard 视图、聚合数据展示、交互与权限边界。
 - **Web Admin Agent**：题库管理、运营配置与数据校验。
-

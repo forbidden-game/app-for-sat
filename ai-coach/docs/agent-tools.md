@@ -1,5 +1,7 @@
 # Agent Tools（pi-agent-core / pi-ai）
 
+北极星：工具约束服务于“每个学生一个 AI 老师”的长期记忆与可追问讲解。
+
 本页定义 Coach Service 需要暴露给 LLM 的核心工具（tool calling），用于强制“先检索、再回答、再写回”。
 
 实现建议：

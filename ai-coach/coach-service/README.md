@@ -1,5 +1,7 @@
 # Coach Service (Worker)
 
+Purpose: power the per-student AI teacher (wrong-answer coaching + followups + long-term tracking).
+
 Node/TypeScript worker that:
 - claims `ai_jobs` of kind `attempt_insight`
 - fetches attempt + question context

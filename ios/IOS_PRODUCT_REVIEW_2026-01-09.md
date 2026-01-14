@@ -8,6 +8,7 @@
 - 从“学生刷题产品”的闭环视角审视当前 iOS 端功能与 UI 体验。
 - 盘点：已实现的主链路、当前短板、下一步开发方向与优先级。
 - 输出：可执行的 backlog（含验收标准），便于迭代落地与对齐。
+- 北极星：每个学生一个 AI 老师（错题讲解、追问对话、长期追踪）——所有链路以此为核心评估。
 
 ## 2. 已跑通的真实 UI 链路（基于 Simulator 实测）
 
@@ -182,4 +183,3 @@
 - Paging：`ios/StudentApp/StudentApp/Views/PagingScrollView.swift`
 - Result & detail：`ios/StudentApp/StudentApp/Views/SessionResultView.swift` / `ios/StudentApp/StudentApp/Views/QuestionDetailView.swift`
 - UI tokens：`ios/StudentApp/StudentApp/Views/AppTheme.swift` / `ios/UI_DESIGN.md`
-

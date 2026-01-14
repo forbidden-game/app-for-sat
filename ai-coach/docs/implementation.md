@@ -1,5 +1,7 @@
 # Implementation Notes
 
+North Star: per-student AI teacher (wrong-answer coaching + followups + long-term tracking). Implementation should keep that loop intact.
+
 ## Database
 AI Coach uses the existing Supabase Postgres database.
 

@@ -1,5 +1,7 @@
 # Data Model（MVP）
 
+北极星：这些结构用于支撑“每个学生一个 AI 老师”的长期记忆与错题追问。
+
 本页描述在现有 Supabase schema（`attempts/questions/tags/sessions` 等）基础上，建议新增的最小数据结构。
 
 > 命名为建议，实际迁移可根据你们现有风格调整。
@@ -93,4 +95,3 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `status` text（`queued|running|done|error`）
 - `error` text
 - `created_at`, `updated_at`
-
