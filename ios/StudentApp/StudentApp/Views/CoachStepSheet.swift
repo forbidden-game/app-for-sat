@@ -216,7 +216,7 @@ struct CoachStepSheet: View {
                     Image(systemName: "message.fill")
                         .font(.system(size: 16, weight: .semibold))
 
-                    Text("去问全科老师")
+                    Text("去问王校长")
                         .font(.headline)
 
                     Spacer(minLength: 0)
@@ -250,7 +250,7 @@ struct CoachStepSheet: View {
             }
             .buttonStyle(.plain)
 
-            Text("提示：后续你可以在“全科老师”对话里继续追问。")
+            Text("提示：后续你可以在“王校长”对话里继续追问。")
                 .font(.footnote)
                 .foregroundStyle(AppTheme.textMuted)
         }

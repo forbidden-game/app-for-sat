@@ -36,7 +36,7 @@ struct SidePanelView: View {
                 HStack(spacing: 12) {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 16, weight: .semibold))
-                    Text("Coach")
+                    Text("王校长")
                         .font(.headline)
                 }
                 .foregroundStyle(AppTheme.textPrimary)

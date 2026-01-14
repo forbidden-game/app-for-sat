@@ -78,7 +78,7 @@ struct CoachChatView: View {
 
             Spacer()
 
-            Text("全科老师")
+            Text("王校长")
                 .font(.headline)
                 .foregroundStyle(AppTheme.textPrimary)
 
