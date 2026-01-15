@@ -141,14 +141,16 @@ export function QuestionForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
           Subject
           <input
             list="subjects-list"
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="subject"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
-            placeholder="e.g., math"
+            placeholder="e.g., math…"
+            autoComplete="off"
             required
           />
           <datalist id="subjects-list">
@@ -158,14 +160,16 @@ export function QuestionForm({
           </datalist>
         </label>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
           Module
           <input
             list="modules-list"
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="module"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={module}
             onChange={(e) => setModule(e.target.value)}
-            placeholder="e.g., algebra"
+            placeholder="e.g., algebra…"
+            autoComplete="off"
             required
           />
           <datalist id="modules-list">
@@ -175,10 +179,11 @@ export function QuestionForm({
           </datalist>
         </label>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
           Difficulty
           <select
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="difficulty"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={difficulty}
             onChange={(e) => setDifficulty(Number(e.target.value))}
           >
@@ -190,10 +195,11 @@ export function QuestionForm({
           </select>
         </label>
 
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
           Question Type
           <select
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="questionType"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={questionType}
             onChange={(e) => setQuestionType(e.target.value)}
             disabled={loadingMeta}
@@ -207,13 +213,15 @@ export function QuestionForm({
         </label>
       </div>
 
-      <label className="grid gap-1 text-sm">
+      <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
         Question Stem
         <textarea
-          className="min-h-[120px] rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+          name="stem"
+          className="min-h-[120px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
           value={stem}
           onChange={(e) => setStem(e.target.value)}
-          placeholder="Enter the question text..."
+          placeholder="Enter the question text…"
+          autoComplete="off"
           required
         />
       </label>
@@ -221,11 +229,11 @@ export function QuestionForm({
       {isMCQ && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-zinc-700">Options</span>
+            <span className="text-sm font-medium text-[color:var(--ink)]">Options</span>
             <button
               type="button"
               onClick={addOption}
-              className="rounded-lg border border-zinc-200 px-3 py-1 text-xs text-zinc-700 hover:border-zinc-300"
+              className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
             >
               + Add Option
             </button>
@@ -233,25 +241,30 @@ export function QuestionForm({
           {options.map((opt, index) => (
             <div key={index} className="flex items-center gap-2">
               <input
-                className="w-12 rounded-lg border border-zinc-200 px-2 py-2 text-center text-sm font-medium"
+                name={`option-label-${index}`}
+                className="w-12 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-2 text-center text-sm font-medium text-[color:var(--ink)]"
                 value={opt.label}
                 onChange={(e) => handleOptionChange(index, "label", e.target.value)}
-                placeholder="A"
+                placeholder="A…"
+                autoComplete="off"
                 aria-label={`Option ${index + 1} label`}
               />
               <input
-                className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                name={`option-content-${index}`}
+                className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={opt.content}
                 onChange={(e) => handleOptionChange(index, "content", e.target.value)}
-                placeholder="Option content..."
+                placeholder="Option content…"
+                autoComplete="off"
                 aria-label={`Option ${index + 1} content`}
               />
-              <label className="flex items-center gap-1 text-sm">
+              <label className="flex items-center gap-1 text-sm text-[color:var(--ink-muted)]">
                 <input
                   type="radio"
                   name="correct-answer"
                   checked={answerKey.correct === opt.label}
                   onChange={() => setAnswerKey({ correct: opt.label })}
+                  autoComplete="off"
                 />
                 Correct
               </label>
@@ -271,10 +284,11 @@ export function QuestionForm({
       )}
 
       {!isMCQ && (
-        <label className="grid gap-1 text-sm">
+        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
           Correct Answer
           <input
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="answer"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={String(answerKey.correct ?? "")}
             onChange={(e) => {
               const val = e.target.value;
@@ -283,20 +297,21 @@ export function QuestionForm({
                 correct: !isNaN(numVal) && val.trim() !== "" ? numVal : val,
               });
             }}
-            placeholder={questionType === "numeric" ? "e.g., 42" : "Correct answer..."}
+            placeholder={questionType === "numeric" ? "e.g., 42…" : "Correct answer…"}
+            autoComplete="off"
           />
         </label>
       )}
 
       <div className="flex flex-col gap-3">
-        <span className="text-sm font-medium text-zinc-700">Tags</span>
+        <span className="text-sm font-medium text-[color:var(--ink)]">Tags</span>
         {Object.keys(tagsByCategory).length === 0 ? (
-          <p className="text-sm text-zinc-500">No tags available.</p>
+          <p className="text-sm text-[color:var(--ink-muted)]">No tags available.</p>
         ) : (
           <div className="flex flex-col gap-3">
             {Object.entries(tagsByCategory).map(([category, tags]) => (
               <div key={category} className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-zinc-500 capitalize w-16">
+                <span className="text-xs font-medium text-[color:var(--ink-muted)] capitalize w-16">
                   {category}:
                 </span>
                 {tags.map((tag) => (
@@ -306,8 +321,8 @@ export function QuestionForm({
                     onClick={() => toggleTag(tag.id)}
                     className={`rounded-full px-3 py-1 text-xs transition ${
                       selectedTagIds.includes(tag.id)
-                        ? "bg-zinc-900 text-white"
-                        : "border border-zinc-200 text-zinc-700 hover:border-zinc-300"
+                        ? "bg-[color:var(--ink)] text-white"
+                        : "border border-[color:var(--border)] text-[color:var(--ink)] hover:bg-[color:var(--surface-soft)]"
                     }`}
                   >
                     {tag.name}
@@ -319,18 +334,18 @@ export function QuestionForm({
         )}
       </div>
 
-      <div className="flex gap-3 pt-4 border-t border-zinc-100">
+      <div className="flex gap-3 pt-4 border-t border-[color:var(--border)]">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-zinc-900 px-6 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-lg bg-[color:var(--accent)] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
         >
-          {saving ? "Saving..." : isEdit ? "Save Changes" : "Create Question"}
+          {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Question"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-zinc-200 px-6 py-2 text-sm text-zinc-700"
+          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
         >
           Cancel
         </button>

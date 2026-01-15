@@ -22,7 +22,7 @@ import { AssetUploader } from "./AssetUploader";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength) + "...";
+  return text.slice(0, maxLength) + "…";
 }
 
 function formatDate(value: string) {
@@ -245,7 +245,9 @@ export default function QuestionsPage() {
   if (error && !result) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
       </main>
     );
   }
@@ -254,23 +256,23 @@ export default function QuestionsPage() {
     <main className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
             Admin Console
           </p>
-          <h1 className="text-2xl font-semibold text-zinc-900">Questions</h1>
-          <p className="text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Questions</h1>
+          <p className="text-sm text-[color:var(--ink-muted)]">
             Manage questions in the question bank.
           </p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/admin/questions/import"
-            className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700 transition hover:border-zinc-300"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
           >
             Import
           </Link>
           <button
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-zinc-800"
+            className="rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[color:var(--accent-strong)]"
             onClick={openCreateDrawer}
             type="button"
           >
@@ -280,29 +282,35 @@ export default function QuestionsPage() {
       </header>
 
       {error ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div
+          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
 
       <form
         onSubmit={handleSearch}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-zinc-200 bg-white p-4"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow)]"
       >
         <label className="grid gap-1 text-sm">
           Search
           <input
             type="text"
-            className="w-48 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-            placeholder="Search stem..."
+            name="search"
+            className="w-48 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            placeholder="Search stem…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            autoComplete="off"
           />
         </label>
         <label className="grid gap-1 text-sm">
           Subject
           <select
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="subject"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           >
@@ -317,7 +325,8 @@ export default function QuestionsPage() {
         <label className="grid gap-1 text-sm">
           Module
           <select
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="module"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={module}
             onChange={(e) => setModule(e.target.value)}
           >
@@ -332,7 +341,8 @@ export default function QuestionsPage() {
         <label className="grid gap-1 text-sm">
           Difficulty
           <select
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="difficulty"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={difficulty}
             onChange={(e) =>
               setDifficulty(e.target.value ? Number(e.target.value) : "")
@@ -349,7 +359,8 @@ export default function QuestionsPage() {
         <label className="grid gap-1 text-sm">
           Type
           <select
-            className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+            name="questionType"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={questionType}
             onChange={(e) => setQuestionType(e.target.value)}
           >
@@ -363,22 +374,22 @@ export default function QuestionsPage() {
         </label>
         <button
           type="submit"
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+          className="rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
         >
           Search
         </button>
         <button
           type="button"
           onClick={clearFilters}
-          className="rounded-lg border border-zinc-200 px-4 py-2 text-sm text-zinc-700"
+          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
         >
           Clear
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-        <table className="w-full text-left text-sm text-zinc-700">
-          <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+      <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
+          <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
             <tr>
               <th className="px-4 py-3">Stem</th>
               <th className="px-4 py-3 w-24">Subject</th>
@@ -392,13 +403,23 @@ export default function QuestionsPage() {
           <tbody>
             {loading && !result ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
-                  Loading...
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-[color:var(--ink-muted)]"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Loading…
                 </td>
               </tr>
             ) : result?.questions.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-zinc-500">
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-[color:var(--ink-muted)]"
+                  role="status"
+                  aria-live="polite"
+                >
                   No questions found.
                 </td>
               </tr>
@@ -406,13 +427,13 @@ export default function QuestionsPage() {
               result?.questions.map((q) => (
                 <tr
                   key={q.id}
-                  className="border-t border-zinc-100 hover:bg-zinc-50"
+                  className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]"
                 >
                   <td className="px-4 py-3">
                     <button
                       type="button"
                       onClick={() => openEditDrawer(q.id)}
-                      className="text-left font-medium text-zinc-900 hover:underline"
+                      className="text-left font-medium text-[color:var(--ink)] hover:underline"
                       aria-label={`Edit question ${truncate(q.stem, 60)}`}
                     >
                       {truncate(q.stem, 60)}
@@ -422,13 +443,13 @@ export default function QuestionsPage() {
                         {q.tags.slice(0, 3).map((tag, i) => (
                           <span
                             key={i}
-                            className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-600"
+                            className="rounded-full bg-[color:var(--surface-strong)] px-2 py-0.5 text-xs text-[color:var(--ink-muted)]"
                           >
                             {tag.name}
                           </span>
                         ))}
                         {q.tags.length > 3 && (
-                          <span className="text-xs text-zinc-400">
+                          <span className="text-xs text-[color:var(--ink-muted)]">
                             +{q.tags.length - 3}
                           </span>
                         )}
@@ -439,7 +460,7 @@ export default function QuestionsPage() {
                   <td className="px-4 py-3 text-xs">{q.module}</td>
                   <td className="px-4 py-3 text-center">{q.difficulty}</td>
                   <td className="px-4 py-3 text-xs">{q.question_type}</td>
-                  <td className="px-4 py-3 text-xs text-zinc-500">
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                     {formatDate(q.created_at)}
                   </td>
                   <td className="px-4 py-3">
@@ -450,7 +471,7 @@ export default function QuestionsPage() {
                           event.stopPropagation();
                           void openEditDrawer(q.id);
                         }}
-                        className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+                        className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
                       >
                         Edit
                       </button>
@@ -463,7 +484,7 @@ export default function QuestionsPage() {
                         disabled={deleting === q.id}
                         className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 transition hover:border-red-300 disabled:opacity-50"
                       >
-                        {deleting === q.id ? "..." : "Del"}
+                        {deleting === q.id ? "…" : "Del"}
                       </button>
                     </div>
                   </td>
@@ -476,7 +497,7 @@ export default function QuestionsPage() {
 
       {result && result.totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-zinc-500">
+          <span className="text-[color:var(--ink-muted)]">
             Showing {(result.page - 1) * result.pageSize + 1}-
             {Math.min(result.page * result.pageSize, result.total)} of{" "}
             {result.total}
@@ -486,18 +507,18 @@ export default function QuestionsPage() {
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="rounded-lg border border-zinc-200 px-3 py-1 text-zinc-700 disabled:opacity-50"
+              className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[color:var(--ink)] disabled:opacity-50"
             >
               Previous
             </button>
-            <span className="px-2 py-1 text-zinc-500">
+            <span className="px-2 py-1 text-[color:var(--ink-muted)]">
               Page {result.page} of {result.totalPages}
             </span>
             <button
               type="button"
               onClick={() => setPage((p) => Math.min(result.totalPages, p + 1))}
               disabled={page >= result.totalPages}
-              className="rounded-lg border border-zinc-200 px-3 py-1 text-zinc-700 disabled:opacity-50"
+              className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[color:var(--ink)] disabled:opacity-50"
             >
               Next
             </button>
@@ -508,22 +529,22 @@ export default function QuestionsPage() {
       {drawerOpen ? (
         <div className="fixed inset-0 z-40 flex justify-end">
           <button
-            className="absolute inset-0 bg-black/30"
+            className="absolute inset-0 bg-black/40"
             onClick={closeDrawer}
             aria-label="Close drawer"
           />
-          <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col gap-4 overflow-auto bg-white p-6 shadow-2xl">
+          <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                   {drawerMode === "edit" ? "Edit question" : "Create question"}
                 </p>
-                <p className="text-sm font-semibold text-zinc-900">
+                <p className="text-sm font-semibold text-[color:var(--ink)]">
                   {drawerMode === "edit" ? "Update content" : "New question"}
                 </p>
               </div>
               <button
-                className="text-xs text-zinc-400 transition hover:text-zinc-600"
+                className="text-xs text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
                 onClick={closeDrawer}
               >
                 Close
@@ -531,30 +552,35 @@ export default function QuestionsPage() {
             </div>
 
             {drawerError ? (
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div
+                className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+                role="alert"
+              >
                 {drawerError}
               </div>
             ) : null}
 
             {drawerMode === "edit" && selectedQuestionId ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
-                <div className="text-xs text-zinc-500">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
+                <div className="text-xs text-[color:var(--ink-muted)]">
                   ID:{" "}
-                  <span className="font-mono text-zinc-700">
+                  <span className="font-mono text-[color:var(--ink)]">
                     {selectedQuestionId}
                   </span>
                 </div>
                 <Link
                   href={`/admin/questions/${selectedQuestionId}`}
-                  className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+                  className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
                 >
-                  Open full editor
+                  Open Full Editor
                 </Link>
               </div>
             ) : null}
 
             {drawerLoading ? (
-              <p className="text-sm text-zinc-500">Loading question...</p>
+              <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+                Loading question…
+              </p>
             ) : (
               <QuestionForm
                 key={selectedQuestion?.id ?? "new-question"}
@@ -566,7 +592,7 @@ export default function QuestionsPage() {
             )}
 
             {drawerMode === "edit" && selectedQuestionId ? (
-              <div className="rounded-2xl border border-zinc-200 bg-white p-4">
+              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
                 <AssetUploader questionId={selectedQuestionId} />
               </div>
             ) : null}

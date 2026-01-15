@@ -43,7 +43,7 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-20 border-b border-[color:var(--border)] bg-white/85 backdrop-blur-xl">
+    <nav className="sticky top-0 z-20 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
         <div className="flex items-baseline gap-2">
           <span className="text-sm font-semibold text-[color:var(--ink)]">SAT Prep</span>
@@ -63,15 +63,17 @@ export function AdminNav() {
           </div>
           <div className="flex items-center gap-3">
             {errorMessage ? (
-              <span className="text-xs text-red-600">{errorMessage}</span>
+              <span className="text-xs text-red-600" role="alert">
+                {errorMessage}
+              </span>
             ) : null}
             <button
-              className="rounded-full border border-[color:var(--border)] bg-white px-4 py-1 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-1 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
               onClick={handleSignOut}
               disabled={!supabase || isSigningOut}
             >
-              {isSigningOut ? "Signing out..." : "Sign out"}
+              {isSigningOut ? "Signing out…" : "Sign out"}
             </button>
           </div>
         </div>

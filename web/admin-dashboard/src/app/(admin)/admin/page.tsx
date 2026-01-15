@@ -82,7 +82,9 @@ export default function AdminPage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-zinc-500">Loading admin overview...</p>
+        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          Loading admin overview…
+        </p>
       </main>
     );
   }
@@ -90,7 +92,9 @@ export default function AdminPage() {
   if (error) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
       </main>
     );
   }
@@ -98,7 +102,9 @@ export default function AdminPage() {
   if (!overview) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-zinc-500">No admin data available.</p>
+        <p className="text-sm text-[color:var(--ink-muted)]">
+          No admin data available.
+        </p>
       </main>
     );
   }
@@ -107,20 +113,20 @@ export default function AdminPage() {
     <main className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
             Admin Console
           </p>
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            Operations overview
+          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">
+            Operations Overview
           </h1>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-[color:var(--ink-muted)]">
             Signed in as{" "}
-            <span className="font-medium text-zinc-700">
+            <span className="font-medium text-[color:var(--ink)]">
               {overview.admin.display_name ?? overview.admin.email ?? "Admin"}
             </span>
           </p>
         </div>
-        <div className="text-xs text-zinc-400">
+        <div className="text-xs text-[color:var(--ink-muted)]">
           Updated {formatDateTime(overview.generated_at)}
         </div>
       </header>
@@ -129,16 +135,18 @@ export default function AdminPage() {
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm"
+            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow)]"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               {metric.label}
             </p>
-            <p className="mt-2 text-2xl font-semibold text-zinc-900">
+            <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">
               {metric.value}
             </p>
             {metric.helper ? (
-              <p className="mt-1 text-xs text-zinc-500">{metric.helper}</p>
+              <p className="mt-1 text-xs text-[color:var(--ink-muted)]">
+                {metric.helper}
+              </p>
             ) : null}
           </div>
         ))}
@@ -146,17 +154,19 @@ export default function AdminPage() {
 
       <section id="content" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-900">Question banks</h2>
+          <h2 className="text-lg font-semibold text-[color:var(--ink)]">
+            Question Banks
+          </h2>
           <Link
-            className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:border-zinc-300"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
             href="/admin/banks"
           >
-            Manage banks
+            Manage Banks
           </Link>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <table className="w-full text-left text-sm text-zinc-700">
-            <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+        <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
               <tr>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Slug</th>
@@ -169,22 +179,21 @@ export default function AdminPage() {
               {questionBanks.length === 0 ? (
                 <tr>
                   <td
-                    className="px-4 py-6 text-center text-sm text-zinc-500"
+                    className="px-4 py-6 text-center text-sm text-[color:var(--ink-muted)]"
                     colSpan={5}
+                    role="status"
+                    aria-live="polite"
                   >
                     No question banks yet.
                   </td>
                 </tr>
               ) : (
                 questionBanks.map((bank) => (
-                  <tr
-                    key={bank.id}
-                    className="border-t border-zinc-100"
-                  >
-                    <td className="px-4 py-3 font-medium text-zinc-900">
+                  <tr key={bank.id} className="border-t border-[color:var(--border)]">
+                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
                       {bank.title}
                     </td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">
+                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                       {bank.slug}
                     </td>
                     <td className="px-4 py-3">{bank.mode}</td>
@@ -192,7 +201,15 @@ export default function AdminPage() {
                       {bank.question_limit ?? "N/A"}
                     </td>
                     <td className="px-4 py-3">
-                      {bank.is_active ? "Active" : "Paused"}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[11px] ${
+                          bank.is_active
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {bank.is_active ? "Active" : "Paused"}
+                      </span>
                     </td>
                   </tr>
                 ))
@@ -204,12 +221,16 @@ export default function AdminPage() {
 
       <section id="users" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-900">Recent users</h2>
-          <span className="text-xs text-zinc-400">Latest 12 profiles</span>
+          <h2 className="text-lg font-semibold text-[color:var(--ink)]">
+            Recent Users
+          </h2>
+          <span className="text-xs text-[color:var(--ink-muted)]">
+            Latest 12 profiles
+          </span>
         </div>
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <table className="w-full text-left text-sm text-zinc-700">
-            <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+        <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Role</th>
@@ -220,20 +241,22 @@ export default function AdminPage() {
               {recentUsers.length === 0 ? (
                 <tr>
                   <td
-                    className="px-4 py-6 text-center text-sm text-zinc-500"
+                    className="px-4 py-6 text-center text-sm text-[color:var(--ink-muted)]"
                     colSpan={3}
+                    role="status"
+                    aria-live="polite"
                   >
                     No users yet.
                   </td>
                 </tr>
               ) : (
                 recentUsers.map((user) => (
-                  <tr key={user.id} className="border-t border-zinc-100">
-                    <td className="px-4 py-3 font-medium text-zinc-900">
+                  <tr key={user.id} className="border-t border-[color:var(--border)]">
+                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
                       {user.display_name ?? "Unnamed"}
                     </td>
                     <td className="px-4 py-3">{user.role ?? "unknown"}</td>
-                    <td className="px-4 py-3 text-xs text-zinc-500">
+                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                       {formatDateTime(user.created_at)}
                     </td>
                   </tr>

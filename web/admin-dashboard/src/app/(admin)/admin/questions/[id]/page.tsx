@@ -89,7 +89,9 @@ export default function EditQuestionPage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-sm text-zinc-500">Loading question...</p>
+        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          Loading question…
+        </p>
       </main>
     );
   }
@@ -97,7 +99,9 @@ export default function EditQuestionPage() {
   if (error && !question) {
     return (
       <main className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
       </main>
     );
   }
@@ -105,7 +109,9 @@ export default function EditQuestionPage() {
   if (!question) {
     return (
       <main className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-sm text-zinc-500">Question not found.</p>
+        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          Question not found.
+        </p>
       </main>
     );
   }
@@ -113,22 +119,25 @@ export default function EditQuestionPage() {
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
       <header>
-        <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+        <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Admin Console
         </p>
-        <h1 className="text-2xl font-semibold text-zinc-900">Edit Question</h1>
-        <p className="text-sm text-zinc-500">
-          ID: <code className="text-xs bg-zinc-100 px-1 py-0.5 rounded">{questionId}</code>
+        <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Edit Question</h1>
+        <p className="text-sm text-[color:var(--ink-muted)]">
+          ID: <code className="text-xs bg-[color:var(--surface-soft)] px-1 py-0.5 rounded">{questionId}</code>
         </p>
       </header>
 
       {error && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div
+          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <QuestionForm
           initialData={question}
           onSubmit={handleSubmit}
@@ -137,7 +146,7 @@ export default function EditQuestionPage() {
         />
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <AssetUploader questionId={questionId} />
       </div>
     </main>

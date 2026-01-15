@@ -165,7 +165,9 @@ export default function UsersPage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-zinc-500">Loading users...</p>
+        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          Loading users…
+        </p>
       </main>
     );
   }
@@ -173,7 +175,9 @@ export default function UsersPage() {
   if (error && users.length === 0) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
       </main>
     );
   }
@@ -182,25 +186,26 @@ export default function UsersPage() {
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
             Admin Console
           </p>
-          <h1 className="text-2xl font-semibold text-zinc-900">Users</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Users</h1>
+          <p className="mt-1 text-sm text-[color:var(--ink-muted)]">
             Create users via email invite and manage roles across student, parent,
             and admin accounts.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <label
-            className="text-xs uppercase tracking-[0.2em] text-zinc-400"
+            className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
             htmlFor="role-filter"
           >
             Filter role
           </label>
           <select
             id="role-filter"
-            className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm"
+            name="roleFilter"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value)}
           >
@@ -214,27 +219,31 @@ export default function UsersPage() {
         </div>
       </header>
 
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-sm text-red-600" role="alert">
+          {error}
+        </p>
+      ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3">
+        <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
             <div>
-              <p className="text-sm font-semibold text-zinc-900">User list</p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-sm font-semibold text-[color:var(--ink)]">User List</p>
+              <p className="text-xs text-[color:var(--ink-muted)]">
                 Showing page {page}. Filters only apply to the current page.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-400">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ink-muted)]">
               <button
-                className="rounded-full border border-zinc-200 px-3 py-1 text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => loadUsers(page - 1)}
                 disabled={page <= 1 || loading}
               >
                 Prev
               </button>
               <button
-                className="rounded-full border border-zinc-200 px-3 py-1 text-zinc-700 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => loadUsers(page + 1)}
                 disabled={!hasNext || loading}
               >
@@ -244,8 +253,8 @@ export default function UsersPage() {
           </div>
           <div className="max-h-[560px] overflow-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="sticky top-0 bg-white">
-                <tr className="border-b border-zinc-100 text-xs uppercase tracking-[0.16em] text-zinc-400">
+              <thead className="sticky top-0 bg-[color:var(--surface)]">
+                <tr className="border-b border-[color:var(--border)] text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Role</th>
@@ -257,26 +266,31 @@ export default function UsersPage() {
               <tbody>
                 {filteredUsers.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-6 text-sm text-zinc-500" colSpan={6}>
+                    <td
+                      className="px-4 py-6 text-sm text-[color:var(--ink-muted)]"
+                      colSpan={6}
+                      role="status"
+                      aria-live="polite"
+                    >
                       No users found on this page.
                     </td>
                   </tr>
                 ) : (
                   filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-zinc-100">
-                      <td className="px-4 py-3 text-zinc-900">
+                    <tr key={user.id} className="border-b border-[color:var(--border)]">
+                      <td className="px-4 py-3 text-[color:var(--ink)]">
                         {user.email ?? "(no email)"}
                       </td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td className="px-4 py-3 text-[color:var(--ink)]">
                         {user.display_name ?? "—"}
                       </td>
-                      <td className="px-4 py-3 text-zinc-700">
+                      <td className="px-4 py-3 text-[color:var(--ink)]">
                         {user.role ?? "unknown"}
                       </td>
-                      <td className="px-4 py-3 text-zinc-500">
+                      <td className="px-4 py-3 text-[color:var(--ink-muted)]">
                         {formatDateTime(user.created_at)}
                       </td>
-                      <td className="px-4 py-3 text-zinc-500">
+                      <td className="px-4 py-3 text-[color:var(--ink-muted)]">
                         {user.last_sign_in_at
                           ? formatDateTime(user.last_sign_in_at)
                           : "—"}
@@ -284,7 +298,7 @@ export default function UsersPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <button
-                            className="rounded-full border border-zinc-200 px-3 py-1 text-xs text-zinc-700 transition hover:bg-zinc-50"
+                            className="rounded-full border border-[color:var(--border)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
                             onClick={() => startEdit(user)}
                           >
                             Edit
@@ -306,19 +320,19 @@ export default function UsersPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-zinc-200 bg-white p-5">
+        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
-                {editingId ? "Edit user" : "Create user"}
+              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                {editingId ? "Edit User" : "Create User"}
               </p>
-              <p className="text-sm font-semibold text-zinc-900">
-                {editingId ? "Update profile" : "Send invite"}
+              <p className="text-sm font-semibold text-[color:var(--ink)]">
+                {editingId ? "Update Profile" : "Send Invite"}
               </p>
             </div>
             {editingId ? (
               <button
-                className="text-xs text-zinc-400 transition hover:text-zinc-600"
+                className="text-xs text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink-muted)]"
                 onClick={resetForm}
               >
                 Cancel
@@ -327,21 +341,25 @@ export default function UsersPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-4 text-sm">
-            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-zinc-400">
+            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
               Email
               <input
-                className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900"
+                name="email"
+                className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.email}
                 onChange={(event) =>
                   setForm((prev) => ({ ...prev, email: event.target.value }))
                 }
-                placeholder="name@example.com"
+                placeholder="name@example.com…"
+                autoComplete="email"
+                spellCheck={false}
               />
             </label>
-            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-zinc-400">
+            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
               Display name
               <input
-                className="rounded-xl border border-zinc-200 px-3 py-2 text-sm text-zinc-900"
+                name="displayName"
+                className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.display_name}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -349,13 +367,15 @@ export default function UsersPage() {
                     display_name: event.target.value,
                   }))
                 }
-                placeholder="Optional"
+                placeholder="Optional…"
+                autoComplete="name"
               />
             </label>
-            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-zinc-400">
+            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
               Role
               <select
-                className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-sm"
+                name="role"
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                 value={form.role}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -375,13 +395,13 @@ export default function UsersPage() {
 
           <div className="mt-6 flex flex-col gap-2">
             <button
-              className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               onClick={handleSave}
               disabled={saving}
             >
-              {editingId ? "Update user" : "Create and send invite"}
+              {editingId ? "Update User" : "Create & Send Invite"}
             </button>
-            <p className="text-xs text-zinc-500">
+            <p className="text-xs text-[color:var(--ink-muted)]">
               Invites use the Supabase email flow. Role changes do not edit
               parent/student links.
             </p>

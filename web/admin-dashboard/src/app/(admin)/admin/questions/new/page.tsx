@@ -50,22 +50,25 @@ export default function NewQuestionPage() {
   return (
     <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
       <header>
-        <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+        <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Admin Console
         </p>
-        <h1 className="text-2xl font-semibold text-zinc-900">New Question</h1>
-        <p className="text-sm text-zinc-500">
+        <h1 className="text-2xl font-semibold text-[color:var(--ink)]">New Question</h1>
+        <p className="text-sm text-[color:var(--ink-muted)]">
           Create a new question in the question bank.
         </p>
       </header>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div
+          className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+          role="alert"
+        >
           {error}
         </div>
       )}
 
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6">
+      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <QuestionForm
           onSubmit={handleSubmit}
           onCancel={handleCancel}

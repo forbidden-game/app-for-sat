@@ -77,7 +77,9 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
       <>
         <SupabaseConfigBanner />
         <main className="mx-auto max-w-5xl px-6 py-12">
-          <p className="text-sm text-zinc-500">Loading admin console...</p>
+          <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+            Loading admin console…
+          </p>
         </main>
       </>
     );

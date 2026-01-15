@@ -29,7 +29,10 @@ export default function RootLayout({
         className={`${spaceGrotesk.variable} ${plexMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        {children}
+        <a className="skip-link" href="#main">
+          Skip to content
+        </a>
+        <div id="main">{children}</div>
       </body>
     </html>
   );

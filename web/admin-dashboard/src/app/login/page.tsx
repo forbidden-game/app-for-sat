@@ -21,21 +21,24 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen">
       <SupabaseConfigBanner />
       <main className="mx-auto flex max-w-md flex-col px-6 py-16">
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <h1 className="text-xl font-semibold text-zinc-900">Admin Login</h1>
-          <p className="mt-2 text-sm text-zinc-500">
+        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
+          <h1 className="text-xl font-semibold text-[color:var(--ink)]">Admin Login</h1>
+          <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
             Receive a magic link to access the admin console.
           </p>
           {sent ? (
-            <p className="mt-4 text-sm text-zinc-700">
+            <p className="mt-4 text-sm text-[color:var(--ink)]">
               Check your email for the login link.
             </p>
           ) : supabase ? (
             <form onSubmit={onSubmit} className="mt-4 space-y-3">
-              <label className="text-xs uppercase tracking-[0.16em] text-zinc-400" htmlFor="admin-email">
+              <label
+                className="text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]"
+                htmlFor="admin-email"
+              >
                 Email
               </label>
               <input
@@ -43,21 +46,23 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                autoCapitalize="none"
+                spellCheck={false}
+                className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email"
+                placeholder="Email…"
                 required
               />
               <button
-                className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"
+                className="w-full rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
                 type="submit"
               >
                 Send Link
               </button>
             </form>
           ) : (
-            <p className="mt-4 text-sm text-zinc-600">
+            <p className="mt-4 text-sm text-[color:var(--ink-muted)]">
               Login is disabled until Supabase is configured.
             </p>
           )}

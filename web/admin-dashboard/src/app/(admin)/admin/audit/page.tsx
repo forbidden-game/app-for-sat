@@ -100,7 +100,9 @@ export default function AuditLogPage() {
   if (loading) {
     return (
       <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-zinc-500">Loading audit logs...</p>
+        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          Loading audit logs…
+        </p>
       </main>
     );
   }
@@ -109,28 +111,31 @@ export default function AuditLogPage() {
     <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-zinc-900">Audit Log</h1>
-          <p className="text-sm text-zinc-500">Last 7 days of admin activity.</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Audit Log</h1>
+          <p className="text-sm text-[color:var(--ink-muted)]">Last 7 days of admin activity.</p>
         </div>
         <button
           type="button"
           onClick={downloadCsv}
-          className="rounded-full border border-zinc-200 px-4 py-2 text-xs text-zinc-700 hover:border-zinc-300"
+          className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs text-[color:var(--ink)] hover:border-[color:var(--accent-strong)]"
         >
           Export CSV
         </button>
       </header>
 
       {error ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div
+          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          role="alert"
+        >
           {error}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-        <table className="w-full text-left text-sm text-zinc-700">
-          <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+      <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <table className="w-full text-left text-sm text-[color:var(--ink)]">
+          <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
             <tr>
               <th className="px-4 py-3">Time</th>
               <th className="px-4 py-3">Actor</th>
@@ -142,25 +147,30 @@ export default function AuditLogPage() {
           <tbody>
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-zinc-500">
+                <td
+                  colSpan={5}
+                  className="px-4 py-8 text-center text-[color:var(--ink-muted)]"
+                  role="status"
+                  aria-live="polite"
+                >
                   No audit events yet.
                 </td>
               </tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className="border-t border-zinc-100">
-                  <td className="px-4 py-3 text-xs text-zinc-500">
+                <tr key={log.id} className="border-t border-[color:var(--border)]">
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                     {formatDateTime(log.created_at)}
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-700">
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink)]">
                     {log.actor_email ?? "unknown"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-zinc-700">{log.action}</td>
-                  <td className="px-4 py-3 text-xs text-zinc-700">
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink)]">{log.action}</td>
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink)]">
                     {log.resource_type}
                     {log.resource_id ? ` · ${log.resource_id.slice(0, 8)}` : ""}
                   </td>
-                  <td className="px-4 py-3 text-[11px] text-zinc-500">
+                  <td className="px-4 py-3 text-[11px] text-[color:var(--ink-muted)]">
                     {JSON.stringify(log.metadata ?? {})}
                   </td>
                 </tr>

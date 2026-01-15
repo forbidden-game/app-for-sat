@@ -124,37 +124,47 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
   }
 
   if (loading) {
-    return <p className="text-sm text-zinc-500">Loading assets...</p>;
+    return (
+      <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+        Loading assets…
+      </p>
+    );
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-zinc-700">Images & Assets</span>
-        <label className="cursor-pointer rounded-lg border border-zinc-200 px-3 py-1 text-xs text-zinc-700 hover:border-zinc-300">
-          {uploading ? "Uploading..." : "+ Add Image"}
+        <span className="text-sm font-medium text-[color:var(--ink)]">Images & Assets</span>
+        <label className="cursor-pointer rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]">
+          {uploading ? "Uploading…" : "+ Add Image"}
           <input
             type="file"
             accept="image/*"
             onChange={handleUpload}
             disabled={uploading}
             className="hidden"
+            name="assetUpload"
+            autoComplete="off"
           />
         </label>
       </div>
 
       {error && (
-        <p className="text-xs text-red-600">{error}</p>
+        <p className="text-xs text-red-600" role="alert">
+          {error}
+        </p>
       )}
 
       {assets.length === 0 ? (
-        <p className="text-sm text-zinc-500">No assets uploaded yet.</p>
+        <p className="text-sm text-[color:var(--ink-muted)]">
+          No assets uploaded yet.
+        </p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {assets.map((asset) => (
             <div
               key={asset.id}
-              className="group relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50"
+              className="group relative overflow-hidden rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)]"
             >
               <Image
                 src={asset.asset_url}
@@ -170,7 +180,13 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
                 title="Delete"
                 aria-label="Delete asset"
               >
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="h-3 w-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
