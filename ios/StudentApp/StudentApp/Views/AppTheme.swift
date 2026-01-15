@@ -13,78 +13,78 @@ import UIKit
 
 enum AppTheme {
     static let backgroundPrimary = dynamicColor(
-        light: UIColor(red: 0.92, green: 0.94, blue: 0.97, alpha: 1),
-        dark: UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 1)
+        light: UIColor(red: 0.99, green: 0.98, blue: 0.97, alpha: 1),
+        dark: UIColor(red: 0.08, green: 0.07, blue: 0.06, alpha: 1)
     )
     static let backgroundSecondary = dynamicColor(
-        light: UIColor(red: 0.88, green: 0.91, blue: 0.95, alpha: 1),
-        dark: UIColor(red: 0.05, green: 0.07, blue: 0.12, alpha: 1)
+        light: UIColor(red: 0.96, green: 0.95, blue: 0.93, alpha: 1),
+        dark: UIColor(red: 0.11, green: 0.10, blue: 0.08, alpha: 1)
     )
     static let backgroundTop = backgroundPrimary
     static let backgroundBottom = backgroundSecondary
     static let surface = dynamicColor(
-        light: UIColor(red: 0.99, green: 0.995, blue: 1.0, alpha: 1),
-        dark: UIColor(red: 0.06, green: 0.10, blue: 0.17, alpha: 1)
+        light: UIColor(red: 0.996, green: 0.992, blue: 0.987, alpha: 1),
+        dark: UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1)
     )
     static let surfaceRaised = dynamicColor(
-        light: UIColor(red: 0.96, green: 0.975, blue: 1.0, alpha: 1),
-        dark: UIColor(red: 0.09, green: 0.13, blue: 0.22, alpha: 1)
+        light: UIColor(red: 0.97, green: 0.96, blue: 0.94, alpha: 1),
+        dark: UIColor(red: 0.15, green: 0.13, blue: 0.11, alpha: 1)
     )
     static let surfacePressed = dynamicColor(
-        light: UIColor(red: 0.90, green: 0.93, blue: 0.97, alpha: 1),
-        dark: UIColor(red: 0.12, green: 0.17, blue: 0.27, alpha: 1)
+        light: UIColor(red: 0.94, green: 0.92, blue: 0.89, alpha: 1),
+        dark: UIColor(red: 0.18, green: 0.16, blue: 0.14, alpha: 1)
     )
     static let textPrimary = dynamicColor(
-        light: UIColor(red: 0.04, green: 0.06, blue: 0.13, alpha: 1),
-        dark: UIColor(red: 0.92, green: 0.95, blue: 1.0, alpha: 1)
+        light: UIColor(red: 0.10, green: 0.10, blue: 0.10, alpha: 1),
+        dark: UIColor(red: 0.95, green: 0.93, blue: 0.90, alpha: 1)
     )
     static let textSecondary = dynamicColor(
-        light: UIColor(red: 0.12, green: 0.17, blue: 0.27, alpha: 1),
-        dark: UIColor(red: 0.72, green: 0.78, blue: 0.90, alpha: 1)
+        light: UIColor(red: 0.24, green: 0.22, blue: 0.20, alpha: 1),
+        dark: UIColor(red: 0.82, green: 0.78, blue: 0.72, alpha: 1)
     )
     static let textMuted = dynamicColor(
-        light: UIColor(red: 0.29, green: 0.35, blue: 0.47, alpha: 1),
-        dark: UIColor(red: 0.54, green: 0.60, blue: 0.72, alpha: 1)
+        light: UIColor(red: 0.42, green: 0.38, blue: 0.33, alpha: 1),
+        dark: UIColor(red: 0.68, green: 0.62, blue: 0.56, alpha: 1)
     )
     static let textOnAccent = dynamicColor(
-        light: UIColor(white: 1.0, alpha: 1),
-        dark: UIColor(white: 1.0, alpha: 1)
+        light: UIColor(red: 0.99, green: 0.98, blue: 0.97, alpha: 1),
+        dark: UIColor(red: 0.99, green: 0.98, blue: 0.97, alpha: 1)
     )
     static let accent = dynamicColor(
-        light: UIColor(red: 0.18, green: 0.42, blue: 0.96, alpha: 1),
-        dark: UIColor(red: 0.43, green: 0.63, blue: 1.0, alpha: 1)
+        light: UIColor(red: 0.18, green: 0.36, blue: 0.36, alpha: 1),
+        dark: UIColor(red: 0.48, green: 0.62, blue: 0.58, alpha: 1)
     )
     static let accentStrong = dynamicColor(
-        light: UIColor(red: 0.31, green: 0.55, blue: 1.0, alpha: 1),
-        dark: UIColor(red: 0.55, green: 0.72, blue: 1.0, alpha: 1)
+        light: UIColor(red: 0.12, green: 0.28, blue: 0.28, alpha: 1),
+        dark: UIColor(red: 0.56, green: 0.72, blue: 0.68, alpha: 1)
     )
     static let statusSuccess = dynamicColor(
-        light: UIColor(red: 0.09, green: 0.79, blue: 0.48, alpha: 1),
-        dark: UIColor(red: 0.22, green: 0.90, blue: 0.60, alpha: 1)
+        light: UIColor(red: 0.20, green: 0.47, blue: 0.40, alpha: 1),
+        dark: UIColor(red: 0.49, green: 0.70, blue: 0.61, alpha: 1)
     )
     static let statusWarning = dynamicColor(
-        light: UIColor(red: 0.96, green: 0.77, blue: 0.32, alpha: 1),
-        dark: UIColor(red: 0.97, green: 0.82, blue: 0.42, alpha: 1)
+        light: UIColor(red: 0.70, green: 0.52, blue: 0.20, alpha: 1),
+        dark: UIColor(red: 0.82, green: 0.64, blue: 0.34, alpha: 1)
     )
     static let statusDanger = dynamicColor(
-        light: UIColor(red: 0.94, green: 0.27, blue: 0.27, alpha: 1),
-        dark: UIColor(red: 1.0, green: 0.42, blue: 0.42, alpha: 1)
+        light: UIColor(red: 0.70, green: 0.33, blue: 0.27, alpha: 1),
+        dark: UIColor(red: 0.83, green: 0.50, blue: 0.42, alpha: 1)
     )
     static let divider = dynamicColor(
-        light: UIColor(red: 0.82, green: 0.86, blue: 0.91, alpha: 1),
-        dark: UIColor(white: 1.0, alpha: 0.22)
+        light: UIColor(red: 0.85, green: 0.82, blue: 0.78, alpha: 1),
+        dark: UIColor(red: 0.25, green: 0.22, blue: 0.20, alpha: 1)
     )
     static let dividerStrong = dynamicColor(
-        light: UIColor(red: 0.76, green: 0.81, blue: 0.89, alpha: 1),
-        dark: UIColor(white: 1.0, alpha: 0.36)
+        light: UIColor(red: 0.79, green: 0.75, blue: 0.70, alpha: 1),
+        dark: UIColor(red: 0.32, green: 0.28, blue: 0.25, alpha: 1)
     )
     static let shadowStrong = dynamicColor(
-        light: UIColor(white: 0.0, alpha: 0.12),
-        dark: UIColor(white: 0.0, alpha: 0.45)
+        light: UIColor(white: 0.0, alpha: 0.10),
+        dark: UIColor(white: 0.0, alpha: 0.55)
     )
     static let shadowSoft = dynamicColor(
-        light: UIColor(white: 0.0, alpha: 0.06),
-        dark: UIColor(white: 0.0, alpha: 0.30)
+        light: UIColor(white: 0.0, alpha: 0.04),
+        dark: UIColor(white: 0.0, alpha: 0.35)
     )
 
     static var backgroundGradient: LinearGradient {
@@ -111,14 +111,14 @@ enum AppTheme {
 enum AppMetrics {
     static let cardCornerRadius: CGFloat = 20
     static let cardPadding: CGFloat = 18
-    static let cardShadowRadius: CGFloat = 10
-    static let cardShadowY: CGFloat = 4
+    static let cardShadowRadius: CGFloat = 8
+    static let cardShadowY: CGFloat = 3
 
     static let rowCornerRadius: CGFloat = 16
     static let rowPaddingVertical: CGFloat = 10
     static let rowPaddingHorizontal: CGFloat = 16
-    static let rowShadowRadius: CGFloat = 8
-    static let rowShadowY: CGFloat = 4
+    static let rowShadowRadius: CGFloat = 6
+    static let rowShadowY: CGFloat = 3
 
     static let badgeSize: CGFloat = 32
     static let badgeSizeSmall: CGFloat = 28
@@ -144,8 +144,8 @@ enum AppMetrics {
     static let gridItemMinimum: CGFloat = 56
 
     static let panelCornerRadius: CGFloat = 28
-    static let panelShadowRadius: CGFloat = 22
-    static let panelShadowY: CGFloat = 12
+    static let panelShadowRadius: CGFloat = 18
+    static let panelShadowY: CGFloat = 10
 }
 
 extension View {
