@@ -642,8 +642,11 @@ private struct AudioWaveform: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .mask(
-                    Rectangle()
-                        .frame(width: width * clampedProgress)
+                    HStack(spacing: 0) {
+                        Rectangle()
+                            .frame(width: width * clampedProgress)
+                        Spacer(minLength: 0)
+                    }
                 )
             )
         }
