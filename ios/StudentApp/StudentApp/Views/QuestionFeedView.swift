@@ -19,6 +19,7 @@ struct QuestionFeedView: View {
     @FocusState private var isInputFocused: Bool
     @State private var showFeedback = false
     @State private var currentPage = 0
+    @State private var autoAdvanceTask: Task<Void, Never>?
 
     var body: some View {
         let total = vm.session.questions.count
@@ -207,8 +208,13 @@ struct QuestionFeedView: View {
     private func optionButton(_ option: QuestionOption, questionId: String, questionIndex: Int) -> some View {
         let isCurrentQuestion = questionIndex == vm.currentIndex
         let isSelected = isCurrentQuestion && selectedOption == option.label
-        let isJustSelected = isCurrentQuestion && showFeedback && isSelected
-        
+        let isFeedback = isCurrentQuestion && showFeedback && isSelected
+        let badgeFill = isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised
+        let badgeStroke = isSelected ? AppTheme.accentStrong : AppTheme.dividerStrong
+        let badgeText = isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary
+        let optionFill = isSelected ? AppTheme.accentSoft : AppTheme.surface
+        let optionStroke = isSelected ? AppTheme.accentStrong : AppTheme.divider
+
         return Button {
             guard isCurrentQuestion, !showFeedback else { return }
             selectedOption = option.label
@@ -218,19 +224,18 @@ struct QuestionFeedView: View {
             }
             recordAnswer(option.label, questionId: questionId)
             submitAnswer(questionIndex: questionIndex, answer: option.label)
+            scheduleAutoAdvance(questionIndex: questionIndex)
         } label: {
             HStack(spacing: 12) {
                 Text(option.label)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(isJustSelected ? AppTheme.textOnAccent : (isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary))
+                    .foregroundStyle(badgeText)
                     .frame(width: AppMetrics.badgeSize, height: AppMetrics.badgeSize)
-                    .background(
-                        isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised)
-                    )
+                    .background(badgeFill)
                     .clipShape(Circle())
                     .overlay(
                         Circle()
-                            .stroke(isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong), lineWidth: isJustSelected ? 2 : 1)
+                            .stroke(badgeStroke, lineWidth: isSelected ? 2 : 1)
                     )
 
                 Text(option.content)
@@ -244,13 +249,13 @@ struct QuestionFeedView: View {
             .padding(.vertical, AppMetrics.rowPaddingVertical)
             .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
             .appSurface(
-                fill: isJustSelected ? AppTheme.surfacePressed : (isSelected ? AppTheme.surfacePressed : AppTheme.surfaceRaised),
-                stroke: isJustSelected ? AppTheme.statusSuccess : (isSelected ? AppTheme.accent : AppTheme.dividerStrong),
+                fill: isSelected ? optionFill : AppTheme.surfaceRaised,
+                stroke: optionStroke,
                 shadowRadius: AppMetrics.rowShadowRadius,
                 shadowY: AppMetrics.rowShadowY,
-                showShadow: isSelected || isJustSelected
+                showShadow: isSelected
             )
-            .scaleEffect(isJustSelected ? 0.97 : 1.0)
+            .scaleEffect(isFeedback ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
         .disabled(!isCurrentQuestion || showFeedback)
@@ -266,7 +271,7 @@ struct QuestionFeedView: View {
         return HStack(spacing: 12) {
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 22))
-                .foregroundStyle(showingFeedback ? AppTheme.statusSuccess : AppTheme.accent)
+                .foregroundStyle(showingFeedback ? AppTheme.accentStrong : AppTheme.accent)
 
             TextField("Type your answer", text: isCurrentQuestion ? $freeResponse : .constant(answers[questionId] ?? ""))
                 .focused($isInputFocused)
@@ -285,11 +290,11 @@ struct QuestionFeedView: View {
         .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
         .appSurface(
             fill: showingFeedback ? AppTheme.surfacePressed : AppTheme.surfaceRaised,
-            stroke: showingFeedback ? AppTheme.statusSuccess : (isEnabled ? AppTheme.dividerStrong : AppTheme.divider),
+            stroke: showingFeedback ? AppTheme.accentStrong : (isEnabled ? AppTheme.dividerStrong : AppTheme.divider),
             shadowRadius: AppMetrics.rowShadowRadius,
             shadowY: AppMetrics.rowShadowY
         )
-        .scaleEffect(showingFeedback ? 0.97 : 1.0)
+        .scaleEffect(showingFeedback ? 0.98 : 1.0)
     }
 
     // MARK: - Helper Methods
@@ -322,6 +327,7 @@ struct QuestionFeedView: View {
             showFeedback = true
         }
         submitAnswer(questionIndex: vm.currentIndex, answer: trimmed)
+        scheduleAutoAdvance(questionIndex: vm.currentIndex)
     }
 
     private func recordAnswer(_ value: String, questionId: String) {
@@ -335,9 +341,6 @@ struct QuestionFeedView: View {
         Task {
             do {
                 _ = try await flowModel.submitAnswer(question: question, answer: answer, allowCoach: false)
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                showFeedback = false
-                advanceAfterAnswer()
             } catch {
                 submissionError(error)
             }
@@ -364,9 +367,25 @@ struct QuestionFeedView: View {
         selectedOption = nil
         freeResponse = ""
         isInputFocused = false
+        autoAdvanceTask?.cancel()
+        autoAdvanceTask = nil
+    }
+
+    private func scheduleAutoAdvance(questionIndex: Int) {
+        autoAdvanceTask?.cancel()
+        autoAdvanceTask = Task {
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            await MainActor.run {
+                guard vm.currentIndex == questionIndex, showFeedback else { return }
+                showFeedback = false
+                advanceAfterAnswer()
+            }
+        }
     }
 
     private func loadAnswer(for question: Question) {
+        autoAdvanceTask?.cancel()
+        autoAdvanceTask = nil
         if let options = question.options, !options.isEmpty {
             selectedOption = answers[question.id]
             freeResponse = ""

@@ -58,6 +58,10 @@ enum AppTheme {
         light: UIColor(red: 0.12, green: 0.28, blue: 0.28, alpha: 1),
         dark: UIColor(red: 0.56, green: 0.72, blue: 0.68, alpha: 1)
     )
+    static let accentSoft = dynamicColor(
+        light: UIColor(red: 0.90, green: 0.93, blue: 0.91, alpha: 1),
+        dark: UIColor(red: 0.18, green: 0.22, blue: 0.20, alpha: 1)
+    )
     static let statusSuccess = dynamicColor(
         light: UIColor(red: 0.20, green: 0.47, blue: 0.40, alpha: 1),
         dark: UIColor(red: 0.49, green: 0.70, blue: 0.61, alpha: 1)
