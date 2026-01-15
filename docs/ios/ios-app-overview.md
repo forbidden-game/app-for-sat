@@ -1,5 +1,10 @@
+---
+summary: iOS Student App flow, screens, and submission behavior
+read_when: updating iOS practice flow, submission, or Coach UX
+---
+
 # iOS Student App Overview
-日期：2026-01-14
+日期：2026-01-15
 
 ## 概览
 当前 iOS 端是一个面向学生的 SAT 练习 App，核心目标是让每个学生拥有一个专属 AI 老师（错题讲解、可反复追问、长期追踪）。应用采用 SwiftUI + StudentCore（SPM 包）分层，UI 负责展示与交互，业务与数据访问集中在 `StudentCore`。
@@ -33,15 +38,17 @@
   - 选择题：选项按钮
   - 填空题：输入框提交
 - 自动前进策略：
-  - 选择题点击后自动前进
-  - 填空题输入后 0.6s 自动提交并前进
+  - 选择题点击后自动前进（默认 220ms，可配置 `autoAdvanceDelayMs`）
+  - 填空题输入后自动提交并前进（同上延迟）
 - 题目切换：上下滑动切换题目
 - 错题处理：展示 CoachStepSheet（选择卡点步）→ 拉取 AI 讲解
+- 提交策略：本地先记，再异步提交；失败会进入“待同步队列”
 
 ### 4) Session Overview（SessionOverviewView）
 - 网格展示题号，已作答题号高亮
 - 可点选题号回到题目
 - 提交按钮用于提交剩余答案
+- 若存在待同步题目，显示“未同步 X 题，连网后自动提交”
 
 ### 5) 侧边面板（SidePanelView）
 - 在“非练习中”状态显示入口按钮
@@ -49,13 +56,13 @@
 - 支持 Sign Out
 
 ### 6) AI 老师对话（CoachChatView）
-- 全科老师总线程，支持跨题追问
+- 全科老师“王校长”总线程，支持跨题追问
 - 支持实时流式回复
 
 ## 数据与服务交互
 - 拉取题库：查询 `question_banks`
 - 创建 Session：RPC `start_practice_session`
-- 提交答案：Function `submit_attempt`
+- 提交答案：Function `submit_attempt`（支持 `client_submission_id` 幂等）
 - 错题步骤选择：Function `set_attempt_step`
 - AI 讲解与追问：读取 `attempt_insights`
 - 全科老师对话：Function `coach_chat` + Realtime `coach_thread_messages`

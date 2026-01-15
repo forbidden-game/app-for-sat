@@ -1,7 +1,12 @@
-# SAT Prep Project Overview
-日期：2026-01-14
+---
+summary: SAT Prep overall product, architecture, and core flows
+read_when: changing core flows, submission, or backend data consistency
+---
 
-最后更新：2026-01-14
+# SAT Prep Project Overview
+日期：2026-01-15
+
+最后更新：2026-01-15
 
 ## 核心北极星
 每个学生都有一个专属 AI 老师：当下错题讲解、可反复追问的对话、长期学习追踪与个性化指导。iOS/Web/后端的所有功能都围绕这位老师服务。
@@ -28,7 +33,7 @@
 2. 题库与练习数据存储在 Supabase Postgres。
 3. 核心业务通过 RPC 与 Edge Functions 完成：
    - 练习 session 下发（不含答案）。
-   - 作答提交与评分。
+   - 作答提交与评分（支持 `client_submission_id` 幂等）。
    - AI 讲解生成与缓存。
 4. 家长端通过聚合 RPC 获取统计视图。
 
@@ -37,8 +42,9 @@
    - 调用 `start_practice_session` RPC。
    - 返回 session 与题目列表（不包含答案）。
 2. **提交作答**
-   - 调用 Edge Function `submit_attempt`。
-   - 服务端评分并写入 `attempts`，必要时更新 `sessions.correct_count`。
+   - 客户端先记录到本地“待同步队列”，再异步提交。
+   - 调用 Edge Function `submit_attempt`（携带 `client_submission_id` 幂等）。
+   - 服务端评分并写入/更新 `attempts`，`sessions.correct_count` 按唯一正确题目重算。
 3. **查看讲解**
    - 调用 Edge Function `generate_explanation`（当前为 stub，后续接入 LLM）。
    - 缓存结果写入 `ai_explanations`。
