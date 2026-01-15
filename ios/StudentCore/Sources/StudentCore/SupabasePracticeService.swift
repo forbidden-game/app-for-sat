@@ -122,12 +122,14 @@ public final class SupabasePracticeService {
         question: Question,
         answer: String?,
         sessionId: String,
+        clientSubmissionId: String,
         durationMs: Int? = nil,
         skipped: Bool? = nil
     ) async throws -> SubmitAttemptResult {
         let payload = SubmitAttemptPayload(
             session_id: sessionId,
             question_id: question.id,
+            client_submission_id: clientSubmissionId,
             answer: encodedAnswer(for: question, answer: answer),
             duration_ms: durationMs,
             skipped: skipped
@@ -458,6 +460,7 @@ private struct QuestionPayload: Decodable {
 private struct SubmitAttemptPayload: Encodable {
     let session_id: String
     let question_id: String
+    let client_submission_id: String
     let answer: FunctionAnswerValue?
     let duration_ms: Int?
     let skipped: Bool?
