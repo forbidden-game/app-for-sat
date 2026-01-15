@@ -1,5 +1,5 @@
 # Web 文档
-日期：2026-01-14
+日期：2026-01-15
 
 ## 目录结构
 ```text
@@ -11,7 +11,7 @@ web/
 
 ## 应用说明
 `parent-dashboard` 面向家长，提供学习进度与学生详情等功能，核心是呈现 AI 老师的长期追踪成果。  
-`admin-dashboard` 面向运维/业务管理者，提供题库、用户与运营概览，保障 AI 老师的数据与运营供给。
+`admin-dashboard` 面向运维/业务管理者，提供题库、用户与运营概览，保障 AI 老师的数据与运营供给；包含 AI Config 与 Audit Log。
 
 ## 环境变量
 `parent-dashboard`：
@@ -40,3 +40,4 @@ npm run dev
 - 管理端从 `parent-dashboard` 中拆分，迁移为独立的 `admin-dashboard`。
 - 管理端路由保持 `/admin`，并使用 server-side service role 访问后端。
 - 管理端新增题库管理（question_banks）的增删改查页面。
+- 管理端新增 AI Config（ai_prompt_configs）与 Audit Log（admin_audit_logs）。
