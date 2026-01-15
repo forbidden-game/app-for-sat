@@ -14,6 +14,7 @@ struct CoachChatView: View {
     @State private var audioPlayer: AVAudioPlayer?
     @State private var audioPlayerDelegate = AudioPlayerDelegate()
     @State private var playingMessageId: String?
+    @State private var recordingFileURL: URL?
 
     @StateObject private var vm: CoachChatViewModel
 
@@ -381,6 +382,7 @@ struct CoachChatView: View {
 
             let fileName = "coach-audio-\(UUID().uuidString).m4a"
             let url = audioFileURL(fileName: fileName)
+            recordingFileURL = url
             let settings: [String: Any] = [
                 AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
                 AVSampleRateKey: 44_100,
@@ -412,16 +414,17 @@ struct CoachChatView: View {
         }
 
         recorder.stop()
-        let duration = recorder.currentTime
-        let url = recorder.url
+        let duration = max(recorder.currentTime, Date().timeIntervalSince(recordingStartedAt))
+        let url = recordingFileURL ?? recorder.url
         audioRecorder = nil
+        recordingFileURL = nil
 
         withAnimation(.easeInOut(duration: 0.2)) {
             isRecording = false
         }
 
-        let fileExists = FileManager.default.fileExists(atPath: url.path)
-        if duration >= 0.1, fileExists {
+        let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue ?? 0
+        if duration >= 0.1, fileSize > 0 {
             vm.addLocalAudioMessage(fileName: url.lastPathComponent, duration: duration)
         } else {
             vm.errorMessage = "录音时间太短或保存失败。"
