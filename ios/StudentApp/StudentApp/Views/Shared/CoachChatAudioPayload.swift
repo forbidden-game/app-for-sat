@@ -7,7 +7,7 @@ struct CoachChatAudioPayload {
     let duration: TimeInterval
 
     var encodedText: String {
-        "\(Self.prefix)\(fileName)|\(duration)"
+        "\(Self.prefix)\(fileName)|\(String(format: "%.2f", duration))"
     }
 
     static func parse(from text: String) -> CoachChatAudioPayload? {

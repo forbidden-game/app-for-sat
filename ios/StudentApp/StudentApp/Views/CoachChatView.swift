@@ -390,7 +390,9 @@ struct CoachChatView: View {
 
             audioRecorder = try AVAudioRecorder(url: url, settings: settings)
             audioRecorder?.prepareToRecord()
-            audioRecorder?.record()
+            guard audioRecorder?.record() == true else {
+                throw NSError(domain: "CoachChatView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Record failed"])
+            }
 
             recordingStartedAt = Date()
             withAnimation(.easeInOut(duration: 0.2)) {
@@ -418,8 +420,11 @@ struct CoachChatView: View {
             isRecording = false
         }
 
-        if duration > 0.3 {
+        let fileExists = FileManager.default.fileExists(atPath: url.path)
+        if duration >= 0.1, fileExists {
             vm.addLocalAudioMessage(fileName: url.lastPathComponent, duration: duration)
+        } else {
+            vm.errorMessage = "录音时间太短或保存失败。"
         }
 
         do {
@@ -479,32 +484,35 @@ private struct RecordingBar: View {
     let startedAt: Date
 
     var body: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .fill(AppTheme.statusDanger)
-                .frame(width: 8, height: 8)
+        TimelineView(.animation) { timeline in
+            let elapsedText = Self.formatElapsed(from: startedAt, now: timeline.date)
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(AppTheme.statusDanger)
+                    .frame(width: 8, height: 8)
 
-            Text("录音中 \(elapsedText)")
-                .font(.footnote)
-                .foregroundStyle(AppTheme.textSecondary)
+                Text("录音中 \(elapsedText)")
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.textSecondary)
 
-            Spacer()
+                Spacer()
 
-            RecordingWave()
-                .frame(width: 88, height: 16)
+                RecordingWave()
+                    .frame(width: 88, height: 16)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(AppTheme.surface)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppTheme.divider, lineWidth: 1.5)
+            )
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(AppTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .stroke(AppTheme.divider, lineWidth: 1.5)
-        )
     }
 
-    private var elapsedText: String {
-        let seconds = max(0, Int(Date().timeIntervalSince(startedAt)))
+    private static func formatElapsed(from start: Date, now: Date) -> String {
+        let seconds = max(0, Int(now.timeIntervalSince(start)))
         let minutes = seconds / 60
         let remainder = seconds % 60
         return String(format: "%02d:%02d", minutes, remainder)
