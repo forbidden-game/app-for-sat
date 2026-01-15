@@ -3,14 +3,14 @@ import StudentCore
 import SwiftUI
 import WebKit
 
-public struct MathRenderRequest: Hashable {
-    public let text: String
-    public let style: MathTextStyle
-    public let width: CGFloat
-    public let colorScheme: ColorScheme
-    public let displayScale: CGFloat
+struct MathRenderRequest: Hashable {
+    let text: String
+    let style: MathTextStyle
+    let width: CGFloat
+    let colorScheme: ColorScheme
+    let displayScale: CGFloat
 
-    public init(
+    init(
         text: String,
         style: MathTextStyle,
         width: CGFloat,
@@ -24,7 +24,7 @@ public struct MathRenderRequest: Hashable {
         self.displayScale = displayScale
     }
 
-    public static func == (lhs: MathRenderRequest, rhs: MathRenderRequest) -> Bool {
+    static func == (lhs: MathRenderRequest, rhs: MathRenderRequest) -> Bool {
         lhs.text == rhs.text &&
         lhs.style == rhs.style &&
         lhs.width == rhs.width &&
@@ -32,7 +32,7 @@ public struct MathRenderRequest: Hashable {
         lhs.displayScale == rhs.displayScale
     }
 
-    public func hash(into hasher: inout Hasher) {
+    func hash(into hasher: inout Hasher) {
         hasher.combine(text)
         hasher.combine(style.cacheKey)
         hasher.combine(width)
@@ -41,32 +41,32 @@ public struct MathRenderRequest: Hashable {
     }
 }
 
-public enum MathRenderPlan: Equatable {
+enum MathRenderPlan: Equatable {
     case plainText(AttributedString)
     case webHTML(MathHTMLPayload)
     case nativeLabel(MathNativePayload)
 }
 
-public struct MathHTMLPayload: Equatable {
-    public let html: String
-    public let accessibilityText: String
-    public let estimatedHeight: CGFloat
+struct MathHTMLPayload: Equatable {
+    let html: String
+    let accessibilityText: String
+    let estimatedHeight: CGFloat
 }
 
-public struct MathNativePayload: Equatable {
-    public let latex: String
-    public let plainText: String
-    public let style: MathTextStyle
-    public let isDisplay: Bool
+struct MathNativePayload: Equatable {
+    let latex: String
+    let plainText: String
+    let style: MathTextStyle
+    let isDisplay: Bool
 }
 
-public enum MathRenderFailure: Error, Equatable {
+enum MathRenderFailure: Error, Equatable {
     case unsupported
     case empty
     case renderFailed(String)
 }
 
-public protocol MathNativeRendering {
+protocol MathNativeRendering {
     func payload(
         latex: String,
         plainText: String,
@@ -75,34 +75,34 @@ public protocol MathNativeRendering {
     ) -> MathNativePayload?
 }
 
-public protocol MathRenderPlanning {
+protocol MathRenderPlanning {
     func plan(for request: MathRenderRequest) -> MathRenderPlan
 }
 
-public protocol MathRenderer {
+protocol MathRenderer {
     func render(_ payload: MathHTMLPayload, into webView: WKWebView) async throws -> CGFloat
 }
 
-public protocol MathWebViewPoolProviding {
+protocol MathWebViewPoolProviding {
     func acquire() -> WKWebView
     func release(_ webView: WKWebView)
 }
 
-public struct MathRenderPolicy {
-    public var maxInlineCharsForNative: Int = 600
-    public var allowNativeWithUnknownCommands = false
-    public var allowNativeWithTextSegments = false
+struct MathRenderPolicy {
+    var maxInlineCharsForNative: Int = 600
+    var allowNativeWithUnknownCommands = false
+    var allowNativeWithTextSegments = false
 
-    public init() {}
+    init() {}
 }
 
-public final class MathRenderPlanner: MathRenderPlanning {
+final class MathRenderPlanner: MathRenderPlanning {
     private let parser: MathMarkupParsing
     private let cache: MathRenderCache
     private let policy: MathRenderPolicy
     private let nativeRenderer: MathNativeRendering?
 
-    public init(
+    init(
         parser: MathMarkupParsing = MathMarkupParser(),
         cache: MathRenderCache = .shared,
         policy: MathRenderPolicy = MathRenderPolicy(),
@@ -114,7 +114,7 @@ public final class MathRenderPlanner: MathRenderPlanning {
         self.nativeRenderer = nativeRenderer
     }
 
-    public func plan(for request: MathRenderRequest) -> MathRenderPlan {
+    func plan(for request: MathRenderRequest) -> MathRenderPlan {
         let cacheKey = MathRenderKeyBuilder.key(for: request)
         if let cached = cache.plan(forKey: cacheKey) {
             return cached
@@ -216,21 +216,21 @@ public final class MathRenderPlanner: MathRenderPlanning {
     }
 }
 
-public final class MathRenderCache {
-    public static let shared = MathRenderCache()
+final class MathRenderCache {
+    static let shared = MathRenderCache()
 
     private let planCache: NSCache<NSString, MathRenderPlanBox>
 
-    public init() {
+    init() {
         planCache = NSCache<NSString, MathRenderPlanBox>()
         planCache.countLimit = 200
     }
 
-    public func plan(forKey key: String) -> MathRenderPlan? {
+    func plan(forKey key: String) -> MathRenderPlan? {
         planCache.object(forKey: key as NSString)?.value
     }
 
-    public func store(_ plan: MathRenderPlan, forKey key: String) {
+    func store(_ plan: MathRenderPlan, forKey key: String) {
         planCache.setObject(MathRenderPlanBox(plan), forKey: key as NSString)
     }
 }
@@ -243,8 +243,8 @@ private final class MathRenderPlanBox: NSObject {
     }
 }
 
-public enum MathRenderKeyBuilder {
-    public static func key(for request: MathRenderRequest) -> String {
+enum MathRenderKeyBuilder {
+    static func key(for request: MathRenderRequest) -> String {
         let widthBucket = ceil(request.width)
         let scheme = request.colorScheme == .dark ? "dark" : "light"
         return [

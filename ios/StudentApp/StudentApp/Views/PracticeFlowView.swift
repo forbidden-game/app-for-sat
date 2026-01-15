@@ -4,18 +4,22 @@ import StudentCore
 struct PracticeFlowView: View {
     private let session: PracticeSession
     private let studentId: String
-    @StateObject private var vm: QuestionFeedViewModel
+    @StateObject private var feedState: QuestionFeedState
+    @StateObject private var answerStore: InMemoryAnswerStore
     @StateObject private var flowModel: PracticeFlowViewModel
-    @State private var answers: [String: String] = [:]
     @State private var returnToOverviewOnAnswer = false
     let headerTitle: String?
     let onExit: () -> Void
+    private let submissionCoordinator: AnswerSubmissionCoordinator
 
     init(session: PracticeSession, sessionId: String, studentId: String, headerTitle: String?, onExit: @escaping () -> Void) {
         self.session = session
         self.studentId = studentId
-        _vm = StateObject(wrappedValue: QuestionFeedViewModel(session: session))
-        _flowModel = StateObject(wrappedValue: PracticeFlowViewModel(session: session, sessionId: sessionId))
+        let flow = PracticeFlowViewModel(session: session, sessionId: sessionId)
+        _flowModel = StateObject(wrappedValue: flow)
+        _feedState = StateObject(wrappedValue: QuestionFeedState(initialIndex: 0))
+        _answerStore = StateObject(wrappedValue: InMemoryAnswerStore())
+        submissionCoordinator = AnswerSubmissionCoordinator(submitter: flow)
         self.headerTitle = headerTitle
         self.onExit = onExit
     }
@@ -25,28 +29,31 @@ struct PracticeFlowView: View {
             switch flowModel.flowState {
             case .practicing:
                 QuestionFeedView(
-                    studentId: studentId,
-                    vm: vm,
-                    answers: $answers,
+                    session: session,
+                    state: feedState,
+                    store: answerStore,
+                    submission: submissionCoordinator,
                     returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
                     headerTitle: headerTitle,
-                    flowModel: flowModel,
                     onBack: onExit,
                     onShowOverview: {
                         flowModel.flowState = .overview
+                    },
+                    onSubmissionError: { error in
+                        flowModel.submissionError = error.localizedDescription
                     }
                 )
 
             case .overview:
                 SessionOverviewView(
                     session: session,
-                    answers: answers,
+                    answers: answerStore.stringAnswers(),
                     isSubmitting: flowModel.isSubmitting,
                     submissionError: flowModel.submissionError,
                     pendingCount: flowModel.pendingCount,
                     onSelectQuestion: { index in
                         returnToOverviewOnAnswer = true
-                        vm.jump(to: index)
+                        feedState.jump(to: index, total: session.questions.count)
                         flowModel.flowState = .practicing
                     },
                     onSubmit: {

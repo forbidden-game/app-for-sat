@@ -1,5 +1,6 @@
 import SwiftMath
 import SwiftUI
+import UIKit
 
 struct SwiftMathLabelView: UIViewRepresentable {
     let payload: MathNativePayload
@@ -17,14 +18,10 @@ struct SwiftMathLabelView: UIViewRepresentable {
             withName: MathFont.latinModernFont.rawValue,
             size: payload.style.fontSize
         )
-        mathFont?.fallbackFont = UIFont.systemFont(
-            ofSize: payload.style.fontSize,
-            weight: uiFontWeight(from: payload.style.fontWeight)
-        )
 
         uiView.font = mathFont
         uiView.textAlignment = mtTextAlignment(from: payload.style.textAlignment)
-        uiView.textColor = MTColor(AppTheme.textPrimary)
+        uiView.textColor = UIColor(AppTheme.textPrimary)
         uiView.labelMode = payload.isDisplay ? .display : .text
         uiView.contentInsets = MTEdgeInsets()
         uiView.latex = payload.latex
@@ -37,7 +34,6 @@ struct SwiftMathLabelView: UIViewRepresentable {
         context: Context
     ) -> CGSize? {
         let size = proposal.replacingUnspecifiedDimensions()
-        uiView.preferredMaxLayoutWidth = size.width
         return uiView.sizeThatFits(size)
     }
 }
@@ -50,20 +46,5 @@ private func mtTextAlignment(from alignment: TextAlignment) -> MTTextAlignment {
         return .right
     default:
         return .left
-    }
-}
-
-private func uiFontWeight(from weight: Font.Weight) -> UIFont.Weight {
-    switch weight {
-    case .bold:
-        return .bold
-    case .semibold:
-        return .semibold
-    case .medium:
-        return .medium
-    case .light:
-        return .light
-    default:
-        return .regular
     }
 }

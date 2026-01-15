@@ -5,20 +5,17 @@ import UIKit
 #endif
 
 struct QuestionFeedView: View {
-    let studentId: String
-    @StateObject var vm: QuestionFeedViewModel
-    @Binding var answers: [String: String]
+    let session: PracticeSession
+    @ObservedObject var state: QuestionFeedState
+    @ObservedObject var store: InMemoryAnswerStore
+    let submission: AnswerSubmissionCoordinator
     @Binding var returnToOverviewOnAnswer: Bool
     let headerTitle: String?
-    @ObservedObject var flowModel: PracticeFlowViewModel
     let onBack: () -> Void
     let onShowOverview: () -> Void
+    let onSubmissionError: (Error) -> Void
 
-    @State private var selectedOption: String?
-    @State private var freeResponse: String = ""
     @FocusState private var isInputFocused: Bool
-    @State private var showFeedback = false
-    @State private var currentPage = 0
     @State private var autoAdvanceTask: Task<Void, Never>?
     @State private var perfTask: Task<Void, Never>?
     @State private var perfDirection = 1
@@ -26,7 +23,7 @@ struct QuestionFeedView: View {
     @State private var canPageDown = true
 
     var body: some View {
-        let total = vm.session.questions.count
+        let total = session.questions.count
 
         ZStack {
             AppTheme.backgroundGradient
@@ -34,12 +31,12 @@ struct QuestionFeedView: View {
 
             VerticalPagingView(
                 pageCount: total + 1,
-                currentPage: $currentPage,
+                currentPage: currentPageBinding,
                 canPageUp: $canPageUp,
                 canPageDown: $canPageDown
             ) { index in
                 if index < total {
-                    questionPage(question: vm.session.questions[index], index: index, total: total)
+                    questionPage(question: session.questions[index], index: index, total: total)
                 } else {
                     overviewTriggerCard(total: total)
                 }
@@ -47,33 +44,29 @@ struct QuestionFeedView: View {
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .onAppear {
-            currentPage = vm.currentIndex
-            loadAnswer(for: vm.session.questions[vm.currentIndex])
+            if session.questions.indices.contains(state.currentIndex) {
+                loadAnswer(for: session.questions[state.currentIndex])
+            }
             startPerfAutoPaging(total: total)
         }
         .onDisappear {
             stopPerfAutoPaging()
+            submission.cancelAll()
         }
-        .onChange(of: currentPage) { _, newPage in
-            if newPage >= vm.session.questions.count {
-                triggerHaptic()
-                onShowOverview()
-                currentPage = vm.session.questions.count - 1
-                return
-            }
-            
-            if newPage != vm.currentIndex {
-                triggerHaptic()
-                isInputFocused = false
-                vm.jump(to: newPage)
-                loadAnswer(for: vm.session.questions[newPage])
+        .onChange(of: state.currentIndex) { _, newIndex in
+            if newIndex >= 0, newIndex < session.questions.count {
+                state.setFocus(false)
+                loadAnswer(for: session.questions[newIndex])
             }
         }
-        .onChange(of: vm.currentIndex) { _, newIndex in
-            if currentPage != newIndex {
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.9)) {
-                    currentPage = newIndex
-                }
+        .onChange(of: state.inputState.isFocused) { _, newValue in
+            if isInputFocused != newValue {
+                isInputFocused = newValue
+            }
+        }
+        .onChange(of: isInputFocused) { _, newValue in
+            if state.inputState.isFocused != newValue {
+                state.setFocus(newValue)
             }
         }
     }
@@ -90,7 +83,8 @@ struct QuestionFeedView: View {
                 header(progress: progress, index: index + 1, total: total, question: question)
 
                 ScrollBoundaryScrollView(
-                    isActive: index == currentPage,
+                    isActive: index == state.currentIndex,
+                    scrollResetID: question.id,
                     canPageUp: $canPageUp,
                     canPageDown: $canPageDown
                 ) {
@@ -213,9 +207,9 @@ struct QuestionFeedView: View {
     }
 
     private func optionButton(_ option: QuestionOption, questionId: String, questionIndex: Int) -> some View {
-        let isCurrentQuestion = questionIndex == vm.currentIndex
-        let isSelected = isCurrentQuestion && selectedOption == option.label
-        let isFeedback = isCurrentQuestion && showFeedback && isSelected
+        let isCurrentQuestion = questionIndex == state.currentIndex
+        let isSelected = isCurrentQuestion && state.inputState.selectedOption == option.label
+        let isFeedback = isCurrentQuestion && state.inputState.showFeedback && isSelected
         let badgeFill = isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised
         let badgeStroke = isSelected ? AppTheme.accentStrong : AppTheme.dividerStrong
         let badgeText = isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary
@@ -223,15 +217,14 @@ struct QuestionFeedView: View {
         let optionStroke = isSelected ? AppTheme.accentStrong : AppTheme.divider
 
         return Button {
-            guard isCurrentQuestion, !showFeedback else { return }
-            selectedOption = option.label
+            guard isCurrentQuestion, !state.inputState.showFeedback else { return }
             triggerSelectionHaptic()
             withAnimation(.easeInOut(duration: 0.15)) {
-                showFeedback = true
+                state.applySelection(.option(option.label))
             }
             recordAnswer(option.label, questionId: questionId)
-            submitAnswer(questionIndex: questionIndex, answer: option.label)
-            scheduleAutoAdvance(questionIndex: questionIndex)
+            submitAnswer(questionId: questionId, answer: option.label)
+            scheduleAutoAdvance(questionId: questionId)
         } label: {
             HStack(spacing: 12) {
                 Text(option.label)
@@ -271,22 +264,23 @@ struct QuestionFeedView: View {
             .scaleEffect(isFeedback ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
-        .disabled(!isCurrentQuestion || showFeedback)
+        .disabled(!isCurrentQuestion || state.inputState.showFeedback)
     }
 
     // MARK: - Free Response
 
     private func freeResponseField(questionId: String, questionIndex: Int) -> some View {
-        let isCurrentQuestion = questionIndex == vm.currentIndex
-        let showingFeedback = isCurrentQuestion && showFeedback
-        let isEnabled = isCurrentQuestion && !showFeedback
+        let isCurrentQuestion = questionIndex == state.currentIndex
+        let showingFeedback = isCurrentQuestion && state.inputState.showFeedback
+        let isEnabled = isCurrentQuestion && !state.inputState.showFeedback
+        let storedValue = store[questionId]?.displayString ?? ""
         
         return HStack(spacing: 12) {
             Image(systemName: "pencil.circle.fill")
                 .font(.system(size: 22))
                 .foregroundStyle(showingFeedback ? AppTheme.accentStrong : AppTheme.accent)
 
-            TextField("Type your answer", text: isCurrentQuestion ? $freeResponse : .constant(answers[questionId] ?? ""))
+            TextField("Type your answer", text: isCurrentQuestion ? freeResponseBinding : .constant(storedValue))
                 .focused($isInputFocused)
                 .textInputAutocapitalization(.never)
                 .keyboardType(.numbersAndPunctuation)
@@ -297,7 +291,7 @@ struct QuestionFeedView: View {
                     }
                 }
                 .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
-                .disabled(!isCurrentQuestion || showFeedback)
+                .disabled(!isCurrentQuestion || state.inputState.showFeedback)
         }
         .padding(.vertical, AppMetrics.fieldPaddingVertical)
         .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
@@ -330,68 +324,77 @@ struct QuestionFeedView: View {
         return questionTitle(for: question)
     }
 
+    private var freeResponseBinding: Binding<String> {
+        Binding(
+            get: { state.inputState.freeResponse },
+            set: { state.updateFreeResponse($0) }
+        )
+    }
+
     private func commitFreeResponse(questionId: String) {
-        let trimmed = freeResponse.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !showFeedback else { return }
-        isInputFocused = false
+        let trimmed = state.inputState.freeResponse.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, !state.inputState.showFeedback else { return }
+        state.setFocus(false)
         triggerSelectionHaptic()
         recordAnswer(trimmed, questionId: questionId)
         withAnimation(.easeInOut(duration: 0.15)) {
-            showFeedback = true
+            state.applySelection(.freeResponse(trimmed))
         }
-        submitAnswer(questionIndex: vm.currentIndex, answer: trimmed)
-        scheduleAutoAdvance(questionIndex: vm.currentIndex)
+        submitAnswer(questionId: questionId, answer: trimmed)
+        scheduleAutoAdvance(questionId: questionId)
     }
 
     private func recordAnswer(_ value: String, questionId: String) {
-        answers[questionId] = value
+        store[questionId] = .string(value)
     }
 
-    private func submitAnswer(questionIndex: Int, answer: String) {
-        guard questionIndex >= 0, questionIndex < vm.session.questions.count else { return }
-        let question = vm.session.questions[questionIndex]
-
-        Task {
-            do {
-                _ = try await flowModel.submitAnswer(question: question, answer: answer, allowCoach: false)
-            } catch {
+    private func submitAnswer(questionId: String, answer: String) {
+        guard let question = session.questions.first(where: { $0.id == questionId }) else { return }
+        submission.submit(
+            question: question,
+            answer: answer,
+            questionId: questionId,
+            onSuccess: { _ in },
+            onFailure: { error in
                 submissionError(error)
             }
-        }
+        )
     }
 
     private func submissionError(_ error: Error) {
-        showFeedback = false
-        flowModel.submissionError = error.localizedDescription
+        state.setFeedbackVisible(false)
+        onSubmissionError(error)
     }
 
     private func advanceAfterAnswer() {
         resetInputs()
-        let isLast = vm.currentIndex == vm.session.questions.count - 1
+        let isLast = state.currentIndex == session.questions.count - 1
         if returnToOverviewOnAnswer || isLast {
             returnToOverviewOnAnswer = false
             onShowOverview()
         } else {
-            vm.advance()
+            state.advance(total: session.questions.count)
         }
     }
 
     private func resetInputs() {
-        selectedOption = nil
-        freeResponse = ""
-        isInputFocused = false
+        state.setFocus(false)
+        state.setFeedbackVisible(false)
+        state.clearAutoAdvance()
         autoAdvanceTask?.cancel()
         autoAdvanceTask = nil
     }
 
-    private func scheduleAutoAdvance(questionIndex: Int) {
+    private func scheduleAutoAdvance(questionId: String) {
         autoAdvanceTask?.cancel()
+        state.scheduleAutoAdvance(for: questionId)
         autoAdvanceTask = Task {
             let delayMs = max(AppConfig.autoAdvanceDelayMs, 80)
             try? await Task.sleep(nanoseconds: UInt64(delayMs) * 1_000_000)
             await MainActor.run {
-                guard vm.currentIndex == questionIndex, showFeedback else { return }
-                showFeedback = false
+                guard state.autoAdvanceState.scheduledForQuestionId == questionId else { return }
+                guard currentQuestionId() == questionId else { return }
+                state.setFeedbackVisible(false)
                 advanceAfterAnswer()
             }
         }
@@ -400,15 +403,13 @@ struct QuestionFeedView: View {
     private func loadAnswer(for question: Question) {
         autoAdvanceTask?.cancel()
         autoAdvanceTask = nil
-        if let options = question.options, !options.isEmpty {
-            selectedOption = answers[question.id]
-            freeResponse = ""
-            isInputFocused = false
-        } else {
-            selectedOption = nil
-            freeResponse = answers[question.id] ?? ""
-        }
-        showFeedback = false
+        let isMultipleChoice = (question.options?.isEmpty == false)
+        state.resetInput(for: question.id, from: store, isMultipleChoice: isMultipleChoice)
+    }
+
+    private func currentQuestionId() -> String? {
+        guard state.currentIndex >= 0, state.currentIndex < session.questions.count else { return nil }
+        return session.questions[state.currentIndex].id
     }
 
     // MARK: - Perf Harness
@@ -424,21 +425,21 @@ struct QuestionFeedView: View {
                 try? await Task.sleep(nanoseconds: UInt64(config.paceSeconds * 1_000_000_000))
                 await MainActor.run {
                     guard total > 1 else { return }
-                    isInputFocused = false
+                    state.setFocus(false)
                     let lastIndex = total - 1
                     if perfDirection > 0 {
-                        if currentPage >= lastIndex {
+                        if state.currentIndex >= lastIndex {
                             perfDirection = -1
-                            currentPage = max(lastIndex - 1, 0)
+                            state.jump(to: max(lastIndex - 1, 0), total: total)
                         } else {
-                            currentPage += 1
+                            state.advance(total: total)
                         }
                     } else {
-                        if currentPage <= 0 {
+                        if state.currentIndex <= 0 {
                             perfDirection = 1
-                            currentPage = min(1, lastIndex)
+                            state.jump(to: min(1, lastIndex), total: total)
                         } else {
-                            currentPage -= 1
+                            state.retreat()
                         }
                     }
                 }
@@ -449,6 +450,25 @@ struct QuestionFeedView: View {
     private func stopPerfAutoPaging() {
         perfTask?.cancel()
         perfTask = nil
+    }
+
+    private var currentPageBinding: Binding<Int> {
+        Binding(
+            get: { state.currentIndex },
+            set: { newPage in
+                let total = session.questions.count
+                guard total > 0 else { return }
+                if newPage >= total {
+                    triggerHaptic()
+                    onShowOverview()
+                    return
+                }
+                guard newPage >= 0, newPage != state.currentIndex else { return }
+                triggerHaptic()
+                state.setFocus(false)
+                state.jump(to: newPage, total: total)
+            }
+        )
     }
 }
 
@@ -466,99 +486,4 @@ private func triggerSelectionHaptic() {
     let generator = UIImpactFeedbackGenerator(style: .medium)
     generator.impactOccurred()
     #endif
-}
-
-// MARK: - Scroll Boundary Helpers
-
-private struct ScrollBoundaryScrollView<Content: View>: View {
-    let isActive: Bool
-    @Binding var canPageUp: Bool
-    @Binding var canPageDown: Bool
-    let content: Content
-
-    @State private var contentHeight: CGFloat = 0
-    @State private var viewportHeight: CGFloat = 0
-    @State private var offsetY: CGFloat = 0
-
-    init(isActive: Bool, canPageUp: Binding<Bool>, canPageDown: Binding<Bool>, @ViewBuilder content: () -> Content) {
-        self.isActive = isActive
-        self._canPageUp = canPageUp
-        self._canPageDown = canPageDown
-        self.content = content()
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                Color.clear
-                    .frame(height: 0)
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear.preference(
-                                key: ScrollOffsetKey.self,
-                                value: proxy.frame(in: .named("scroll")).minY
-                            )
-                        }
-                    )
-
-                content
-            }
-            .background(
-                GeometryReader { proxy in
-                    Color.clear.preference(key: ContentHeightKey.self, value: proxy.size.height)
-                }
-            )
-        }
-        .coordinateSpace(name: "scroll")
-        .scrollIndicators(.hidden)
-        .background(
-            GeometryReader { proxy in
-                Color.clear.preference(key: ViewportHeightKey.self, value: proxy.size.height)
-            }
-        )
-        .onPreferenceChange(ScrollOffsetKey.self) { offset in
-            offsetY = offset
-            updatePagingState()
-        }
-        .onPreferenceChange(ContentHeightKey.self) { height in
-            contentHeight = height
-            updatePagingState()
-        }
-        .onPreferenceChange(ViewportHeightKey.self) { height in
-            viewportHeight = height
-            updatePagingState()
-        }
-    }
-
-    private func updatePagingState() {
-        guard isActive else { return }
-        let maxScroll = max(contentHeight - viewportHeight, 0)
-        let topThreshold: CGFloat = 2
-        let bottomThreshold: CGFloat = 2
-        let atTop = offsetY >= -topThreshold
-        let atBottom = maxScroll <= 0 || offsetY <= -(maxScroll + bottomThreshold)
-        canPageUp = atTop
-        canPageDown = atBottom
-    }
-}
-
-private struct ScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-private struct ContentHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
-private struct ViewportHeightKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
 }
