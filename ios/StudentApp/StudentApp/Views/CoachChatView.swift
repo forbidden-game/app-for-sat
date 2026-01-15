@@ -557,6 +557,7 @@ private struct AudioMessageBubble: View {
 
                 AudioMiniWave(color: foreground.opacity(0.7))
             }
+            .frame(width: bubbleWidth, alignment: .leading)
             .foregroundStyle(foreground)
         }
         .buttonStyle(.plain)
@@ -567,6 +568,13 @@ private struct AudioMessageBubble: View {
         let minutes = totalSeconds / 60
         let seconds = totalSeconds % 60
         return String(format: "%d:%02d", minutes, seconds)
+    }
+
+    private var bubbleWidth: CGFloat {
+        let minWidth: CGFloat = 90
+        let maxWidth: CGFloat = 220
+        let width = 80 + CGFloat(payload.duration) * 6
+        return min(max(width, minWidth), maxWidth)
     }
 }
 
