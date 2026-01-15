@@ -56,12 +56,6 @@ export default function AiLogsPage() {
     };
   }, [supabase]);
 
-  useEffect(() => {
-    if (!selectedId && logs.length > 0) {
-      setSelectedId(logs[0].id);
-    }
-  }, [logs, selectedId]);
-
   const kindOptions = useMemo(() => {
     return Array.from(new Set(logs.map((log) => log.kind))).sort();
   }, [logs]);
@@ -91,8 +85,19 @@ export default function AiLogsPage() {
     });
   }, [logs, kindFilter, statusFilter, providerFilter, query]);
 
+  useEffect(() => {
+    if (filteredLogs.length === 0) {
+      if (selectedId) setSelectedId(null);
+      return;
+    }
+    const stillVisible = filteredLogs.some((log) => log.id === selectedId);
+    if (!stillVisible) {
+      setSelectedId(filteredLogs[0].id);
+    }
+  }, [filteredLogs, selectedId]);
+
   const selectedLog = useMemo(() => {
-    return filteredLogs.find((log) => log.id === selectedId) ?? filteredLogs[0] ?? null;
+    return filteredLogs.find((log) => log.id === selectedId) ?? null;
   }, [filteredLogs, selectedId]);
 
   const events = useMemo(() => {
@@ -138,7 +143,7 @@ export default function AiLogsPage() {
   return (
     <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-6 py-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
           <h1 className="text-2xl font-semibold text-[color:var(--ink)]">AI Debug Workbench</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
@@ -161,7 +166,7 @@ export default function AiLogsPage() {
       ) : null}
 
       <section className="grid gap-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 md:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <aside className="flex flex-col gap-4">
+        <aside className="flex min-w-0 flex-col gap-4">
           <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Filters</div>
             <div className="mt-3 grid gap-2">
@@ -220,19 +225,19 @@ export default function AiLogsPage() {
                   key={log.id}
                   type="button"
                   onClick={() => setSelectedId(log.id)}
-                  className={`flex w-full flex-col gap-2 rounded-2xl border px-3 py-3 text-left text-xs transition ${
+                  className={`flex w-full min-w-0 flex-col gap-2 rounded-2xl border px-3 py-3 text-left text-xs transition ${
                     log.id === selectedLog?.id
                       ? "border-[color:var(--accent)] bg-[color:var(--surface)]"
                       : "border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface)]"
                   }`}
                 >
-                  <div className="flex items-center justify-between text-[color:var(--ink-muted)]">
-                    <span>{formatDateTime(log.created_at)}</span>
+                  <div className="flex min-w-0 items-center justify-between gap-2 text-[color:var(--ink-muted)]">
+                    <span className="truncate">{formatDateTime(log.created_at)}</span>
                     <span className="rounded-full bg-[color:var(--surface-strong)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
                       {log.kind}
                     </span>
                   </div>
-                  <div className="font-medium text-[color:var(--ink)]">
+                  <div className="truncate font-medium text-[color:var(--ink)]">
                     {log.model_provider}/{log.model_id}
                   </div>
                   <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
@@ -251,14 +256,14 @@ export default function AiLogsPage() {
           </div>
         </aside>
 
-        <section className="flex flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+        <section className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
           {selectedLog ? (
             <>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0">
                   <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Session</div>
                   <div className="text-lg font-semibold text-[color:var(--ink)]">{selectedLog.kind}</div>
-                  <div className="text-xs text-[color:var(--ink-muted)]">
+                  <div className="truncate text-xs text-[color:var(--ink-muted)]">
                     {selectedLog.model_provider}/{selectedLog.model_id} · {selectedLog.prompt_version ?? "—"}
                   </div>
                 </div>
@@ -276,14 +281,14 @@ export default function AiLogsPage() {
                   <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                     System prompt
                   </div>
-                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap text-xs text-[color:var(--ink)]">
+                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
                     {selectedLog.system_prompt ?? ""}
                   </pre>
                 </div>
 
                 <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
                   <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Prompts</div>
-                  <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap text-xs text-[color:var(--ink)]">
+                  <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
                     {JSON.stringify(selectedLog.prompts ?? [], null, 2)}
                   </pre>
                 </div>
@@ -298,15 +303,15 @@ export default function AiLogsPage() {
                         const type = String(event.type ?? "event");
                         const stamp = typeof event.logged_at === "string" ? event.logged_at : "";
                         return (
-                          <div key={`${type}-${index}`} className="flex gap-3 text-xs">
-                            <div className="min-w-[120px] text-[color:var(--ink-muted)]">
+                          <div key={`${type}-${index}`} className="flex flex-col gap-2 text-xs sm:flex-row sm:gap-3">
+                            <div className="sm:min-w-[120px] text-[color:var(--ink-muted)]">
                               {stamp ? formatDateTime(stamp) : "—"}
                             </div>
-                            <div className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
+                            <div className="min-w-0 flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
                               <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                                 {type}
                               </div>
-                              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap text-[11px] text-[color:var(--ink)]">
+                              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-[color:var(--ink)]">
                                 {JSON.stringify(event, null, 2)}
                               </pre>
                             </div>
@@ -325,30 +330,30 @@ export default function AiLogsPage() {
           )}
         </section>
 
-        <aside className="flex flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+        <aside className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
           <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Debug Panel</div>
           {selectedLog ? (
             <>
               <div className="space-y-2 text-xs text-[color:var(--ink)]">
-                <div className="flex items-center justify-between">
-                  <span className="text-[color:var(--ink-muted)]">Job</span>
-                  <span className="truncate">{selectedLog.job_id ?? "—"}</span>
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <span className="shrink-0 text-[color:var(--ink-muted)]">Job</span>
+                  <span className="min-w-0 flex-1 truncate text-right">{selectedLog.job_id ?? "—"}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[color:var(--ink-muted)]">Student</span>
-                  <span className="truncate">{selectedLog.student_id ?? "—"}</span>
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <span className="shrink-0 text-[color:var(--ink-muted)]">Student</span>
+                  <span className="min-w-0 flex-1 truncate text-right">{selectedLog.student_id ?? "—"}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[color:var(--ink-muted)]">Attempt</span>
-                  <span className="truncate">{selectedLog.attempt_id ?? "—"}</span>
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <span className="shrink-0 text-[color:var(--ink-muted)]">Attempt</span>
+                  <span className="min-w-0 flex-1 truncate text-right">{selectedLog.attempt_id ?? "—"}</span>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[color:var(--ink-muted)]">Updated</span>
-                  <span>{formatDateTime(selectedLog.created_at)}</span>
+                <div className="flex min-w-0 items-start justify-between gap-2">
+                  <span className="shrink-0 text-[color:var(--ink-muted)]">Updated</span>
+                  <span className="min-w-0 flex-1 text-right">{formatDateTime(selectedLog.created_at)}</span>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3 text-xs text-[color:var(--ink-muted)]">
+              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3 text-xs text-[color:var(--ink-muted)] break-words">
                 {selectedLog.error ? selectedLog.error : "No errors reported."}
               </div>
 
