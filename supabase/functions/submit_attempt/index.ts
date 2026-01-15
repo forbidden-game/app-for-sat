@@ -248,20 +248,22 @@ serve(async (req) => {
     attemptRowId = insertedAttempt.id;
   }
 
-  const { count: correctCount, error: correctCountError } = await supabase
+  const { data: correctRows, error: correctRowsError } = await supabase
     .from("attempts")
-    .select("id", { count: "exact", head: true })
+    .select("question_id")
     .eq("session_id", body.session_id)
     .eq("student_id", studentId)
     .eq("is_correct", true);
 
-  if (correctCountError) {
+  if (correctRowsError) {
     return jsonResponse({ error: "correct_count_failed" }, 500);
   }
 
+  const uniqueCorrectCount = new Set((correctRows ?? []).map((row) => row.question_id)).size;
+
   const { error: updateSessionError } = await supabase
     .from("sessions")
-    .update({ correct_count: correctCount ?? 0 })
+    .update({ correct_count: uniqueCorrectCount })
     .eq("id", body.session_id);
 
   if (updateSessionError) {
