@@ -110,6 +110,8 @@ struct CoachChatView: View {
         let stroke = isUser ? AppTheme.accentStrong : AppTheme.divider
 
         return HStack(alignment: .top, spacing: 10) {
+            if isUser { Spacer(minLength: 40) }
+
             if !isUser {
                 CoachAvatarView(size: 24)
                     .padding(.top, 2)
@@ -135,7 +137,7 @@ struct CoachChatView: View {
                     .stroke(stroke, lineWidth: 1)
             )
 
-            if isUser { Spacer(minLength: 40) }
+            if !isUser { Spacer(minLength: 40) }
         }
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
