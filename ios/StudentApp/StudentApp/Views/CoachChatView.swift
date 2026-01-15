@@ -180,6 +180,13 @@ struct CoachChatView: View {
                     .onSubmit {
                         Task { await vm.send() }
                     }
+                    .onChange(of: vm.draftText) { _, newValue in
+                        guard newValue.last == "\n" else { return }
+                        let trimmed = newValue.trimmingCharacters(in: .newlines)
+                        vm.draftText = trimmed
+                        guard !trimmed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+                        Task { await vm.send() }
+                    }
                     .padding(.vertical, 11)
                     .padding(.horizontal, 12)
                     .background(AppTheme.surface)

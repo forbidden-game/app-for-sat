@@ -59,6 +59,10 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     func send() async {
+        if isSending {
+            return
+        }
+
         let text = draftText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return }
 
