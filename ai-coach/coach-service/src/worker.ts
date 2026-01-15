@@ -1,5 +1,5 @@
 import { Agent } from "@mariozechner/pi-agent-core";
-import type { Model } from "@mariozechner/pi-ai";
+import { getEnvApiKey, type Model } from "@mariozechner/pi-ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "./config.js";
@@ -7,6 +7,7 @@ import { logger } from "./logger.js";
 import { resolveModel } from "./model.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools } from "./tools/coachTools.js";
+import { buildModelSpec, getPublishedAiPromptConfigs, type AiPromptKind } from "./aiConfig.js";
 import { processAttemptInsightJob } from "./jobs/processAttemptInsightJob.js";
 import { processCoachReplyJob } from "./jobs/processCoachReplyJob.js";
 import { processSnapshotRefreshJob } from "./jobs/processSnapshotRefreshJob.js";
@@ -41,46 +42,83 @@ function resolveJobModel(config: CoachConfig, kind: AiJobRow["kind"]): Model<any
   return modelForSpec(config.modelDefault);
 }
 
+const DEFAULT_SYSTEM_PROMPTS: Record<AiPromptKind, string> = {
+  attempt_insight:
+    "You are a strict, concise SAT tutor. Prefer short, step-by-step guidance and ask questions instead of long explanations.",
+  coach_reply:
+    "你是一位严格、精要的 SAT 全科老师。默认用中文，先给最小可执行下一步，再问一个澄清问题。避免长篇大论。",
+  progress_report: "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
+};
+
+const DEFAULT_PROMPT_VERSIONS: Record<AiPromptKind, string> = {
+  attempt_insight: "ai-coach-insight-v2",
+  coach_reply: "ai-coach-chat-v2",
+  progress_report: "ai-coach-report-v1",
+};
+
+type PromptOverrides = {
+  systemPrompt: string;
+  promptVersion: string;
+  modelSpec: string | null;
+};
+
+function resolvePromptOverrides(
+  kind: AiJobRow["kind"],
+  configs: Partial<Record<AiPromptKind, { systemPrompt: string; promptVersion: string; modelProvider: string; modelId: string }>> | null,
+): PromptOverrides | null {
+  if (kind !== "attempt_insight" && kind !== "coach_reply" && kind !== "progress_report") {
+    return null;
+  }
+
+  const config = configs?.[kind];
+
+  return {
+    systemPrompt: config?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS[kind],
+    promptVersion: config?.promptVersion ?? DEFAULT_PROMPT_VERSIONS[kind],
+    modelSpec: buildModelSpec(config ?? null),
+  };
+}
+
 export function createCoachAgent(
   config: CoachConfig,
   supabase: SupabaseClient,
   model: Model<any>,
+  systemPrompt?: string,
+  promptVersion?: string,
 ): Agent {
   const tools = buildCoachTools(supabase, {
     modelId: model.id,
-    promptVersion: "ai-coach-insight-v2",
+    promptVersion: promptVersion ?? DEFAULT_PROMPT_VERSIONS.attempt_insight,
   });
 
   return new Agent({
     initialState: {
-      systemPrompt:
-        "You are a strict, concise SAT tutor. Prefer short, step-by-step guidance and ask questions instead of long explanations.",
+      systemPrompt: systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.attempt_insight,
       model,
       thinkingLevel: "off",
       tools,
       messages: [],
     },
-    getApiKey: async (provider) => {
-      if (provider === "minimax") return config.minimaxApiKey;
-      return undefined;
-    },
+    getApiKey: async (provider) =>
+      provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(provider),
   });
 }
 
-export function createChatAgent(config: CoachConfig, model: Model<any>): Agent {
+export function createChatAgent(
+  config: CoachConfig,
+  model: Model<any>,
+  systemPrompt?: string,
+): Agent {
   return new Agent({
     initialState: {
-      systemPrompt:
-        "你是一位严格、精要的 SAT 全科老师。默认用中文，先给最小可执行下一步，再问一个澄清问题。避免长篇大论。",
+      systemPrompt: systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.coach_reply,
       model,
       thinkingLevel: "off",
       tools: [],
       messages: [],
     },
-    getApiKey: async (provider) => {
-      if (provider === "minimax") return config.minimaxApiKey;
-      return undefined;
-    },
+    getApiKey: async (provider) =>
+      provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(provider),
   });
 }
 
@@ -170,14 +208,23 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
       logger.info({ jobId: job.id, kind: job.kind, attemptId: job.attempt_id }, "processing ai job");
 
       try {
+        const promptConfigs = await getPublishedAiPromptConfigs(supabase);
+        const overrides = resolvePromptOverrides(job.kind, promptConfigs);
+
         if (job.kind === "attempt_insight") {
           if (!job.attempt_id) throw new Error("missing attempt_id");
-          const model = resolveJobModel(config, job.kind);
-          const agent = createCoachAgent(config, supabase, model);
+          const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          const agent = createCoachAgent(
+            config,
+            supabase,
+            model,
+            overrides?.systemPrompt,
+            overrides?.promptVersion,
+          );
           await processAttemptInsightJob(supabase, agent, job.attempt_id, job.created_at);
         } else if (job.kind === "coach_reply") {
-          const model = resolveJobModel(config, job.kind);
-          const agent = createChatAgent(config, model);
+          const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          const agent = createChatAgent(config, model, overrides?.systemPrompt);
           await processCoachReplyJob(supabase, agent, job);
         } else if (job.kind === "snapshot_refresh") {
           const studentId = getStudentId(job);
@@ -186,8 +233,15 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
           const periodEnd = typeof payload.period_end === "string" ? payload.period_end : null;
           await processSnapshotRefreshJob(supabase, studentId, periodEnd);
         } else if (job.kind === "progress_report") {
-          const model = resolveJobModel(config, job.kind);
-          await processProgressReportJob(supabase, config, model, (job.payload ?? {}) as Record<string, unknown>);
+          const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          await processProgressReportJob(
+            supabase,
+            config,
+            model,
+            (job.payload ?? {}) as Record<string, unknown>,
+            overrides?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.progress_report,
+            overrides?.promptVersion ?? DEFAULT_PROMPT_VERSIONS.progress_report,
+          );
         } else {
           logger.info({ kind: job.kind }, "job kind not implemented, skipping");
         }

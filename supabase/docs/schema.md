@@ -615,6 +615,27 @@
 
 ---
 
+## AI Coach Config（Admin）
+
+### `public.ai_prompt_configs`
+**用途**：AI Coach 的 prompt + model 配置（支持版本化与发布）。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `kind` text (`attempt_insight` | `coach_reply` | `progress_report`)
+- `prompt_version` text
+- `system_prompt` text
+- `model_provider` text (`minimax` | `openai`)
+- `model_id` text
+- `status` text (`draft` | `published` | `archived`)
+- `created_by` uuid (auth.users)
+- `created_at` / `updated_at` / `published_at` timestamptz
+
+**约束**
+- 每个 `kind` 仅允许一个 `published` 版本（partial unique index）
+
+---
+
 ### `public.push_tokens`
 **用途**：设备推送 token（APNs/FCM）存储。
 
@@ -638,6 +659,23 @@
 - `status` text (`queued` | `sending` | `sent` | `error`)
 - `locked_at` timestamptz
 - `locked_by` text
+
+---
+
+## Admin
+
+### `public.admin_audit_logs`
+**用途**：Admin 操作审计日志（短期保留）。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `actor_id` uuid
+- `actor_email` text
+- `action` text
+- `resource_type` text
+- `resource_id` text
+- `metadata` jsonb
+- `created_at` timestamptz
 
 ---
 

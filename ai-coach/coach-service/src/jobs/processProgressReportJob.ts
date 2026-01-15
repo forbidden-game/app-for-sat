@@ -119,6 +119,8 @@ export async function processProgressReportJob(
   config: CoachConfig,
   model: Model<any>,
   payload: ReportPayload,
+  systemPrompt: string = "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
+  promptVersion: string = "ai-coach-report-v1",
 ): Promise<void> {
   const studentId = payload.student_id;
   const periodKind = payload.period_kind === "monthly" ? "monthly" : "weekly";
@@ -178,7 +180,7 @@ export async function processProgressReportJob(
     const response = await completeSimple(
       model,
       {
-        systemPrompt: "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
+        systemPrompt,
         messages: [{ role: "user", content: prompt, timestamp: Date.now() }],
       },
       model.provider === "minimax" ? { apiKey: config.minimaxApiKey } : undefined,
@@ -208,7 +210,7 @@ export async function processProgressReportJob(
       summary: output.summary,
       plan: output.plan,
       model: model.id,
-      prompt_version: "ai-coach-report-v1",
+      prompt_version: promptVersion,
       cost_usd: costUsd,
     })
     .select("id")

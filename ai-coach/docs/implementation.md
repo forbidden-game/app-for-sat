@@ -36,6 +36,7 @@ Run:
 
 Notes:
 - Worker will periodically enqueue `snapshot_refresh` + `progress_report` jobs (interval via `AI_COACH_SCHEDULE_INTERVAL_MS`).
+- Published rows in `ai_prompt_configs` override system prompts + model routing (env defaults are fallback).
 
 ## Notification Sender
 Location: `ai-coach/notification-sender/`
