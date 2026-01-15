@@ -254,6 +254,57 @@ Preferred: SwiftMath (native attributed rendering) + WebKit fallback.
 - Benefits: less flicker, no WebView for simple math, lower memory.
 - Fallback: KaTeX via WKWebView for complex or unsupported features.
 
+### SwiftMath Integration Details (Draft)
+
+API surface (StudentApp):
+
+```swift
+public enum MathRenderFailure: Error, Equatable {
+    case unsupported
+    case empty
+    case renderFailed(String)
+}
+
+public protocol MathNativeRendering {
+    func renderAttributed(
+        latex: String,
+        style: MathTextStyle,
+        maxWidth: CGFloat
+    ) throws -> AttributedString
+}
+
+public final class SwiftMathRenderer: MathNativeRendering {
+    public init() {}
+    public func renderAttributed(
+        latex: String,
+        style: MathTextStyle,
+        maxWidth: CGFloat
+    ) throws -> AttributedString
+}
+```
+
+Planner decision table:
+- No math segments -> `plainText`.
+- Math segments, all inline, size < 600 chars, no unknown commands -> SwiftMath.
+- Block math or unknown commands -> WebKit (KaTeX).
+- SwiftMath throws -> WebKit.
+- WebKit fails or times out -> `plainText` fallback.
+
+Caching strategy:
+- Two-level cache: `planCache` (MathRenderPlan) + `heightCache` (final height).
+- Key: `textHash|styleKey|width|colorScheme|displayScale`.
+- `styleKey`: fontSize|weight|lineHeight|lineSpacing|textAlign.
+- `width` bucketed to 1pt (ceil to nearest 1.0) to avoid tiny layout churn.
+- `displayScale` included to prevent mismatched raster metrics.
+
+WebKit pooling:
+- `MathWebViewPool` size 2-3; reuse WKWebView instances.
+- Render queue limited to 2 concurrent tasks to prevent memory spikes.
+
+Instrumentation:
+- Log counters: swiftmath_success, swiftmath_fail, webkit_fallback, webkit_fail.
+- Track avg render time per renderer.
+
 ## Migration Checklist (Step-by-step)
 
 Phase 0: Guardrails
