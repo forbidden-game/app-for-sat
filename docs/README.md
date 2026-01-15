@@ -16,6 +16,7 @@ docs/
   ai-coach-flow.md        # AI Coach 后端流程草案
   ai-coach/README.md      # AI Coach 入口（指向 ai-coach/docs）
   ios/ios-app-overview.md # iOS 学生端概览
+  ios/question-feed-refactor-plan.md # Question Feed refactor plan
 ```
 
 跨目录文档入口：
