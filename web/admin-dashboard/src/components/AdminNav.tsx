@@ -9,6 +9,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 const links = [
   { href: "/admin", label: "Overview" },
   { href: "/admin/ai-config", label: "AI Config" },
+  { href: "/admin/ai-logs", label: "AI Logs" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/questions", label: "Questions" },
   { href: "/admin/banks", label: "Banks" },

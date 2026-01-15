@@ -8,6 +8,8 @@ import { resolveModel } from "./model.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools, type CoachToolOptions } from "./tools/coachTools.js";
 import { buildModelSpec, getPublishedAiPromptConfigs, type AiPromptKind } from "./aiConfig.js";
+import { createAgentLogSession } from "./agentLogs.js";
+import { getProviderApiKey } from "./providerKeys.js";
 import { processAttemptInsightJob } from "./jobs/processAttemptInsightJob.js";
 import { processCoachReplyJob } from "./jobs/processCoachReplyJob.js";
 import { processSnapshotRefreshJob } from "./jobs/processSnapshotRefreshJob.js";
@@ -88,6 +90,7 @@ export function createCoachAgent(
   systemPrompt?: string,
   promptVersion?: string,
   toolOverrides?: CoachToolOverrides,
+  apiKeyResolver?: (provider: string) => Promise<string | undefined> | string | undefined,
 ): Agent {
   const tools = buildCoachTools(supabase, {
     modelId: model.id,
@@ -103,8 +106,9 @@ export function createCoachAgent(
       tools,
       messages: [],
     },
-    getApiKey: async (provider) =>
-      provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(provider),
+    getApiKey: apiKeyResolver
+      ? apiKeyResolver
+      : async (provider) => (provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(provider)),
   });
 }
 
@@ -112,6 +116,7 @@ export function createChatAgent(
   config: CoachConfig,
   model: Model<any>,
   systemPrompt?: string,
+  apiKeyResolver?: (provider: string) => Promise<string | undefined> | string | undefined,
 ): Agent {
   return new Agent({
     initialState: {
@@ -121,9 +126,20 @@ export function createChatAgent(
       tools: [],
       messages: [],
     },
-    getApiKey: async (provider) =>
-      provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(provider),
+    getApiKey: apiKeyResolver
+      ? apiKeyResolver
+      : async (provider) => (provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(provider)),
   });
+}
+
+async function resolveProviderKey(
+  supabase: SupabaseClient,
+  config: CoachConfig,
+  provider: string,
+): Promise<string | undefined> {
+  if (provider === "minimax") return config.minimaxApiKey;
+  const fromDb = await getProviderApiKey(supabase, provider);
+  return fromDb ?? getEnvApiKey(provider);
 }
 
 async function markJobDone(supabase: SupabaseClient, jobId: string): Promise<void> {
@@ -181,6 +197,7 @@ async function claimJobs(
 
 export async function runWorker(config: CoachConfig, supabase: SupabaseClient): Promise<void> {
   let lastScheduleAt = 0;
+  const apiKeyResolver = async (provider: string) => resolveProviderKey(supabase, config, provider);
 
   for (;;) {
     const now = Date.now();
@@ -218,26 +235,64 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
         if (job.kind === "attempt_insight") {
           if (!job.attempt_id) throw new Error("missing attempt_id");
           const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          const systemPrompt = overrides?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.attempt_insight;
+          const promptVersion = overrides?.promptVersion ?? DEFAULT_PROMPT_VERSIONS.attempt_insight;
           const agent = createCoachAgent(
             config,
             supabase,
             model,
-            overrides?.systemPrompt,
-            overrides?.promptVersion,
+            systemPrompt,
+            promptVersion,
             { allowWriteInsight: true, includeContextTool: true, includeMemoryTools: true },
+            apiKeyResolver,
           );
-          await processAttemptInsightJob(supabase, agent, job.attempt_id, job.created_at);
+          const logSession = createAgentLogSession({
+            job,
+            model,
+            promptVersion,
+            systemPrompt,
+          });
+          logSession.attach(agent);
+          try {
+            await processAttemptInsightJob(supabase, agent, job, logSession);
+            await logSession.flush(supabase, "done");
+          } catch (err) {
+            if (!(err instanceof JobDeferredError)) {
+              await logSession.flush(supabase, "error", err);
+            }
+            throw err;
+          } finally {
+            logSession.detach();
+          }
         } else if (job.kind === "coach_reply") {
           const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          const systemPrompt = overrides?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.coach_reply;
+          const promptVersion = overrides?.promptVersion ?? DEFAULT_PROMPT_VERSIONS.coach_reply;
           const agent = createCoachAgent(
             config,
             supabase,
             model,
-            overrides?.systemPrompt,
-            overrides?.promptVersion,
+            systemPrompt,
+            promptVersion,
             { allowWriteInsight: false, includeContextTool: true, includeMemoryTools: true },
+            apiKeyResolver,
           );
-          await processCoachReplyJob(supabase, agent, job);
+          const logSession = createAgentLogSession({
+            job,
+            model,
+            promptVersion,
+            systemPrompt,
+          });
+          logSession.attach(agent);
+          try {
+            await processCoachReplyJob(supabase, agent, job, logSession);
+            await logSession.flush(supabase, "done");
+          } catch (err) {
+            await logSession.flush(supabase, "error", err);
+            throw err;
+          } finally {
+            logSession.detach();
+          }
         } else if (job.kind === "snapshot_refresh") {
           const studentId = getStudentId(job);
           if (!studentId) throw new Error("missing student_id");

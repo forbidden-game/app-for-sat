@@ -23,9 +23,16 @@ export type AiPromptConfigInput = {
   kind: AiPromptKind;
   prompt_version: string;
   system_prompt: string;
-  model_provider: "minimax" | "openai";
+  model_provider: "minimax" | "openai" | "openrouter";
   model_id: string;
   notes?: string;
+};
+
+export type AiProviderKeyStatus = {
+  provider: "openrouter";
+  hasKey: boolean;
+  last4: string | null;
+  updatedAt: string | null;
 };
 
 export async function listAiPromptConfigs(accessToken: string): Promise<AiPromptConfig[]> {
@@ -133,4 +140,95 @@ export async function archiveAiPromptConfig(
     resourceId: data.id,
     metadata: { kind: data.kind },
   });
+}
+
+export async function getAiProviderKeyStatus(
+  accessToken: string,
+  provider: AiProviderKeyStatus["provider"],
+): Promise<AiProviderKeyStatus> {
+  const { supabase } = await requireAdmin(accessToken);
+
+  const { data, error } = await supabase
+    .from("ai_provider_keys")
+    .select("api_key, updated_at")
+    .eq("provider", provider)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error("Failed to load provider key status.");
+  }
+
+  const apiKey = (data?.api_key as string | undefined) ?? "";
+  return {
+    provider,
+    hasKey: apiKey.length > 0,
+    last4: apiKey.length >= 4 ? apiKey.slice(-4) : null,
+    updatedAt: (data?.updated_at as string | null) ?? null,
+  };
+}
+
+export async function upsertAiProviderKey(
+  accessToken: string,
+  provider: AiProviderKeyStatus["provider"],
+  apiKey: string,
+): Promise<AiProviderKeyStatus> {
+  const context = await requireAdmin(accessToken);
+  const now = new Date().toISOString();
+  const trimmed = apiKey.trim();
+
+  if (!trimmed) {
+    throw new Error("API key is required.");
+  }
+
+  const { data: existing, error: lookupError } = await context.supabase
+    .from("ai_provider_keys")
+    .select("id")
+    .eq("provider", provider)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new Error("Failed to verify provider key.");
+  }
+
+  if (existing?.id) {
+    const { error } = await context.supabase
+      .from("ai_provider_keys")
+      .update({
+        api_key: trimmed,
+        updated_at: now,
+        updated_by: context.admin.id,
+      })
+      .eq("id", existing.id);
+
+    if (error) {
+      throw new Error("Failed to update provider key.");
+    }
+  } else {
+    const { error } = await context.supabase.from("ai_provider_keys").insert({
+      provider,
+      api_key: trimmed,
+      created_at: now,
+      updated_at: now,
+      created_by: context.admin.id,
+      updated_by: context.admin.id,
+    });
+
+    if (error) {
+      throw new Error("Failed to save provider key.");
+    }
+  }
+
+  await recordAdminEvent(context, {
+    action: "ai_provider_key.upsert",
+    resourceType: "ai_provider_keys",
+    resourceId: provider,
+    metadata: { provider },
+  });
+
+  return {
+    provider,
+    hasKey: true,
+    last4: trimmed.slice(-4),
+    updatedAt: now,
+  };
 }

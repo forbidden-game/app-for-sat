@@ -11,6 +11,10 @@ type CoachContent = {
   status?: "streaming" | "done" | "error";
 };
 
+export type CoachReplyLogSink = {
+  recordPrompt?: (prompt: string) => void;
+};
+
 async function insertAssistantMessage(
   supabase: SupabaseClient,
   studentId: string,
@@ -44,6 +48,7 @@ export async function processCoachReplyJob(
   supabase: SupabaseClient,
   agent: Agent,
   job: AiJobRow,
+  log?: CoachReplyLogSink,
 ): Promise<void> {
   if (!job.student_id) throw new Error("missing student_id");
   const studentId = job.student_id;
@@ -91,6 +96,7 @@ export async function processCoachReplyJob(
 
   try {
     const prompt = buildCoachReplyPrompt(context);
+    log?.recordPrompt?.(prompt);
 
     await agent.prompt(prompt);
 

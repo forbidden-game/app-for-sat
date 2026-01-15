@@ -63,6 +63,16 @@ class StubAgent {
   }
 }
 
+function makeJob(createdAt: string = new Date().toISOString()) {
+  return {
+    id: "job-1",
+    kind: "attempt_insight",
+    attempt_id: "attempt-1",
+    student_id: "student-1",
+    created_at: createdAt,
+  };
+}
+
 function buildSupabaseForAttempt(snapshot: Snapshot, attemptInsightSelect?: Array<{ data: any; error: any }>) {
   return createSupabaseMock({
     rpc: {
@@ -94,7 +104,7 @@ describe("processAttemptInsightJob", () => {
     });
     const agent = new StubAgent();
 
-    await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toThrow(
+    await expect(processAttemptInsightJob(supabase, agent as any, makeJob())).rejects.toThrow(
       /missing_attempt_context/,
     );
   });
@@ -107,7 +117,7 @@ describe("processAttemptInsightJob", () => {
     });
     const agent = new StubAgent();
 
-    await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toThrow(
+    await expect(processAttemptInsightJob(supabase, agent as any, makeJob())).rejects.toThrow(
       /missing_attempt_context/,
     );
   });
@@ -117,7 +127,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(0);
   });
@@ -129,7 +139,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toBeInstanceOf(
+    await expect(processAttemptInsightJob(supabase, agent as any, makeJob())).rejects.toBeInstanceOf(
       JobDeferredError,
     );
   });
@@ -142,7 +152,7 @@ describe("processAttemptInsightJob", () => {
     const agent = new StubAgent();
     const old = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", old);
+    await processAttemptInsightJob(supabase, agent as any, makeJob(old));
 
     expect(agent.prompts.length).toBeGreaterThan(0);
   });
@@ -154,7 +164,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts.length).toBeGreaterThan(0);
   });
@@ -164,7 +174,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(1);
   });
@@ -176,7 +186,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts[0]).toContain("\"student_selected_step\": \"3\"");
   });
@@ -188,7 +198,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts[0]).toContain("\"student_selected_step\": \"unknown\"");
   });
@@ -203,7 +213,7 @@ describe("processAttemptInsightJob", () => {
     ]);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(2);
     expect(agent.prompts[1]).toContain("write_attempt_insight");
@@ -219,7 +229,7 @@ describe("processAttemptInsightJob", () => {
     ]);
     const agent = new StubAgent();
 
-    await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toThrow(
+    await expect(processAttemptInsightJob(supabase, agent as any, makeJob())).rejects.toThrow(
       /attempt_insight_not_written/,
     );
   });
@@ -234,7 +244,7 @@ describe("processAttemptInsightJob", () => {
     ]);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts[1]).toContain("attempt_id=attempt-1");
   });
@@ -249,7 +259,7 @@ describe("processAttemptInsightJob", () => {
     ]);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts[1]).toContain("student_id=student-1");
   });
@@ -264,7 +274,7 @@ describe("processAttemptInsightJob", () => {
     ]);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts[1]).toContain("question_id=question-1");
   });
@@ -274,7 +284,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(1);
   });
@@ -284,7 +294,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(1);
   });
@@ -294,7 +304,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(1);
   });
@@ -304,7 +314,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(1);
   });
@@ -314,7 +324,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(0);
   });
@@ -324,7 +334,7 @@ describe("processAttemptInsightJob", () => {
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
+    await processAttemptInsightJob(supabase, agent as any, makeJob());
 
     expect(agent.prompts).toHaveLength(0);
   });

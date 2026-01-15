@@ -96,3 +96,32 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `status` text（`queued|running|done|error`）
 - `error` text
 - `created_at`, `updated_at`
+
+## 6) `public.ai_provider_keys`
+Provider key（服务端读取，MVP 仅 OpenRouter）。
+
+字段建议：
+- `id` uuid PK
+- `provider` text（`openrouter`）
+- `api_key` text
+- `created_by` / `updated_by` uuid
+- `created_at` / `updated_at` timestamptz
+
+## 7) `public.ai_agent_logs`
+AI Coach agent 执行日志（prompt + tool 轨迹，用于 debug）。
+
+字段建议：
+- `id` uuid PK
+- `job_id` uuid nullable
+- `kind` text
+- `student_id` uuid nullable
+- `attempt_id` uuid nullable
+- `model_provider` text
+- `model_id` text
+- `prompt_version` text
+- `system_prompt` text
+- `prompts` jsonb
+- `events` jsonb
+- `status` text（`done` | `error`）
+- `error` text
+- `created_at` timestamptz

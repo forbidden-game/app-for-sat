@@ -1,9 +1,10 @@
 import type { Model } from "@mariozechner/pi-ai";
-import { completeSimple } from "@mariozechner/pi-ai";
+import { completeSimple, getEnvApiKey } from "@mariozechner/pi-ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "../config.js";
 import { logger } from "../logger.js";
+import { getProviderApiKey } from "../providerKeys.js";
 import { buildProgressReportPrompt } from "../prompts/progressReportPrompt.js";
 import type { PeriodStats } from "../stats.js";
 import { buildDelta, fetchPeriodStats } from "../stats.js";
@@ -177,13 +178,17 @@ export async function processProgressReportJob(
   let output: ReportOutput | null = null;
   let costUsd: number | null = null;
   try {
+    const apiKey =
+      model.provider === "minimax"
+        ? config.minimaxApiKey
+        : (await getProviderApiKey(supabase, model.provider)) ?? getEnvApiKey(model.provider);
     const response = await completeSimple(
       model,
       {
         systemPrompt,
         messages: [{ role: "user", content: prompt, timestamp: Date.now() }],
       },
-      model.provider === "minimax" ? { apiKey: config.minimaxApiKey } : undefined,
+      apiKey ? { apiKey } : undefined,
     );
 
     costUsd = response.usage?.cost?.total ?? null;

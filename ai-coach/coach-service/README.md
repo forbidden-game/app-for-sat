@@ -22,4 +22,5 @@ Create `ai-coach/coach-service/.env` from `.env.example`.
 ## Notes
 - This worker expects Supabase URL + service role key.
 - Model config defaults to env in `src/config.ts`, but published rows in `ai_prompt_configs` override prompt + model at runtime.
-- OpenAI models require `OPENAI_API_KEY` (MiniMax uses `MINIMAX_API_KEY`).
+- MiniMax uses `MINIMAX_API_KEY`; OpenAI uses `OPENAI_API_KEY`.
+- OpenRouter can use `OPENROUTER_API_KEY`, or the Admin Console stored key (`ai_provider_keys`).

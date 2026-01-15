@@ -5,13 +5,23 @@ import { buildCoachContext } from "../context/coachContext.js";
 import { buildAttemptInsightPrompt } from "../prompts/attemptInsightPrompt.js";
 import { logger } from "../logger.js";
 import { JobDeferredError } from "./jobErrors.js";
+import type { AiJobRow } from "../types.js";
+
+export type AttemptInsightJob = Pick<AiJobRow, "id" | "attempt_id" | "created_at" | "student_id" | "kind">;
+
+export type AttemptInsightLogSink = {
+  recordPrompt?: (prompt: string) => void;
+};
 
 export async function processAttemptInsightJob(
   supabase: SupabaseClient,
   agent: Agent,
-  attemptId: string,
-  jobCreatedAtIso: string,
+  job: AttemptInsightJob,
+  log?: AttemptInsightLogSink,
 ): Promise<void> {
+  if (!job.attempt_id) throw new Error("missing attempt_id");
+  const attemptId = job.attempt_id;
+  const jobCreatedAtIso = job.created_at;
   const context = await buildCoachContext({
     supabase,
     attemptId,
@@ -47,6 +57,7 @@ export async function processAttemptInsightJob(
   }
 
   const prompt = buildAttemptInsightPrompt(context);
+  log?.recordPrompt?.(prompt);
 
   const hasInsight = async (): Promise<boolean> => {
     const { data, error: insightError } = await supabase
@@ -71,6 +82,7 @@ export async function processAttemptInsightJob(
       "Remember: explanation_short must be Chinese and <= 120 chars. followups max 2.",
     ].join("\n");
 
+    log?.recordPrompt?.(retryPrompt);
     await agent.prompt(retryPrompt);
 
     if (!(await hasInsight())) {

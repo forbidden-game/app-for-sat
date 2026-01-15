@@ -639,7 +639,7 @@
 - `kind` text (`attempt_insight` | `coach_reply` | `progress_report`)
 - `prompt_version` text
 - `system_prompt` text
-- `model_provider` text (`minimax` | `openai`)
+- `model_provider` text (`minimax` | `openai` | `openrouter`)
 - `model_id` text
 - `status` text (`draft` | `published` | `archived`)
 - `created_by` uuid (auth.users)
@@ -647,6 +647,37 @@
 
 **约束**
 - 每个 `kind` 仅允许一个 `published` 版本（partial unique index）
+
+---
+
+### `public.ai_provider_keys`
+**用途**：第三方模型 provider key（仅服务端读取）。
+
+**字段**（摘要）
+- `provider` text (`openrouter`)
+- `api_key` text
+- `created_by` / `updated_by` uuid
+- `created_at` / `updated_at` timestamptz
+
+---
+
+### `public.ai_agent_logs`
+**用途**：AI Coach agent 执行日志（prompt + tool 轨迹）。
+
+**字段**（摘要）
+- `job_id` uuid
+- `kind` text
+- `student_id` uuid
+- `attempt_id` uuid
+- `model_provider` text
+- `model_id` text
+- `prompt_version` text
+- `system_prompt` text
+- `prompts` jsonb
+- `events` jsonb
+- `status` text (`done` | `error`)
+- `error` text
+- `created_at` timestamptz
 
 ---
 
