@@ -324,62 +324,84 @@ describe("processCoachReplyJob", () => {
     expect(updates.length).toBeGreaterThan(1);
   });
 
-  it("throws when snapshot query fails", async () => {
+  it("continues when snapshot query fails", async () => {
     const agent = new StubAgent();
     const { supabase } = createSupabaseMock({
       from: {
         student_snapshots: { select: [{ data: null, error: { message: "snapshot_failed" } }] },
+        student_reports: { select: [{ data: [], error: null }] },
+        attempt_insights: { select: [{ data: [], error: null }, { data: null, error: null }] },
+        coach_thread_messages: {
+          select: [{ data: [{ id: "msg1", student_id: "s1", role: "user", content: { text: "hi" }, created_at: "2025-01-01" }], error: null }],
+          insert: [{ data: { id: "assistant-1" }, error: null }],
+          update: [{ data: null, error: null }],
+        },
       },
     });
 
-    await expect(processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any)).rejects.toThrow(
-      /snapshot_failed/,
-    );
+    await processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any);
+
+    expect(agent.prompts[0]).toContain("学生状态信号");
   });
 
-  it("throws when reports query fails", async () => {
+  it("continues when reports query fails", async () => {
     const agent = new StubAgent();
     const { supabase } = createSupabaseMock({
       from: {
         student_snapshots: { select: [{ data: null, error: null }] },
         student_reports: { select: [{ data: null, error: { message: "reports_failed" } }] },
+        attempt_insights: { select: [{ data: [], error: null }, { data: null, error: null }] },
+        coach_thread_messages: {
+          select: [{ data: [{ id: "msg1", student_id: "s1", role: "user", content: { text: "hi" }, created_at: "2025-01-01" }], error: null }],
+          insert: [{ data: { id: "assistant-1" }, error: null }],
+          update: [{ data: null, error: null }],
+        },
       },
     });
 
-    await expect(processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any)).rejects.toThrow(
-      /reports_failed/,
-    );
+    await processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any);
+
+    expect(agent.prompts[0]).toContain("最近进展报告");
   });
 
-  it("throws when insights query fails", async () => {
+  it("continues when insights query fails", async () => {
     const agent = new StubAgent();
     const { supabase } = createSupabaseMock({
       from: {
         student_snapshots: { select: [{ data: null, error: null }] },
         student_reports: { select: [{ data: [], error: null }] },
-        attempt_insights: { select: [{ data: null, error: { message: "insights_failed" } }] },
+        attempt_insights: { select: [{ data: null, error: { message: "insights_failed" } }, { data: null, error: null }] },
+        coach_thread_messages: {
+          select: [{ data: [{ id: "msg1", student_id: "s1", role: "user", content: { text: "hi" }, created_at: "2025-01-01" }], error: null }],
+          insert: [{ data: { id: "assistant-1" }, error: null }],
+          update: [{ data: null, error: null }],
+        },
       },
     });
 
-    await expect(processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any)).rejects.toThrow(
-      /insights_failed/,
-    );
+    await processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any);
+
+    expect(agent.prompts[0]).toContain("最近错题洞察");
   });
 
-  it("throws when messages query fails", async () => {
+  it("continues when messages query fails", async () => {
     const agent = new StubAgent();
     const { supabase } = createSupabaseMock({
       from: {
         student_snapshots: { select: [{ data: null, error: null }] },
         student_reports: { select: [{ data: [], error: null }] },
-        attempt_insights: { select: [{ data: [], error: null }] },
-        coach_thread_messages: { select: [{ data: null, error: { message: "messages_failed" } }] },
+        attempt_insights: { select: [{ data: [], error: null }, { data: null, error: null }] },
+        coach_thread_messages: {
+          select: [{ data: null, error: { message: "messages_failed" } }],
+          insert: [{ data: { id: "assistant-1" }, error: null }],
+          update: [{ data: null, error: null }],
+        },
       },
     });
 
-    await expect(processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any)).rejects.toThrow(
-      /messages_failed/,
-    );
+    await processCoachReplyJob(supabase, agent as any, { id: "job", kind: "coach_reply", student_id: "s1", payload: {} } as any);
+
+    expect(agent.prompts[0]).toContain("最近对话");
   });
 
   it("continues when linked insight fails", async () => {

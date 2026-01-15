@@ -6,7 +6,7 @@ import type { CoachConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { resolveModel } from "./model.js";
 import type { AiJobRow } from "./types.js";
-import { buildCoachTools } from "./tools/coachTools.js";
+import { buildCoachTools, type CoachToolOptions } from "./tools/coachTools.js";
 import { buildModelSpec, getPublishedAiPromptConfigs, type AiPromptKind } from "./aiConfig.js";
 import { processAttemptInsightJob } from "./jobs/processAttemptInsightJob.js";
 import { processCoachReplyJob } from "./jobs/processCoachReplyJob.js";
@@ -79,16 +79,20 @@ function resolvePromptOverrides(
   };
 }
 
+type CoachToolOverrides = Omit<CoachToolOptions, "modelId" | "promptVersion">;
+
 export function createCoachAgent(
   config: CoachConfig,
   supabase: SupabaseClient,
   model: Model<any>,
   systemPrompt?: string,
   promptVersion?: string,
+  toolOverrides?: CoachToolOverrides,
 ): Agent {
   const tools = buildCoachTools(supabase, {
     modelId: model.id,
     promptVersion: promptVersion ?? DEFAULT_PROMPT_VERSIONS.attempt_insight,
+    ...toolOverrides,
   });
 
   return new Agent({
@@ -220,11 +224,19 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
             model,
             overrides?.systemPrompt,
             overrides?.promptVersion,
+            { allowWriteInsight: true, includeContextTool: true, includeMemoryTools: true },
           );
           await processAttemptInsightJob(supabase, agent, job.attempt_id, job.created_at);
         } else if (job.kind === "coach_reply") {
           const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
-          const agent = createChatAgent(config, model, overrides?.systemPrompt);
+          const agent = createCoachAgent(
+            config,
+            supabase,
+            model,
+            overrides?.systemPrompt,
+            overrides?.promptVersion,
+            { allowWriteInsight: false, includeContextTool: true, includeMemoryTools: true },
+          );
           await processCoachReplyJob(supabase, agent, job);
         } else if (job.kind === "snapshot_refresh") {
           const studentId = getStudentId(job);

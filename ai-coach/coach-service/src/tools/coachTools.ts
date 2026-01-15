@@ -2,6 +2,7 @@ import { Type } from "@sinclair/typebox";
 import type { AgentTool, AgentToolResult } from "@mariozechner/pi-agent-core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildCoachContext, type CoachContextPacket } from "../context/coachContext.js";
 import { errorModeEnum, type ErrorModeEnum } from "../domain/errorModes.js";
 import { logger } from "../logger.js";
 
@@ -27,6 +28,9 @@ type SimilarMistake = {
 export type CoachToolOptions = {
   modelId?: string;
   promptVersion?: string;
+  allowWriteInsight?: boolean;
+  includeMemoryTools?: boolean;
+  includeContextTool?: boolean;
 };
 
 async function enqueueSnapshotRefresh(supabase: SupabaseClient, studentId: string): Promise<void> {
@@ -47,6 +51,10 @@ async function enqueueSnapshotRefresh(supabase: SupabaseClient, studentId: strin
 }
 
 export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOptions = {}): AgentTool<any>[] {
+  const allowWriteInsight = options.allowWriteInsight ?? true;
+  const includeMemoryTools = options.includeMemoryTools ?? true;
+  const includeContextTool = options.includeContextTool ?? true;
+
   const searchProcedureCandidates: AgentTool<
     typeof SearchProcedureCandidatesSchema,
     { candidates: SearchProcedureCandidate[] }
@@ -68,6 +76,29 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
       return {
         content: [{ type: "text", text: JSON.stringify({ candidates }) }],
         details: { candidates },
+      };
+    },
+  };
+
+  const getCoachContext: AgentTool<typeof GetCoachContextSchema, { context: CoachContextPacket }> = {
+    name: "get_coach_context",
+    label: "Get coach context",
+    description: "Load a compact context packet for the student (optionally linked to an attempt).",
+    parameters: GetCoachContextSchema,
+    execute: async (_toolCallId, params) => {
+      const context = await buildCoachContext({
+        supabase,
+        studentId: params.student_id,
+        linkedAttemptId: params.linked_attempt_id ?? null,
+        includeMessages: params.include_messages ?? true,
+        messageLimit: params.message_limit ?? 30,
+        insightLimit: params.insight_limit ?? 5,
+        reportLimit: params.report_limit ?? 2,
+      });
+
+      return {
+        content: [{ type: "text", text: JSON.stringify({ context }) }],
+        details: { context },
       };
     },
   };
@@ -173,7 +204,135 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
     },
   };
 
-  return [searchProcedureCandidates, createProcedure, searchSimilarMistakes, writeAttemptInsight];
+  const memorySearch: AgentTool<typeof MemorySearchSchema, { results: MemorySearchResult[]; disabled?: boolean; error?: string }> =
+    {
+      name: "memory_search",
+      label: "Memory search",
+      description: "Search teacher memory entries for this student.",
+      parameters: MemorySearchSchema,
+      execute: async (_toolCallId, params) => {
+        const { data, error } = await supabase
+          .from("coach_memory_entries")
+          .select("id,scope,content,tags,source,created_at")
+          .eq("student_id", params.student_id)
+          .ilike("content", `%${params.query}%`)
+          .order("created_at", { ascending: false })
+          .limit(params.limit ?? 5);
+
+        if (error) {
+          if (isMissingRelationError(error)) {
+            const details = { results: [], disabled: true, error: error.message };
+            return {
+              content: [{ type: "text", text: JSON.stringify(details) }],
+              details,
+            };
+          }
+          throw new Error(error.message);
+        }
+
+        const results = (data ?? []).map((row) => ({
+          id: row.id as string,
+          scope: row.scope as string,
+          tags: (row.tags as string[] | null) ?? [],
+          source: (row.source as string | null) ?? null,
+          created_at: row.created_at as string,
+          snippet: String(row.content ?? "").slice(0, 200),
+        }));
+
+        return {
+          content: [{ type: "text", text: JSON.stringify({ results }) }],
+          details: { results },
+        };
+      },
+    };
+
+  const memoryGet: AgentTool<typeof MemoryGetSchema, { entry: MemoryEntry | null; disabled?: boolean; error?: string }> = {
+    name: "memory_get",
+    label: "Memory get",
+    description: "Fetch a full memory entry by id.",
+    parameters: MemoryGetSchema,
+    execute: async (_toolCallId, params) => {
+      const { data, error } = await supabase
+        .from("coach_memory_entries")
+        .select("id,scope,content,tags,source,created_at")
+        .eq("id", params.memory_id)
+        .maybeSingle();
+
+      if (error) {
+        if (isMissingRelationError(error)) {
+          const details = { entry: null, disabled: true, error: error.message };
+          return {
+            content: [{ type: "text", text: JSON.stringify(details) }],
+            details,
+          };
+        }
+        throw new Error(error.message);
+      }
+
+      const entry = data
+        ? {
+            id: data.id as string,
+            scope: data.scope as string,
+            content: data.content as string,
+            tags: (data.tags as string[] | null) ?? [],
+            source: (data.source as string | null) ?? null,
+            created_at: data.created_at as string,
+          }
+        : null;
+
+      return {
+        content: [{ type: "text", text: JSON.stringify({ entry }) }],
+        details: { entry },
+      };
+    },
+  };
+
+  const memoryWrite: AgentTool<typeof MemoryWriteSchema, { ok: true; id?: string; disabled?: boolean; error?: string }> = {
+    name: "memory_write",
+    label: "Memory write",
+    description: "Write a teacher memory entry for the student.",
+    parameters: MemoryWriteSchema,
+    execute: async (_toolCallId, params) => {
+      const { data, error } = await supabase
+        .from("coach_memory_entries")
+        .insert({
+          student_id: params.student_id,
+          scope: params.scope,
+          content: params.content,
+          tags: params.tags ?? null,
+          source: params.source ?? null,
+        })
+        .select("id")
+        .single();
+
+      if (error) {
+        if (isMissingRelationError(error)) {
+          const details = { ok: true, disabled: true, error: error.message };
+          return {
+            content: [{ type: "text", text: JSON.stringify(details) }],
+            details,
+          };
+        }
+        throw new Error(error.message);
+      }
+
+      return {
+        content: [{ type: "text", text: JSON.stringify({ ok: true, id: data.id }) }],
+        details: { ok: true, id: data.id as string },
+      };
+    },
+  };
+
+  const tools: AgentTool<any>[] = [
+    searchProcedureCandidates,
+    createProcedure,
+    searchSimilarMistakes,
+    ...(includeContextTool ? [getCoachContext] : []),
+    ...(allowWriteInsight ? [writeAttemptInsight] : []),
+    ...(includeMemoryTools ? [memorySearch, memoryGet, memoryWrite] : []),
+  ];
+
+  return tools;
 }
 
 const SearchProcedureCandidatesSchema = Type.Object({
@@ -196,12 +355,39 @@ const SearchSimilarMistakesSchema = Type.Object({
   limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
 });
 
+const GetCoachContextSchema = Type.Object({
+  student_id: Type.String({ minLength: 1 }),
+  linked_attempt_id: Type.Optional(Type.String({ minLength: 1 })),
+  include_messages: Type.Optional(Type.Boolean()),
+  message_limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
+  insight_limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
+  report_limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 10 })),
+});
+
 const FollowupSchema = Type.Object({
   question: Type.String({ minLength: 1 }),
   expected: Type.Optional(Type.String()),
 });
 
 const EvidenceSchema = Type.Object({}, { additionalProperties: true });
+
+const MemorySearchSchema = Type.Object({
+  student_id: Type.String({ minLength: 1 }),
+  query: Type.String({ minLength: 1 }),
+  limit: Type.Optional(Type.Integer({ minimum: 1, maximum: 20 })),
+});
+
+const MemoryGetSchema = Type.Object({
+  memory_id: Type.String({ minLength: 1 }),
+});
+
+const MemoryWriteSchema = Type.Object({
+  student_id: Type.String({ minLength: 1 }),
+  scope: Type.Union([Type.Literal("daily"), Type.Literal("curated")]),
+  content: Type.String({ minLength: 1, maxLength: 2000 }),
+  tags: Type.Optional(Type.Array(Type.String({ minLength: 1 }), { maxItems: 12 })),
+  source: Type.Optional(Type.String({ minLength: 1, maxLength: 80 })),
+});
 
 const WriteAttemptInsightSchema = Type.Object({
   attempt_id: Type.String({ minLength: 1 }),
@@ -219,3 +405,28 @@ const WriteAttemptInsightSchema = Type.Object({
   followups: Type.Array(FollowupSchema, { minItems: 0, maxItems: 2 }),
   confidence: Type.Optional(Type.Number({ minimum: 0, maximum: 1 })),
 });
+
+type MemorySearchResult = {
+  id: string;
+  scope: string;
+  tags: string[];
+  source: string | null;
+  created_at: string;
+  snippet: string;
+};
+
+type MemoryEntry = {
+  id: string;
+  scope: string;
+  content: string;
+  tags: string[];
+  source: string | null;
+  created_at: string;
+};
+
+function isMissingRelationError(error: { code?: string | null; message?: string | null }): boolean {
+  const code = typeof error.code === "string" ? error.code : "";
+  if (code === "42P01") return true;
+  const message = typeof error.message === "string" ? error.message.toLowerCase() : "";
+  return message.includes("does not exist") || message.includes("undefined");
+}

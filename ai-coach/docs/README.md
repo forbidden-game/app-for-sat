@@ -35,6 +35,9 @@
 - `ai-coach/docs/error-modes.md`：SAT Math 初始 `error_mode_enum`（带 Unknown）。
 - `ai-coach/docs/procedures.md`：procedure/steps 自增长规则与模板。
 - `ai-coach/docs/api-v2.md`：AI Coach v2 API / Jobs 规范。
+- `ai-coach/docs/memory-v1.md`：王校长长期记忆机制（v1）。
+- `ai-coach/docs/architecture-v1.md`：AI Coach 架构设计（v1）。
+- `ai-coach/docs/test-plan-v1.md`：AI Coach 测试方案（v1）。
 
 ## 下一步（实现顺序建议）
 1. 先落 DB 表 + 最小 API：写入 insight、查询相似错误、读 student snapshot。

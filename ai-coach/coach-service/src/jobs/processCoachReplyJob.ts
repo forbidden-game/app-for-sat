@@ -1,6 +1,7 @@
 import type { Agent } from "@mariozechner/pi-agent-core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { buildCoachContext } from "../context/coachContext.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
 import { buildCoachReplyPrompt } from "../prompts/coachReplyPrompt.js";
@@ -9,21 +10,6 @@ type CoachContent = {
   text?: string;
   status?: "streaming" | "done" | "error";
 };
-
-type CoachThreadMessageRow = {
-  id: string;
-  student_id: string;
-  role: "user" | "assistant" | "tool";
-  content: CoachContent;
-  created_at: string;
-  linked_attempt_id: string | null;
-};
-
-function extractText(content: unknown): string {
-  if (!content || typeof content !== "object") return "";
-  const maybeText = (content as any).text;
-  return typeof maybeText === "string" ? maybeText : "";
-}
 
 async function insertAssistantMessage(
   supabase: SupabaseClient,
@@ -65,59 +51,15 @@ export async function processCoachReplyJob(
   const payload = (job.payload ?? {}) as any;
   const linkedAttemptId = typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
 
-  const { data: snapshotRow, error: snapshotError } = await supabase
-    .from("student_snapshots")
-    .select("*")
-    .eq("student_id", studentId)
-    .maybeSingle();
-  if (snapshotError) throw new Error(snapshotError.message);
-
-  const { data: recentReports, error: reportError } = await supabase
-    .from("student_reports")
-    .select("id, period_kind, period_key, period_start, period_end, summary, plan, metrics, delta, created_at")
-    .eq("student_id", studentId)
-    .order("created_at", { ascending: false })
-    .limit(2);
-  if (reportError) throw new Error(reportError.message);
-
-  const { data: recentInsights, error: insightError } = await supabase
-    .from("attempt_insights")
-    .select("attempt_id, procedure_id, error_step_index, error_mode_enum, explanation_short, created_at")
-    .eq("student_id", studentId)
-    .order("created_at", { ascending: false })
-    .limit(5);
-  if (insightError) throw new Error(insightError.message);
-
-  const { data: recentMessages, error: msgError } = await supabase
-    .from("coach_thread_messages")
-    .select("id,student_id,role,content,created_at,linked_attempt_id")
-    .eq("student_id", studentId)
-    .order("created_at", { ascending: false })
-    .limit(30);
-  if (msgError) throw new Error(msgError.message);
-
-  const chronological = (recentMessages ?? []).slice().reverse() as CoachThreadMessageRow[];
-
-  const messages = chronological.map((m) => ({
-    role: m.role,
-    text: extractText(m.content),
-    created_at: m.created_at,
-  }));
-
-  let linkedAttemptInsight: unknown | null = null;
-  if (linkedAttemptId) {
-    const { data: insight, error: linkedError } = await supabase
-      .from("attempt_insights")
-      .select("attempt_id,explanation_short,followups,error_step_index,error_mode_enum,procedure_id")
-      .eq("attempt_id", linkedAttemptId)
-      .maybeSingle();
-
-    if (linkedError) {
-      logger.warn({ err: linkedError, linkedAttemptId }, "failed to load linked attempt insight");
-    } else {
-      linkedAttemptInsight = insight ?? null;
-    }
-  }
+  const context = await buildCoachContext({
+    supabase,
+    studentId,
+    linkedAttemptId,
+    includeMessages: true,
+    includeReports: true,
+    includeInsights: true,
+    includeSnapshot: true,
+  });
 
   const assistantMessageId = await insertAssistantMessage(supabase, studentId, linkedAttemptId);
 
@@ -148,14 +90,7 @@ export async function processCoachReplyJob(
   });
 
   try {
-    const prompt = buildCoachReplyPrompt({
-      studentId,
-      snapshot: snapshotRow ?? null,
-      reports: recentReports ?? [],
-      recentInsights: recentInsights ?? [],
-      messages,
-      linkedAttemptInsight,
-    });
+    const prompt = buildCoachReplyPrompt(context);
 
     await agent.prompt(prompt);
 

@@ -119,7 +119,10 @@ describe("RPC and stats", () => {
   });
 });
 
-describe("RPC integration", () => {
+const RUN_SUPABASE_TESTS = process.env.RUN_SUPABASE_TESTS === "1";
+const describeIntegration = RUN_SUPABASE_TESTS ? describe : describe.skip;
+
+describeIntegration("RPC integration", () => {
   const supabase = createLocalSupabase();
   const profileIds: string[] = [];
   const questionIds: string[] = [];

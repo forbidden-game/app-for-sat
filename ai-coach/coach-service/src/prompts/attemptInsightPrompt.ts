@@ -1,11 +1,15 @@
-import type { AttemptForCoach } from "../domain/attemptForCoach.js";
+import type { CoachContextPacket } from "../context/coachContext.js";
 
-export function buildAttemptInsightPrompt(input: AttemptForCoach): string {
-  const selectedStepText = input.attempt.student_selected_step_is_unknown
+export function buildAttemptInsightPrompt(context: CoachContextPacket): string {
+  if (!context.attempt || !context.question) {
+    throw new Error("missing_attempt_context");
+  }
+
+  const selectedStepText = context.attempt.student_selected_step_is_unknown
     ? "unknown"
-    : input.attempt.student_selected_step_index === null
+    : context.attempt.student_selected_step_index === null
       ? "unknown"
-      : String(input.attempt.student_selected_step_index);
+      : String(context.attempt.student_selected_step_index);
 
   const procedureSubject = "sat_math";
 
@@ -25,25 +29,28 @@ export function buildAttemptInsightPrompt(input: AttemptForCoach): string {
     JSON.stringify(
       {
         procedure_subject: procedureSubject,
+        student: context.student,
         attempt: {
-          id: input.attempt.id,
-          student_id: input.attempt.student_id,
-          question_id: input.attempt.question_id,
-          answer: input.attempt.answer,
-          duration_ms: input.attempt.duration_ms,
-          skipped: input.attempt.skipped,
+          id: context.attempt.id,
+          student_id: context.attempt.student_id,
+          question_id: context.attempt.question_id,
+          answer: context.attempt.answer,
+          duration_ms: context.attempt.duration_ms,
+          skipped: context.attempt.skipped,
           student_selected_step: selectedStepText,
         },
         question: {
-          subject: input.question.subject,
-          module: input.question.module,
-          difficulty: input.question.difficulty,
-          question_type: input.question.question_type,
-          stem: input.question.stem,
-          options: input.question.options,
-          answer_key: input.question.answer_key,
-          tags: input.question.tags,
+          subject: context.question.subject,
+          module: context.question.module,
+          difficulty: context.question.difficulty,
+          question_type: context.question.question_type,
+          stem: context.question.stem,
+          options: context.question.options,
+          answer_key: context.question.answer_key,
+          tags: context.question.tags,
         },
+        snapshot: context.snapshot,
+        recent_insights: context.recent_insights,
       },
       null,
       2,

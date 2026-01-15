@@ -3,7 +3,7 @@
 
 北极星：工具约束服务于“每个学生一个 AI 老师”的长期记忆与可追问讲解。
 
-本页定义 Coach Service 需要暴露给 LLM 的核心工具（tool calling），用于强制“先检索、再回答、再写回”。
+本页定义 Coach Service 需要暴露给 LLM 的核心工具（tool calling），用于“先检索、再回答、再写回”的高自由度流程。
 
 实现建议：
 - 使用 `@mariozechner/pi-ai` 的 TypeBox schema 定义 tools，避免自由文本输出。
@@ -31,16 +31,7 @@
 规则：
 - 仅当 `search_procedure_candidates` topK 都低于阈值才允许创建。
 
-## Tool 3: `merge_procedures`
-用途：合并重复 procedure，保留 aliases。
-
-输入：
-- `from_procedure_id`, `to_procedure_id`, `rationale`
-
-输出：
-- `ok`
-
-## Tool 4: `search_similar_mistakes`
+## Tool 3: `search_similar_mistakes`
 用途：按步骤相似检索该学生历史错误。
 
 输入：
@@ -57,16 +48,18 @@
 2) 同 error_mode_enum（加权）
 3) 最近时间
 
-## Tool 5: `get_student_snapshot`
-用途：加载长期快照（跨题对话必须用）。
+## Tool 4: `get_coach_context`
+用途：加载学生上下文包（含快照、报告、近期错题、对话等）。
 
 输入：
 - `student_id`
+- `linked_attempt_id?`
+- `include_messages?`, `message_limit?`, `insight_limit?`, `report_limit?`
 
 输出：
-- `snapshot`: `{ weak_steps_top, common_error_modes_top, recent_trend, notes }`
+- `context`（JSON）
 
-## Tool 6: `write_attempt_insight`
+## Tool 5: `write_attempt_insight`
 用途：把本次错题的结构化诊断写回 DB，并触发更新快照。
 
 输入（核心字段）：
@@ -83,20 +76,38 @@
 输出：
 - `ok`
 
-## Tool 7（对话）: `append_coach_thread_messages`
-用途：追加对话消息（user/assistant/tool）。
+## Tool 6: `memory_search`
+用途：按学生检索长期记忆（文本匹配版）。
 
 输入：
-- `student_id`, `messages[]`
+- `student_id`
+- `query`
+- `limit?`
 
 输出：
-- `ok`
+- `results[]`: `{ id, scope, tags, source, created_at, snippet }`
 
-## Tool 8（可选）: `summarize_thread`
-用途：对旧消息做摘要并存储（降低上下文成本）。
+## Tool 7: `memory_get`
+用途：读取单条记忆。
 
 输入：
-- `student_id`, `until_message_id`
+- `memory_id`
 
 输出：
-- `summary_text` 或 `summary_json`
+- `entry`
+
+## Tool 8: `memory_write`
+用途：写入老师记忆。
+
+输入：
+- `student_id`, `scope`(daily|curated), `content`, `tags?`, `source?`
+
+输出：
+- `ok`, `id`
+
+---
+
+## Planned（未实现）
+- `merge_procedures`：合并重复 procedure
+- `append_coach_thread_messages`：追加对话消息
+- `summarize_thread`：对话摘要

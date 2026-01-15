@@ -63,6 +63,28 @@ class StubAgent {
   }
 }
 
+function buildSupabaseForAttempt(snapshot: Snapshot, attemptInsightSelect?: Array<{ data: any; error: any }>) {
+  return createSupabaseMock({
+    rpc: {
+      get_attempt_for_coach: [{ data: snapshot, error: null }],
+    },
+    from: {
+      profiles: { select: [{ data: { display_name: null }, error: null }] },
+      student_snapshots: { select: [{ data: null, error: null }] },
+      student_reports: { select: [{ data: [], error: null }] },
+      attempt_insights: {
+        select:
+          attemptInsightSelect ??
+          [
+            { data: [], error: null }, // recent_insights
+            { data: null, error: null }, // linked attempt insight
+            { data: { attempt_id: "attempt-1" }, error: null }, // hasInsight
+          ],
+      },
+    },
+  });
+}
+
 describe("processAttemptInsightJob", () => {
   it("throws when get_attempt_for_coach errors", async () => {
     const { supabase } = createSupabaseMock({
@@ -73,7 +95,7 @@ describe("processAttemptInsightJob", () => {
     const agent = new StubAgent();
 
     await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toThrow(
-      /rpc_failed/,
+      /missing_attempt_context/,
     );
   });
 
@@ -86,17 +108,13 @@ describe("processAttemptInsightJob", () => {
     const agent = new StubAgent();
 
     await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toThrow(
-      /invalid get_attempt_for_coach response/,
+      /missing_attempt_context/,
     );
   });
 
   it("skips when attempt is correct", async () => {
     const snapshot = makeSnapshot({ attempt: { ...makeSnapshot().attempt, is_correct: true } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -108,11 +126,7 @@ describe("processAttemptInsightJob", () => {
     const snapshot = makeSnapshot({
       attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: false },
     });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toBeInstanceOf(
@@ -124,16 +138,7 @@ describe("processAttemptInsightJob", () => {
     const snapshot = makeSnapshot({
       attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: false },
     });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
     const old = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
@@ -146,16 +151,7 @@ describe("processAttemptInsightJob", () => {
     const snapshot = makeSnapshot({
       attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: true },
     });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -165,16 +161,7 @@ describe("processAttemptInsightJob", () => {
 
   it("calls agent prompt", async () => {
     const snapshot = makeSnapshot();
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -186,16 +173,7 @@ describe("processAttemptInsightJob", () => {
     const snapshot = makeSnapshot({
       attempt: { ...makeSnapshot().attempt, student_selected_step_index: 3 },
     });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -207,16 +185,7 @@ describe("processAttemptInsightJob", () => {
     const snapshot = makeSnapshot({
       attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: true },
     });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -226,16 +195,12 @@ describe("processAttemptInsightJob", () => {
 
   it("retries when insight missing after first prompt", async () => {
     const snapshot = makeSnapshot();
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: null, error: null }, { data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot, [
+      { data: [], error: null }, // recent_insights
+      { data: null, error: null }, // linked insight
+      { data: null, error: null }, // hasInsight (first)
+      { data: { attempt_id: "attempt-1" }, error: null }, // hasInsight (retry)
+    ]);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -246,16 +211,12 @@ describe("processAttemptInsightJob", () => {
 
   it("throws when insight still missing after retry", async () => {
     const snapshot = makeSnapshot();
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: null, error: null }, { data: null, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot, [
+      { data: [], error: null },
+      { data: null, error: null },
+      { data: null, error: null },
+      { data: null, error: null },
+    ]);
     const agent = new StubAgent();
 
     await expect(processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString())).rejects.toThrow(
@@ -265,16 +226,12 @@ describe("processAttemptInsightJob", () => {
 
   it("includes attempt_id in retry prompt", async () => {
     const snapshot = makeSnapshot();
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: null, error: null }, { data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot, [
+      { data: [], error: null },
+      { data: null, error: null },
+      { data: null, error: null },
+      { data: { attempt_id: "attempt-1" }, error: null },
+    ]);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -284,16 +241,12 @@ describe("processAttemptInsightJob", () => {
 
   it("includes student_id in retry prompt", async () => {
     const snapshot = makeSnapshot();
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: null, error: null }, { data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot, [
+      { data: [], error: null },
+      { data: null, error: null },
+      { data: null, error: null },
+      { data: { attempt_id: "attempt-1" }, error: null },
+    ]);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -303,16 +256,12 @@ describe("processAttemptInsightJob", () => {
 
   it("includes question_id in retry prompt", async () => {
     const snapshot = makeSnapshot();
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: null, error: null }, { data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot, [
+      { data: [], error: null },
+      { data: null, error: null },
+      { data: null, error: null },
+      { data: { attempt_id: "attempt-1" }, error: null },
+    ]);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -322,16 +271,7 @@ describe("processAttemptInsightJob", () => {
 
   it("handles skipped attempts", async () => {
     const snapshot = makeSnapshot({ attempt: { ...makeSnapshot().attempt, skipped: true } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -341,16 +281,7 @@ describe("processAttemptInsightJob", () => {
 
   it("handles null duration", async () => {
     const snapshot = makeSnapshot({ attempt: { ...makeSnapshot().attempt, duration_ms: null } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -360,16 +291,7 @@ describe("processAttemptInsightJob", () => {
 
   it("supports numeric answer_key", async () => {
     const snapshot = makeSnapshot({ question: { ...makeSnapshot().question, answer_key: { correct: 42 } as any } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -379,16 +301,7 @@ describe("processAttemptInsightJob", () => {
 
   it("handles empty tags array", async () => {
     const snapshot = makeSnapshot({ question: { ...makeSnapshot().question, tags: [] } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-      from: {
-        attempt_insights: {
-          select: [{ data: { attempt_id: "attempt-1" }, error: null }],
-        },
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -398,11 +311,7 @@ describe("processAttemptInsightJob", () => {
 
   it("handles null is_correct by skipping", async () => {
     const snapshot = makeSnapshot({ attempt: { ...makeSnapshot().attempt, is_correct: null } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());
@@ -412,11 +321,7 @@ describe("processAttemptInsightJob", () => {
 
   it("handles correct attempt without prompting", async () => {
     const snapshot = makeSnapshot({ attempt: { ...makeSnapshot().attempt, is_correct: true } });
-    const { supabase } = createSupabaseMock({
-      rpc: {
-        get_attempt_for_coach: [{ data: snapshot, error: null }],
-      },
-    });
+    const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, "attempt-1", new Date().toISOString());

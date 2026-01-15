@@ -59,7 +59,10 @@ const config = makeConfig({
   reportMonthlyDays: 30,
 });
 
-describe.sequential("AI coach end-to-end flow", () => {
+const RUN_SUPABASE_TESTS = process.env.RUN_SUPABASE_TESTS === "1";
+const describeIntegration = RUN_SUPABASE_TESTS ? describe.sequential : describe.skip;
+
+describeIntegration("AI coach end-to-end flow", () => {
   const supabase = createLocalSupabase();
   const profileIds: string[] = [];
   const questionIds: string[] = [];
