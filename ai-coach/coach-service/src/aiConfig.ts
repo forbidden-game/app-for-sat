@@ -15,7 +15,7 @@ export type AiPromptConfig = {
 
 const CACHE_TTL_MS = 60_000;
 let cachedAt = 0;
-let cachedConfigs: Record<AiPromptKind, AiPromptConfig> | null = null;
+let cachedConfigs: Partial<Record<AiPromptKind, AiPromptConfig>> | null = null;
 
 function isAiPromptKind(value: string): value is AiPromptKind {
   return value === "attempt_insight" || value === "coach_reply" || value === "progress_report";

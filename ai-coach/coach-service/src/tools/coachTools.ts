@@ -287,7 +287,10 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
     },
   };
 
-  const memoryWrite: AgentTool<typeof MemoryWriteSchema, { ok: true; id?: string; disabled?: boolean; error?: string }> = {
+  const memoryWrite: AgentTool<
+    typeof MemoryWriteSchema,
+    { ok: boolean; id?: string; disabled?: boolean; error?: string }
+  > = {
     name: "memory_write",
     label: "Memory write",
     description: "Write a teacher memory entry for the student.",
