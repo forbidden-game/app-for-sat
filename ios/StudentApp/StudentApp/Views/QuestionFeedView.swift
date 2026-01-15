@@ -20,6 +20,10 @@ struct QuestionFeedView: View {
     @State private var showFeedback = false
     @State private var currentPage = 0
     @State private var autoAdvanceTask: Task<Void, Never>?
+    @State private var perfTask: Task<Void, Never>?
+    @State private var perfDirection = 1
+    @State private var canPageUp = true
+    @State private var canPageDown = true
 
     var body: some View {
         let total = vm.session.questions.count
@@ -28,7 +32,12 @@ struct QuestionFeedView: View {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
 
-            PagingScrollView(pageCount: total + 1, currentPage: $currentPage) { index in
+            VerticalPagingView(
+                pageCount: total + 1,
+                currentPage: $currentPage,
+                canPageUp: $canPageUp,
+                canPageDown: $canPageDown
+            ) { index in
                 if index < total {
                     questionPage(question: vm.session.questions[index], index: index, total: total)
                 } else {
@@ -40,6 +49,10 @@ struct QuestionFeedView: View {
         .onAppear {
             currentPage = vm.currentIndex
             loadAnswer(for: vm.session.questions[vm.currentIndex])
+            startPerfAutoPaging(total: total)
+        }
+        .onDisappear {
+            stopPerfAutoPaging()
         }
         .onChange(of: currentPage) { _, newPage in
             if newPage >= vm.session.questions.count {
@@ -76,7 +89,11 @@ struct QuestionFeedView: View {
             VStack(spacing: AppMetrics.sectionSpacing) {
                 header(progress: progress, index: index + 1, total: total, question: question)
 
-                ScrollView {
+                ScrollBoundaryScrollView(
+                    isActive: index == currentPage,
+                    canPageUp: $canPageUp,
+                    canPageDown: $canPageDown
+                ) {
                     VStack(spacing: AppMetrics.sectionSpacing) {
                         questionCard(text: question.stem)
 
@@ -85,20 +102,13 @@ struct QuestionFeedView: View {
                         } else {
                             freeResponseField(questionId: question.id, questionIndex: index)
                         }
-
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, AppMetrics.pageBottomPadding)
                 }
-                .scrollIndicators(.hidden)
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
-            .scrollTransition(.animated(.spring(response: 0.35, dampingFraction: 0.9))) { content, phase in
-                content
-                    .scaleEffect(1 - abs(phase.value) * 0.05)
-                    .opacity(1 - abs(phase.value) * 0.3)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
@@ -116,8 +126,8 @@ struct QuestionFeedView: View {
             Text("Review Your Answers")
                 .font(.title2.bold())
                 .foregroundStyle(AppTheme.textPrimary)
-            
-            Text("Swipe left to see overview")
+
+            Text("Swipe up to see overview")
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.textMuted)
             
@@ -400,6 +410,46 @@ struct QuestionFeedView: View {
         }
         showFeedback = false
     }
+
+    // MARK: - Perf Harness
+
+    private func startPerfAutoPaging(total: Int) {
+        let config = PerfHarnessConfig.current
+        guard config.isEnabled, perfTask == nil else { return }
+        guard total > 1 else { return }
+
+        perfTask = Task {
+            let endTime = Date().addingTimeInterval(config.durationSeconds)
+            while Date() < endTime, !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(config.paceSeconds * 1_000_000_000))
+                await MainActor.run {
+                    guard total > 1 else { return }
+                    isInputFocused = false
+                    let lastIndex = total - 1
+                    if perfDirection > 0 {
+                        if currentPage >= lastIndex {
+                            perfDirection = -1
+                            currentPage = max(lastIndex - 1, 0)
+                        } else {
+                            currentPage += 1
+                        }
+                    } else {
+                        if currentPage <= 0 {
+                            perfDirection = 1
+                            currentPage = min(1, lastIndex)
+                        } else {
+                            currentPage -= 1
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func stopPerfAutoPaging() {
+        perfTask?.cancel()
+        perfTask = nil
+    }
 }
 
 // MARK: - Haptics
@@ -416,4 +466,99 @@ private func triggerSelectionHaptic() {
     let generator = UIImpactFeedbackGenerator(style: .medium)
     generator.impactOccurred()
     #endif
+}
+
+// MARK: - Scroll Boundary Helpers
+
+private struct ScrollBoundaryScrollView<Content: View>: View {
+    let isActive: Bool
+    @Binding var canPageUp: Bool
+    @Binding var canPageDown: Bool
+    let content: Content
+
+    @State private var contentHeight: CGFloat = 0
+    @State private var viewportHeight: CGFloat = 0
+    @State private var offsetY: CGFloat = 0
+
+    init(isActive: Bool, canPageUp: Binding<Bool>, canPageDown: Binding<Bool>, @ViewBuilder content: () -> Content) {
+        self.isActive = isActive
+        self._canPageUp = canPageUp
+        self._canPageDown = canPageDown
+        self.content = content()
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                Color.clear
+                    .frame(height: 0)
+                    .background(
+                        GeometryReader { proxy in
+                            Color.clear.preference(
+                                key: ScrollOffsetKey.self,
+                                value: proxy.frame(in: .named("scroll")).minY
+                            )
+                        }
+                    )
+
+                content
+            }
+            .background(
+                GeometryReader { proxy in
+                    Color.clear.preference(key: ContentHeightKey.self, value: proxy.size.height)
+                }
+            )
+        }
+        .coordinateSpace(name: "scroll")
+        .scrollIndicators(.hidden)
+        .background(
+            GeometryReader { proxy in
+                Color.clear.preference(key: ViewportHeightKey.self, value: proxy.size.height)
+            }
+        )
+        .onPreferenceChange(ScrollOffsetKey.self) { offset in
+            offsetY = offset
+            updatePagingState()
+        }
+        .onPreferenceChange(ContentHeightKey.self) { height in
+            contentHeight = height
+            updatePagingState()
+        }
+        .onPreferenceChange(ViewportHeightKey.self) { height in
+            viewportHeight = height
+            updatePagingState()
+        }
+    }
+
+    private func updatePagingState() {
+        guard isActive else { return }
+        let maxScroll = max(contentHeight - viewportHeight, 0)
+        let topThreshold: CGFloat = 2
+        let bottomThreshold: CGFloat = 2
+        let atTop = offsetY >= -topThreshold
+        let atBottom = maxScroll <= 0 || offsetY <= -(maxScroll + bottomThreshold)
+        canPageUp = atTop
+        canPageDown = atBottom
+    }
+}
+
+private struct ScrollOffsetKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct ContentHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+private struct ViewportHeightKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
 }

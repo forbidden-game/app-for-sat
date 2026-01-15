@@ -267,6 +267,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "拍摄题目照片用于讲解。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "录制语音给王校长讲解。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "选择题目照片用于讲解。";
+				INFOPLIST_KEY_UIAppFonts = Fonts/NotoSansSC.ttf;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -304,6 +305,7 @@
 				INFOPLIST_KEY_NSCameraUsageDescription = "拍摄题目照片用于讲解。";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "录制语音给王校长讲解。";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "选择题目照片用于讲解。";
+				INFOPLIST_KEY_UIAppFonts = Fonts/NotoSansSC.ttf;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

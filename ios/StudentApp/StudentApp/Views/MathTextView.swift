@@ -5,6 +5,7 @@ import Foundation
 struct MathTextView: View {
     let text: String
     var style: MathTextStyle = .body
+    private let requiresMath: Bool
 
     @State private var measuredHeight: CGFloat = 1
     @State private var hasRendered = false
@@ -12,14 +13,15 @@ struct MathTextView: View {
     init(text: String, style: MathTextStyle = .body) {
         self.text = text
         self.style = style
+        self.requiresMath = MathContentDetector.containsMath(text)
         _measuredHeight = State(initialValue: MathTextView.estimatedHeight(for: text, style: style))
-        if MathContentDetector.containsMath(text) {
+        if requiresMath {
             MathWebViewPrewarmer.prewarm()
         }
     }
 
     var body: some View {
-        if MathContentDetector.containsMath(text) {
+        if requiresMath {
             ZStack(alignment: .topLeading) {
                 Text(PlainTextSanitizer.sanitize(text))
                     .font(.system(size: style.fontSize, weight: style.fontWeight))
@@ -53,10 +55,16 @@ struct MathTextView: View {
     private static func estimatedHeight(for text: String, style: MathTextStyle) -> CGFloat {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return style.fontSize * style.lineHeight }
+        let cacheKey = "\(style.cacheKey)|\(text)" as NSString
+        if let cached = MathTextCache.estimatedHeightCache.object(forKey: cacheKey) {
+            return CGFloat(truncating: cached)
+        }
         let approxCharsPerLine: CGFloat = 28
         let estimatedLines = ceil(CGFloat(trimmed.count) / approxCharsPerLine)
         let lineHeight = style.fontSize * style.lineHeight
-        return max(lineHeight, estimatedLines * lineHeight)
+        let height = max(lineHeight, estimatedLines * lineHeight)
+        MathTextCache.estimatedHeightCache.setObject(NSNumber(value: Double(height)), forKey: cacheKey)
+        return height
     }
 }
 
@@ -113,6 +121,10 @@ struct MathTextStyle: Equatable {
         textAlign: "left",
         textAlignment: .leading
     )
+
+    var cacheKey: String {
+        "\(fontSize)|\(fontWeightValue)|\(lineHeight)|\(lineSpacing)|\(textAlign)"
+    }
 }
 
 extension MathTextView {
@@ -245,6 +257,8 @@ private enum InlineMarkdownRenderer {
 }
 
 private enum PlainTextSanitizer {
+    private static let textCommandRegex = try? NSRegularExpression(pattern: #"\\text\{([^}]*)\}"#, options: [])
+
     static func sanitize(_ text: String) -> String {
         var updated = text
         updated = updated.replacingOccurrences(of: "\\\\", with: "\n")
@@ -256,7 +270,7 @@ private enum PlainTextSanitizer {
         updated = updated.replacingOccurrences(of: "\\{", with: "{")
         updated = updated.replacingOccurrences(of: "\\}", with: "}")
         updated = updated.replacingOccurrences(of: "\\\n", with: "\n")
-        if let regex = try? NSRegularExpression(pattern: #"\\text\{([^}]*)\}"#, options: []) {
+        if let regex = textCommandRegex {
             let range = NSRange(updated.startIndex..<updated.endIndex, in: updated)
             updated = regex.stringByReplacingMatches(in: updated, options: [], range: range, withTemplate: "$1")
         }
@@ -304,9 +318,13 @@ private enum MathAssetLoader {
 
 private enum MathHTMLBuilder {
     static func html(for text: String, style: MathTextStyle) -> String {
+        let cacheKey = "\(style.cacheKey)|\(text)" as NSString
+        if let cached = MathTextCache.htmlCache.object(forKey: cacheKey) {
+            return cached as String
+        }
         let bodyText = buildBody(from: MathTextPreprocessor.preprocess(text))
         let assetBlock = MathAssetLoader.assetBlockHTML
-        return """
+        let html = """
         <!doctype html>
         <html>
           <head>
@@ -373,6 +391,8 @@ private enum MathHTMLBuilder {
           </body>
         </html>
         """
+        MathTextCache.htmlCache.setObject(html as NSString, forKey: cacheKey)
+        return html
     }
 
     static var prewarmHTML: String {
@@ -415,16 +435,41 @@ private enum MathHTMLBuilder {
 }
 
 private enum MathTextPreprocessor {
+    private static let wrapEnvironmentRegexes: [NSRegularExpression] = [
+        try! NSRegularExpression(pattern: #"\\begin\{align\*?\}([\s\S]*?)\\end\{align\*?\}"#, options: []),
+        try! NSRegularExpression(pattern: #"\\begin\{aligned\}([\s\S]*?)\\end\{aligned\}"#, options: []),
+        try! NSRegularExpression(pattern: #"\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}"#, options: [])
+    ]
+
+    private static let stripTextOnlyRegexes: [NSRegularExpression] = [
+        try! NSRegularExpression(pattern: #"\\+begin\{align\*?\}([\s\S]*?)\\+end\{align\*?\}"#, options: []),
+        try! NSRegularExpression(pattern: #"\\+begin\{aligned\}([\s\S]*?)\\+end\{aligned\}"#, options: []),
+        try! NSRegularExpression(pattern: #"\\+begin\{equation\*?\}([\s\S]*?)\\+end\{equation\*?\}"#, options: [])
+    ]
+
+    private static let commandRegex = try? NSRegularExpression(pattern: #"\\[A-Za-z]+"#, options: [])
+
     static func requiresMathRendering(_ text: String) -> Bool {
+        let cacheKey = text as NSString
+        if let cached = MathTextCache.requiresCache.object(forKey: cacheKey) {
+            return cached.boolValue
+        }
         let stripped = stripTextOnlyMathBlocks(in: text)
         let markers = ["$", "\\(", "\\[", "\\begin{", "\\frac", "\\sqrt", "\\pi", "\\alpha", "\\beta", "\\gamma", "\\theta"]
         if markers.contains(where: { stripped.contains($0) }) {
+            MathTextCache.requiresCache.setObject(NSNumber(value: true), forKey: cacheKey)
             return true
         }
-        return shouldWrapSimpleMath(stripped)
+        let result = shouldWrapSimpleMath(stripped)
+        MathTextCache.requiresCache.setObject(NSNumber(value: result), forKey: cacheKey)
+        return result
     }
 
     static func preprocess(_ text: String) -> String {
+        let cacheKey = text as NSString
+        if let cached = MathTextCache.preprocessCache.object(forKey: cacheKey) {
+            return cached as String
+        }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return text }
 
@@ -432,6 +477,7 @@ private enum MathTextPreprocessor {
         updated = normalizeMathEnvironments(in: updated)
         updated = wrapMathEnvironments(in: updated)
         updated = wrapSimpleMathIfNeeded(updated)
+        MathTextCache.preprocessCache.setObject(updated as NSString, forKey: cacheKey)
         return updated
     }
 
@@ -445,21 +491,14 @@ private enum MathTextPreprocessor {
     }
 
     private static func wrapMathEnvironments(in text: String) -> String {
-        let patterns = [
-            #"\\begin\{align\*?\}([\s\S]*?)\\end\{align\*?\}"#,
-            #"\\begin\{aligned\}([\s\S]*?)\\end\{aligned\}"#,
-            #"\\begin\{equation\*?\}([\s\S]*?)\\end\{equation\*?\}"#
-        ]
-
         var updated = text
-        for pattern in patterns {
-            updated = wrapEnvironment(pattern: pattern, in: updated)
+        for regex in wrapEnvironmentRegexes {
+            updated = wrapEnvironment(regex: regex, in: updated)
         }
         return updated
     }
 
-    private static func wrapEnvironment(pattern: String, in text: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return text }
+    private static func wrapEnvironment(regex: NSRegularExpression, in text: String) -> String {
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, options: [], range: range)
         guard !matches.isEmpty else { return text }
@@ -477,21 +516,14 @@ private enum MathTextPreprocessor {
     }
 
     private static func stripTextOnlyMathBlocks(in text: String) -> String {
-        let patterns = [
-            #"\\+begin\{align\*?\}([\s\S]*?)\\+end\{align\*?\}"#,
-            #"\\+begin\{aligned\}([\s\S]*?)\\+end\{aligned\}"#,
-            #"\\+begin\{equation\*?\}([\s\S]*?)\\+end\{equation\*?\}"#
-        ]
-
         var updated = text
-        for pattern in patterns {
-            updated = replaceTextOnlyBlock(pattern: pattern, in: updated)
+        for regex in stripTextOnlyRegexes {
+            updated = replaceTextOnlyBlock(regex: regex, in: updated)
         }
         return updated
     }
 
-    private static func replaceTextOnlyBlock(pattern: String, in text: String) -> String {
-        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return text }
+    private static func replaceTextOnlyBlock(regex: NSRegularExpression, in text: String) -> String {
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
         let matches = regex.matches(in: text, options: [], range: range)
         guard !matches.isEmpty else { return text }
@@ -598,7 +630,7 @@ private enum MathTextPreprocessor {
     }
 
     private static func containsPlainWords(_ text: String) -> Bool {
-        guard let commandRegex = try? NSRegularExpression(pattern: #"\\[A-Za-z]+"#, options: []) else {
+        guard let commandRegex = commandRegex else {
             return false
         }
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
@@ -607,4 +639,30 @@ private enum MathTextPreprocessor {
         let words = lettersOnly.split(separator: " ").map { String($0) }
         return words.contains { $0.count >= 2 }
     }
+}
+
+private enum MathTextCache {
+    static let requiresCache: NSCache<NSString, NSNumber> = {
+        let cache = NSCache<NSString, NSNumber>()
+        cache.countLimit = 300
+        return cache
+    }()
+
+    static let preprocessCache: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 300
+        return cache
+    }()
+
+    static let htmlCache: NSCache<NSString, NSString> = {
+        let cache = NSCache<NSString, NSString>()
+        cache.countLimit = 200
+        return cache
+    }()
+
+    static let estimatedHeightCache: NSCache<NSString, NSNumber> = {
+        let cache = NSCache<NSString, NSNumber>()
+        cache.countLimit = 300
+        return cache
+    }()
 }

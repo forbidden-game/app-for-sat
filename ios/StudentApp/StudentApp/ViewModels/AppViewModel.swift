@@ -14,11 +14,18 @@ final class AppViewModel: ObservableObject {
 
     private let authService: AuthService
     private let practiceService: SupabasePracticeService
+    private let perfConfig = PerfHarnessConfig.current
+    private var didStartPerfSession = false
 
     init(authService: AuthService = AuthService(), practiceService: SupabasePracticeService = SupabasePracticeService()) {
         self.authService = authService
         self.practiceService = practiceService
         self.user = authService.currentUser()
+        if perfConfig.isEnabled, user == nil, let email = perfConfig.email, let password = perfConfig.password {
+            Task {
+                await signIn(email: email, password: password)
+            }
+        }
         if user != nil {
             Task {
                 await loadBanks()
@@ -78,6 +85,24 @@ final class AppViewModel: ObservableObject {
             errorMessage = UserFacingError.message(error)
         }
         isLoading = false
+        await maybeStartPerfSession()
+    }
+
+    private func maybeStartPerfSession() async {
+        guard perfConfig.isEnabled else { return }
+        guard !didStartPerfSession else { return }
+        guard session == nil, sessionId == nil else { return }
+
+        let target: QuestionBank?
+        if let slug = perfConfig.bankSlug {
+            target = banks.first(where: { $0.slug == slug })
+        } else {
+            target = banks.first
+        }
+
+        guard let bank = target else { return }
+        didStartPerfSession = true
+        await startSession(for: bank)
     }
 
     func startSession(for bank: QuestionBank) async {
