@@ -416,18 +416,20 @@ private enum MathHTMLBuilder {
 
 private enum MathTextPreprocessor {
     static func requiresMathRendering(_ text: String) -> Bool {
+        let stripped = stripTextOnlyMathBlocks(in: text)
         let markers = ["$", "\\(", "\\[", "\\begin{", "\\frac", "\\sqrt", "\\pi", "\\alpha", "\\beta", "\\gamma", "\\theta"]
-        if markers.contains(where: { text.contains($0) }) {
+        if markers.contains(where: { stripped.contains($0) }) {
             return true
         }
-        return shouldWrapSimpleMath(text)
+        return shouldWrapSimpleMath(stripped)
     }
 
     static func preprocess(_ text: String) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return text }
 
-        var updated = normalizeMathEnvironments(in: text)
+        var updated = stripTextOnlyMathBlocks(in: text)
+        updated = normalizeMathEnvironments(in: updated)
         updated = wrapMathEnvironments(in: updated)
         updated = wrapSimpleMathIfNeeded(updated)
         return updated
@@ -472,6 +474,98 @@ private enum MathTextPreprocessor {
             result.replaceSubrange(range, with: "$$\(block)$$")
         }
         return result
+    }
+
+    private static func stripTextOnlyMathBlocks(in text: String) -> String {
+        let patterns = [
+            #"\\+begin\{align\*?\}([\s\S]*?)\\+end\{align\*?\}"#,
+            #"\\+begin\{aligned\}([\s\S]*?)\\+end\{aligned\}"#,
+            #"\\+begin\{equation\*?\}([\s\S]*?)\\+end\{equation\*?\}"#
+        ]
+
+        var updated = text
+        for pattern in patterns {
+            updated = replaceTextOnlyBlock(pattern: pattern, in: updated)
+        }
+        return updated
+    }
+
+    private static func replaceTextOnlyBlock(pattern: String, in text: String) -> String {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return text }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, options: [], range: range)
+        guard !matches.isEmpty else { return text }
+
+        var result = text
+        for match in matches.reversed() {
+            guard match.numberOfRanges > 1, let contentRange = Range(match.range(at: 1), in: result) else { continue }
+            let content = String(result[contentRange])
+            guard isTextOnlyBlock(content) else { continue }
+            let replacement = extractTextLines(from: content)
+            if let fullRange = Range(match.range, in: result) {
+                result.replaceSubrange(fullRange, with: replacement)
+            }
+        }
+        return result
+    }
+
+    private static func isTextOnlyBlock(_ content: String) -> Bool {
+        let normalized = normalizeBackslashes(content)
+        let lines = normalized.components(separatedBy: "\\\\")
+        for line in lines {
+            let trimmed = line.replacingOccurrences(of: "&", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty { continue }
+            let normalizedLine = trimLeadingBackslashes(trimmed)
+            if normalizedLine.range(of: #"^\\text\{.*\}$"#, options: .regularExpression) != nil {
+                continue
+            }
+            if containsMathSymbols(normalizedLine) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private static func extractTextLines(from content: String) -> String {
+        let normalized = normalizeBackslashes(content)
+        let lines = normalized.components(separatedBy: "\\\\")
+        let cleaned = lines.compactMap { line -> String? in
+            let trimmed = line.replacingOccurrences(of: "&", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { return nil }
+            var text = trimLeadingBackslashes(trimmed)
+            if let regex = try? NSRegularExpression(pattern: #"^\\text\{(.*)\}$"#, options: []) {
+                let range = NSRange(text.startIndex..<text.endIndex, in: text)
+                if let match = regex.firstMatch(in: text, options: [], range: range),
+                   let innerRange = Range(match.range(at: 1), in: text) {
+                    text = String(text[innerRange])
+                }
+            }
+            return PlainTextSanitizer.sanitize(text)
+        }
+        return cleaned.joined(separator: "\n")
+    }
+
+    private static func containsMathSymbols(_ text: String) -> Bool {
+        let markers = ["\\frac", "\\sqrt", "\\pi", "\\alpha", "\\beta", "\\gamma", "\\theta", "^", "_", "=", "<", ">", "+", "-", "*", "/"]
+        if markers.contains(where: { text.contains($0) }) { return true }
+        if text.range(of: #"\d"#, options: .regularExpression) != nil { return true }
+        return false
+    }
+
+    private static func normalizeBackslashes(_ text: String) -> String {
+        var updated = text
+        while updated.contains("\\\\") {
+            updated = updated.replacingOccurrences(of: "\\\\", with: "\\")
+        }
+        return updated
+    }
+
+    private static func trimLeadingBackslashes(_ text: String) -> String {
+        var trimmed = text
+        while trimmed.hasPrefix("\\") {
+            trimmed.removeFirst()
+        }
+        return trimmed
     }
 
     private static func isWrappedByDisplayMath(_ text: String, at index: String.Index) -> Bool {
