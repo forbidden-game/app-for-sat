@@ -7,6 +7,8 @@ struct CoachChatView: View {
     @State private var pendingImage: UIImage?
     @State private var showCameraPicker = false
     @State private var showLibraryPicker = false
+    @State private var isRecording = false
+    @State private var recordingStartedAt = Date()
 
     @StateObject private var vm: CoachChatViewModel
 
@@ -157,6 +159,11 @@ struct CoachChatView: View {
                     .padding(.horizontal, 16)
             }
 
+            if isRecording {
+                RecordingBar(startedAt: recordingStartedAt)
+                    .padding(.horizontal, 16)
+            }
+
             HStack(spacing: 10) {
                 cameraButton
 
@@ -213,18 +220,22 @@ struct CoachChatView: View {
     }
 
     private var micButton: some View {
-        Image(systemName: "mic.fill")
-            .font(.system(size: 16, weight: .semibold))
-            .foregroundStyle(AppTheme.textOnAccent)
-            .frame(width: 44, height: 44)
-            .background(AppTheme.accent)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(AppTheme.accentStrong, lineWidth: 1.5)
-            )
-            .accessibilityLabel("语音输入")
-            .accessibilityAddTraits(.isButton)
+        Button {
+            toggleRecording()
+        } label: {
+            Image(systemName: isRecording ? "stop.fill" : "mic.fill")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AppTheme.textOnAccent)
+                .frame(width: 44, height: 44)
+                .background(isRecording ? AppTheme.statusDanger : AppTheme.accent)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(isRecording ? AppTheme.statusDanger : AppTheme.accentStrong, lineWidth: 1.5)
+                )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(isRecording ? "停止录音" : "语音输入")
     }
 
     private func pendingImagePreview(_ image: UIImage) -> some View {
@@ -286,5 +297,69 @@ struct CoachChatView: View {
 
     private func openLibrary() {
         showLibraryPicker = true
+    }
+
+    private func toggleRecording() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if isRecording {
+                isRecording = false
+            } else {
+                recordingStartedAt = Date()
+                isRecording = true
+            }
+        }
+    }
+}
+
+private struct RecordingBar: View {
+    let startedAt: Date
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .fill(AppTheme.statusDanger)
+                .frame(width: 8, height: 8)
+
+            Text("录音中 \(elapsedText)")
+                .font(.footnote)
+                .foregroundStyle(AppTheme.textSecondary)
+
+            Spacer()
+
+            RecordingWave()
+                .frame(width: 88, height: 16)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .stroke(AppTheme.divider, lineWidth: 1.5)
+        )
+    }
+
+    private var elapsedText: String {
+        let seconds = max(0, Int(Date().timeIntervalSince(startedAt)))
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        return String(format: "%02d:%02d", minutes, remainder)
+    }
+}
+
+private struct RecordingWave: View {
+    var body: some View {
+        TimelineView(.animation) { timeline in
+            let time = timeline.date.timeIntervalSinceReferenceDate
+            HStack(spacing: 3) {
+                ForEach(0..<8, id: \.self) { index in
+                    let phase = time * 2.2 + Double(index) * 0.6
+                    let height = 4 + abs(sin(phase)) * 10
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(AppTheme.accent)
+                        .frame(width: 2, height: height)
+                }
+            }
+        }
     }
 }
