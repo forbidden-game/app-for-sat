@@ -90,6 +90,20 @@ enum MathHTMLBuilderV2 {
         """
     }
 
+    static var prewarmHTML: String {
+        let assetBlock = MathAssetLoaderV2.assetBlockHTML
+        return """
+        <!doctype html>
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+            \(assetBlock)
+          </head>
+          <body></body>
+        </html>
+        """
+    }
+
     private static func buildBody(from text: String) -> String {
         let normalized = text
             .replacingOccurrences(of: "\r\n", with: "\n")

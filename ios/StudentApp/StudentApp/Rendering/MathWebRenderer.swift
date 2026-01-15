@@ -1,6 +1,10 @@
 import Foundation
 import WebKit
 
+enum MathWebViewProcessPool {
+    static let shared = WKProcessPool()
+}
+
 final class MathWebViewPool: MathWebViewPoolProviding {
     private var pool: [WKWebView] = []
     private let lock = NSLock()
@@ -62,6 +66,16 @@ final class MathWebRenderer: NSObject, MathRenderer, WKNavigationDelegate, WKScr
             self.continuation = continuation
             self.startTimeout()
         }
+    }
+
+    func cancel() {
+        timeoutTask?.cancel()
+        timeoutTask = nil
+        if let continuation {
+            self.continuation = nil
+            continuation.resume(throwing: MathRenderFailure.renderFailed("render cancelled"))
+        }
+        cleanupHandlers()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -137,6 +151,7 @@ private enum MathWebViewFactory {
         let config = WKWebViewConfiguration()
         let controller = WKUserContentController()
         config.userContentController = controller
+        config.processPool = MathWebViewProcessPool.shared
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
         webView.backgroundColor = .clear
