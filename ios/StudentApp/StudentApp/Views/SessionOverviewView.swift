@@ -6,6 +6,7 @@ struct SessionOverviewView: View {
     let answers: [String: String]
     let isSubmitting: Bool
     let submissionError: String?
+    let pendingCount: Int
     let onSelectQuestion: (Int) -> Void
     let onSubmit: () -> Void
 
@@ -26,6 +27,13 @@ struct SessionOverviewView: View {
                     .font(.subheadline)
                     .foregroundStyle(AppTheme.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+
+                if pendingCount > 0 {
+                    Text("未同步 \(pendingCount) 题，连网后自动提交")
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.textMuted)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 LazyVGrid(columns: columns, spacing: AppMetrics.gridSpacing) {
                     ForEach(Array(session.questions.enumerated()), id: \.offset) { index, question in

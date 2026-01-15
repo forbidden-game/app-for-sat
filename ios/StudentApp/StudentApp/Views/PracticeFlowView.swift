@@ -21,55 +21,61 @@ struct PracticeFlowView: View {
     }
 
     var body: some View {
-        switch flowModel.flowState {
-        case .practicing:
-            QuestionFeedView(
-                studentId: studentId,
-                vm: vm,
-                answers: $answers,
-                returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
-                headerTitle: headerTitle,
-                flowModel: flowModel,
-                onBack: onExit,
-                onShowOverview: {
-                    flowModel.flowState = .overview
-                }
-            )
+        Group {
+            switch flowModel.flowState {
+            case .practicing:
+                QuestionFeedView(
+                    studentId: studentId,
+                    vm: vm,
+                    answers: $answers,
+                    returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
+                    headerTitle: headerTitle,
+                    flowModel: flowModel,
+                    onBack: onExit,
+                    onShowOverview: {
+                        flowModel.flowState = .overview
+                    }
+                )
 
-        case .overview:
-            SessionOverviewView(
-                session: session,
-                answers: answers,
-                isSubmitting: flowModel.isSubmitting,
-                submissionError: flowModel.submissionError,
-                onSelectQuestion: { index in
-                    returnToOverviewOnAnswer = true
-                    vm.jump(to: index)
-                    flowModel.flowState = .practicing
-                },
-                onSubmit: {
-                    flowModel.finalizeSession()
-                }
-            )
+            case .overview:
+                SessionOverviewView(
+                    session: session,
+                    answers: answers,
+                    isSubmitting: flowModel.isSubmitting,
+                    submissionError: flowModel.submissionError,
+                    pendingCount: flowModel.pendingCount,
+                    onSelectQuestion: { index in
+                        returnToOverviewOnAnswer = true
+                        vm.jump(to: index)
+                        flowModel.flowState = .practicing
+                    },
+                    onSubmit: {
+                        flowModel.finalizeSession()
+                    }
+                )
 
-        case .result(let result):
-            SessionResultView(
-                result: result,
-                onSelectQuestion: { question in
-                    flowModel.showQuestionDetail(question)
-                },
-                onDismiss: onExit
-            )
+            case .result(let result):
+                SessionResultView(
+                    result: result,
+                    onSelectQuestion: { question in
+                        flowModel.showQuestionDetail(question)
+                    },
+                    onDismiss: onExit
+                )
 
-        case .questionDetail(let question):
-            QuestionDetailView(
-                question: question,
-                studentId: studentId,
-                flowModel: flowModel,
-                onBack: {
-                    flowModel.backToResult()
-                }
-            )
+            case .questionDetail(let question):
+                QuestionDetailView(
+                    question: question,
+                    studentId: studentId,
+                    flowModel: flowModel,
+                    onBack: {
+                        flowModel.backToResult()
+                    }
+                )
+            }
+        }
+        .task {
+            await flowModel.flushPendingAnswers()
         }
     }
 }

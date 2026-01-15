@@ -23,6 +23,7 @@ final class PracticeFlowViewModel: ObservableObject {
     @Published var flowState: PracticeFlowState = .practicing
     @Published var sessionResult: SessionResult?
     @Published var coachAttempt: CoachAttemptContext?
+    @Published var pendingCount: Int = 0
 
     let session: PracticeSession
     let sessionId: String
@@ -32,11 +33,14 @@ final class PracticeFlowViewModel: ObservableObject {
     private var insightPrefetchTasks: [String: Task<Void, Never>] = [:]
     private var attemptIdsByQuestion: [String: String] = [:]
     private let pendingStore = PendingAnswerStore.shared
+    private var isFlushingPending = false
 
     init(session: PracticeSession, sessionId: String, practiceService: SupabasePracticeService = SupabasePracticeService()) {
         self.session = session
         self.sessionId = sessionId
         self.practiceService = practiceService
+        pendingStore.loadIfNeeded()
+        refreshPendingCount()
     }
 
     func submitAnswer(question: Question, answer: String, allowCoach: Bool) async throws -> SubmitAttemptResult {
@@ -51,6 +55,7 @@ final class PracticeFlowViewModel: ObservableObject {
             retryCount: 0
         )
         pendingStore.upsert(record)
+        refreshPendingCount()
 
         do {
             let result = try await practiceService.submitAttempt(
@@ -63,6 +68,7 @@ final class PracticeFlowViewModel: ObservableObject {
             correctByQuestion[question.id] = result.isCorrect
             attemptIdsByQuestion[question.id] = result.attemptId
             pendingStore.removeRecord(sessionId: sessionId, questionId: question.id)
+            refreshPendingCount()
 
             if result.isCorrect == false {
                 prefetchAttemptInsight(attemptId: result.attemptId)
@@ -127,24 +133,43 @@ final class PracticeFlowViewModel: ObservableObject {
         insightPrefetchTasks[attemptId] = task
     }
 
+    func flushPendingAnswers() async {
+        if isFlushingPending { return }
+        isFlushingPending = true
+        defer { isFlushingPending = false }
+
+        let pendingRecords = pendingStore.records(for: sessionId)
+        guard !pendingRecords.isEmpty else {
+            refreshPendingCount()
+            return
+        }
+
+        for record in pendingRecords {
+            guard let question = session.questions.first(where: { $0.id == record.questionId }) else { continue }
+            do {
+                let result = try await practiceService.submitAttempt(
+                    question: question,
+                    answer: record.answer,
+                    sessionId: sessionId,
+                    clientSubmissionId: record.clientSubmissionId
+                )
+                correctByQuestion[question.id] = result.isCorrect
+                attemptIdsByQuestion[question.id] = result.attemptId
+                pendingStore.removeRecord(sessionId: sessionId, questionId: question.id)
+            } catch {
+                pendingStore.incrementRetry(for: record.id)
+            }
+        }
+
+        refreshPendingCount()
+    }
+
     func finalizeSession() {
         Task {
             isSubmitting = true
             defer { isSubmitting = false }
             do {
-                let pendingRecords = pendingStore.records(for: sessionId)
-                for record in pendingRecords {
-                    guard let question = session.questions.first(where: { $0.id == record.questionId }) else { continue }
-                    let result = try await practiceService.submitAttempt(
-                        question: question,
-                        answer: record.answer,
-                        sessionId: sessionId,
-                        clientSubmissionId: record.clientSubmissionId
-                    )
-                    correctByQuestion[question.id] = result.isCorrect
-                    attemptIdsByQuestion[question.id] = result.attemptId
-                    pendingStore.removeRecord(sessionId: sessionId, questionId: question.id)
-                }
+                await flushPendingAnswers()
 
                 let result = try await practiceService.fetchSessionResult(sessionId: sessionId)
                 for question in result.questions {
@@ -168,5 +193,9 @@ final class PracticeFlowViewModel: ObservableObject {
         if let result = sessionResult {
             flowState = .result(result)
         }
+    }
+
+    private func refreshPendingCount() {
+        pendingCount = pendingStore.records(for: sessionId).count
     }
 }
