@@ -14,6 +14,8 @@ struct CoachChatView: View {
     @State private var audioPlayer: AVAudioPlayer?
     @State private var audioPlayerDelegate = AudioPlayerDelegate()
     @State private var playingMessageId: String?
+    @State private var playbackProgress: Double = 0
+    @State private var playbackTimer: Timer?
     @State private var recordingFileURL: URL?
 
     @StateObject private var vm: CoachChatViewModel
@@ -117,6 +119,7 @@ struct CoachChatView: View {
         let fg = isUser ? AppTheme.textOnAccent : AppTheme.textPrimary
         let stroke = isUser ? AppTheme.accentStrong : AppTheme.divider
         let audioPayload = CoachChatAudioPayload.parse(from: msg.content.text)
+        let progress = playingMessageId == msg.id ? playbackProgress : 0
 
         return HStack(alignment: .top, spacing: 10) {
             if isUser { Spacer(minLength: 40) }
@@ -133,6 +136,7 @@ struct CoachChatView: View {
                         isUser: isUser,
                         foreground: fg,
                         isPlaying: playingMessageId == msg.id,
+                        progress: progress,
                         onPlay: { togglePlayback(messageId: msg.id, payload: audioPayload) }
                     )
                 } else {
@@ -439,11 +443,11 @@ struct CoachChatView: View {
 
     private func togglePlayback(messageId: String, payload: CoachChatAudioPayload) {
         if playingMessageId == messageId {
-            audioPlayer?.stop()
-            audioPlayer = nil
-            playingMessageId = nil
+            stopPlayback()
             return
         }
+
+        stopPlayback()
 
         let url = audioFileURL(fileName: payload.fileName)
         guard FileManager.default.fileExists(atPath: url.path) else {
@@ -456,16 +460,41 @@ struct CoachChatView: View {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayerDelegate.onFinish = {
                 DispatchQueue.main.async {
-                    playingMessageId = nil
-                    audioPlayer = nil
+                    stopPlayback()
                 }
             }
             audioPlayer?.delegate = audioPlayerDelegate
             audioPlayer?.play()
             playingMessageId = messageId
+            startPlaybackTimer(duration: payload.duration > 0 ? payload.duration : (audioPlayer?.duration ?? 0))
         } catch {
             vm.errorMessage = "语音播放失败，请稍后重试。"
         }
+    }
+
+    private func startPlaybackTimer(duration: TimeInterval) {
+        playbackTimer?.invalidate()
+        playbackProgress = 0
+        let total = max(duration, 0.1)
+        playbackTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            guard let player = audioPlayer else {
+                stopPlayback()
+                return
+            }
+            playbackProgress = min(player.currentTime / total, 1)
+        }
+        if let playbackTimer {
+            RunLoop.main.add(playbackTimer, forMode: .common)
+        }
+    }
+
+    private func stopPlayback() {
+        audioPlayer?.stop()
+        audioPlayer = nil
+        playingMessageId = nil
+        playbackProgress = 0
+        playbackTimer?.invalidate()
+        playbackTimer = nil
     }
 
     private func audioFileURL(fileName: String) -> URL {
@@ -544,6 +573,7 @@ private struct AudioMessageBubble: View {
     let isUser: Bool
     let foreground: Color
     let isPlaying: Bool
+    let progress: Double
     let onPlay: () -> Void
 
     var body: some View {
@@ -554,8 +584,13 @@ private struct AudioMessageBubble: View {
 
                 Text(durationText)
                     .font(.footnote.weight(.semibold))
+                    .frame(width: 36, alignment: .leading)
 
-                AudioMiniWave(color: foreground.opacity(0.7))
+                AudioWaveform(
+                    progress: progress,
+                    baseColor: foreground.opacity(0.35),
+                    progressColor: foreground.opacity(0.9)
+                )
             }
             .frame(width: bubbleWidth, alignment: .leading)
             .foregroundStyle(foreground)
@@ -578,17 +613,46 @@ private struct AudioMessageBubble: View {
     }
 }
 
-private struct AudioMiniWave: View {
-    let color: Color
+private struct AudioWaveform: View {
+    let progress: Double
+    let baseColor: Color
+    let progressColor: Color
 
     var body: some View {
-        HStack(spacing: 3) {
-            ForEach(0..<6, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 1.5)
-                    .fill(color)
-                    .frame(width: 2, height: 4 + CGFloat(index % 3) * 2)
+        GeometryReader { proxy in
+            let width = max(proxy.size.width, 20)
+            let barCount = max(Int(width / 4), 6)
+            let clampedProgress = min(max(progress, 0), 1)
+
+            HStack(spacing: 2) {
+                ForEach(0..<barCount, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(baseColor)
+                        .frame(width: 2, height: barHeight(for: index))
+                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(
+                HStack(spacing: 2) {
+                    ForEach(0..<barCount, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 1.5)
+                            .fill(progressColor)
+                            .frame(width: 2, height: barHeight(for: index))
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .mask(
+                    Rectangle()
+                        .frame(width: width * clampedProgress)
+                )
+            )
         }
+        .frame(maxWidth: .infinity, minHeight: 14, maxHeight: 14)
+    }
+
+    private func barHeight(for index: Int) -> CGFloat {
+        let pattern = [4, 7, 10, 6, 9, 5, 8, 6]
+        return CGFloat(pattern[index % pattern.count])
     }
 }
 
