@@ -255,6 +255,15 @@ struct QuestionFeedView: View {
                 shadowY: AppMetrics.rowShadowY,
                 showShadow: isSelected
             )
+            .overlay(alignment: .leading) {
+                if isSelected {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(AppTheme.accentStrong)
+                        .frame(width: 4)
+                        .padding(.vertical, 8)
+                        .offset(x: 6)
+                }
+            }
             .scaleEffect(isFeedback ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
@@ -374,7 +383,8 @@ struct QuestionFeedView: View {
     private func scheduleAutoAdvance(questionIndex: Int) {
         autoAdvanceTask?.cancel()
         autoAdvanceTask = Task {
-            try? await Task.sleep(nanoseconds: 220_000_000)
+            let delayMs = max(AppConfig.autoAdvanceDelayMs, 80)
+            try? await Task.sleep(nanoseconds: UInt64(delayMs) * 1_000_000)
             await MainActor.run {
                 guard vm.currentIndex == questionIndex, showFeedback else { return }
                 showFeedback = false
