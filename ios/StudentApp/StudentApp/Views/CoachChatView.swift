@@ -78,9 +78,12 @@ struct CoachChatView: View {
 
             Spacer()
 
-            Text("王校长")
-                .font(.headline)
-                .foregroundStyle(AppTheme.textPrimary)
+            HStack(spacing: 8) {
+                CoachAvatarView(size: 28)
+                Text("王校长")
+                    .font(.headline)
+                    .foregroundStyle(AppTheme.textPrimary)
+            }
 
             Spacer()
 
@@ -92,11 +95,15 @@ struct CoachChatView: View {
 
     private func messageBubble(_ msg: CoachThreadMessage) -> some View {
         let isUser = msg.role == .user
-        let bg = isUser ? AppTheme.accentStrong : AppTheme.surfaceRaised
+        let bg = isUser ? AppTheme.accentStrong : AppTheme.surface
         let fg = isUser ? AppTheme.textOnAccent : AppTheme.textPrimary
+        let stroke = isUser ? AppTheme.accentStrong : AppTheme.divider
 
-        return HStack {
-            if isUser { Spacer(minLength: 40) }
+        return HStack(alignment: .top, spacing: 10) {
+            if !isUser {
+                CoachAvatarView(size: 24)
+                    .padding(.top, 2)
+            }
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(msg.content.text)
@@ -115,12 +122,12 @@ struct CoachChatView: View {
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(isUser ? AppTheme.accent.opacity(0.4) : AppTheme.dividerStrong, lineWidth: 1)
+                    .stroke(stroke, lineWidth: 1)
             )
 
-            if !isUser { Spacer(minLength: 40) }
+            if isUser { Spacer(minLength: 40) }
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
 
     private var composer: some View {
@@ -139,11 +146,11 @@ struct CoachChatView: View {
                     .lineLimit(1...4)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 12)
-                    .background(AppTheme.surfaceRaised)
+                    .background(AppTheme.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(AppTheme.dividerStrong, lineWidth: 1)
+                            .stroke(AppTheme.divider, lineWidth: 1)
                     )
 
                 Button {

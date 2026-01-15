@@ -70,10 +70,13 @@ struct CoachStepSheet: View {
     }
 
     private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("AI 老师")
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(AppTheme.textPrimary)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                CoachAvatarView(size: 30)
+                Text("王校长")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+            }
 
             Text("你在哪一步开始不确定？（默认必选，可选不确定）")
                 .font(.subheadline)

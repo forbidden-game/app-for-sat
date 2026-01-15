@@ -284,7 +284,7 @@ struct QuestionDetailView: View {
                         Image(systemName: "sparkles")
                             .font(.system(size: 14, weight: .semibold))
 
-                        Text("AI老师")
+                        Text("王校长")
                             .font(.subheadline.weight(.semibold))
                     }
                     .foregroundStyle(AppTheme.textOnAccent)
