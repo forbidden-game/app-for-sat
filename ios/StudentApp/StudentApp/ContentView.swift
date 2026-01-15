@@ -46,6 +46,7 @@ private struct MainContainerView: View {
     @State private var showPanel = false
     @State private var showCoach = false
     @State private var showReports = false
+    @State private var showUiDemo = false
 
     var body: some View {
         SidePanelHost(isPresented: $showPanel) {
@@ -82,9 +83,9 @@ private struct MainContainerView: View {
             }, onReports: {
                 showReports = true
                 showPanel = false
-            }) {
+            }, onSignOut: {
                 Task { await vm.signOut() }
-            }
+            }, onUiDemo: uiDemoAction)
         }
         .sheet(isPresented: $showCoach) {
             if let studentId = vm.user?.id {
@@ -96,6 +97,11 @@ private struct MainContainerView: View {
                 CoachReportsView(studentId: studentId)
             }
         }
+#if DEBUG
+        .sheet(isPresented: $showUiDemo) {
+            UiRefactorDemoView()
+        }
+#endif
         .onChange(of: isInSession) { _, newValue in
             if newValue {
                 showPanel = false
@@ -126,4 +132,15 @@ private struct MainContainerView: View {
         }
         return "Student"
     }
+
+#if DEBUG
+    private var uiDemoAction: (() -> Void)? {
+        {
+            showUiDemo = true
+            showPanel = false
+        }
+    }
+#else
+    private var uiDemoAction: (() -> Void)? { nil }
+#endif
 }
