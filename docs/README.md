@@ -1,5 +1,10 @@
+---
+summary: Docs index and conventions
+read_when: adding or updating docs, changing doc conventions
+---
+
 # SAT Prep Docs Index
-日期：2026-01-14
+日期：2026-01-15
 
 北极星：每个学生一个 AI 老师（错题讲解 + 追问对话 + 长期追踪）。
 

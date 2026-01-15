@@ -1,5 +1,10 @@
+---
+summary: AI Coach backend pipeline draft and worker flow
+read_when: updating AI coach backend flow, Edge Functions, or workers
+---
+
 # AI Coach Backend Flow (Draft)
-日期：2026-01-14
+日期：2026-01-15
 
 ## North Star
 Per-student AI teacher: immediate wrong-answer coaching, multi-turn followups, long-term learning tracking. This flow exists to power that teacher.
