@@ -117,11 +117,8 @@ struct SessionResultView: View {
                     .background(AppTheme.surfaceRaised)
                     .clipShape(Circle())
 
-                Text(questionResult.stem)
-                    .font(.subheadline)
-                    .foregroundStyle(AppTheme.textPrimary)
+                MathTextView(text: questionResult.stem, style: .body)
                     .lineLimit(2)
-                    .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 Image(systemName: questionResult.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")

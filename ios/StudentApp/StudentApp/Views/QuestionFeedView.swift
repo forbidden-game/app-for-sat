@@ -180,10 +180,7 @@ struct QuestionFeedView: View {
     // MARK: - Question Card
 
     private func questionCard(text: String) -> some View {
-        Text(text)
-            .font(.title3.weight(.semibold))
-            .lineSpacing(4)
-            .foregroundStyle(AppTheme.textPrimary)
+        MathTextView(text: text, style: .questionStem)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppMetrics.cardPadding)
             .appSurface(
@@ -238,11 +235,8 @@ struct QuestionFeedView: View {
                             .stroke(badgeStroke, lineWidth: isSelected ? 2 : 1)
                     )
 
-                Text(option.content)
-                    .font(.body)
-                    .lineSpacing(2)
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
+                MathTextView(text: option.content, style: .option)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
                 Spacer()
             }

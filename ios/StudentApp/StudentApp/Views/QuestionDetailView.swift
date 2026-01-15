@@ -106,10 +106,7 @@ struct QuestionDetailView: View {
     }
 
     private var questionCard: some View {
-        Text(question.stem)
-            .font(.title3.weight(.semibold))
-            .lineSpacing(4)
-            .foregroundStyle(AppTheme.textPrimary)
+        MathTextView(text: question.stem, style: .questionStem)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppMetrics.cardPadding)
             .appSurface(
@@ -147,11 +144,8 @@ struct QuestionDetailView: View {
                         .stroke(labelBorder(isCorrect: showCorrect, isIncorrect: showIncorrect), lineWidth: 1)
                 )
 
-            Text(option.content)
-                .font(.body)
-                .lineSpacing(2)
-                .foregroundStyle(AppTheme.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+            MathTextView(text: option.content, style: .option)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer()
 
@@ -255,9 +249,7 @@ struct QuestionDetailView: View {
                 .foregroundStyle(AppTheme.textSecondary)
                 .padding(.leading, 4)
 
-            Text(question.explanation)
-                .font(.body)
-                .foregroundStyle(AppTheme.textPrimary)
+            MathTextView(text: question.explanation, style: .explanation)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(AppMetrics.cardPadding)
                 .appSurface(

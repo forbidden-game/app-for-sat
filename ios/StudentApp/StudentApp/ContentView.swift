@@ -30,6 +30,7 @@ struct ContentView: View {
         .fontDesign(.serif)
         .onAppear {
             pushTokenManager.updateAuth(userId: vm.user?.id)
+            MathTextView.prewarm()
         }
         .onChange(of: vm.user?.id) { _, newValue in
             pushTokenManager.updateAuth(userId: newValue)
