@@ -1,6 +1,42 @@
 import SwiftUI
 
 struct UiRefactorDemoView: View {
+    private enum DemoMode: String, CaseIterable, Identifiable {
+        case practice = "Practice"
+        case coachChat = "Coach Chat"
+
+        var id: String { rawValue }
+    }
+
+    @State private var mode: DemoMode = .practice
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Picker("Demo", selection: $mode) {
+                ForEach(DemoMode.allCases) { option in
+                    Text(option.rawValue)
+                        .tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+
+            Group {
+                switch mode {
+                case .practice:
+                    PracticeDemoPager()
+                case .coachChat:
+                    CoachChatDemoView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+        .background(Color(.systemGroupedBackground))
+    }
+}
+
+private struct PracticeDemoPager: View {
     private let styles: [DemoStyle] = [.paperFocus, .calmAcademic, .vibrantProgress]
     @State private var selection = 0
 
