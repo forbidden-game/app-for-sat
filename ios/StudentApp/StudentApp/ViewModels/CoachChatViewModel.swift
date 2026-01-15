@@ -17,6 +17,8 @@ final class CoachChatViewModel: ObservableObject {
     private var promptTask: Task<Void, Never>?
     private var promptIndex = 0
     private var promptCandidates: [String] = []
+    private var remoteMessages: [CoachThreadMessage] = []
+    private var localMessages: [CoachThreadMessage] = []
 
     init(
         studentId: String,
@@ -32,7 +34,8 @@ final class CoachChatViewModel: ObservableObject {
 
     func load() async {
         do {
-            messages = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
+            remoteMessages = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
+            messages = mergeMessages()
         } catch {
             errorMessage = UserFacingError.message(error)
         }
@@ -79,12 +82,12 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     private func upsertMessage(_ msg: CoachThreadMessage) {
-        if let idx = messages.firstIndex(where: { $0.id == msg.id }) {
-            messages[idx] = msg
+        if let idx = remoteMessages.firstIndex(where: { $0.id == msg.id }) {
+            remoteMessages[idx] = msg
         } else {
-            messages.append(msg)
-            messages.sort(by: { $0.createdAt < $1.createdAt })
+            remoteMessages.append(msg)
         }
+        messages = mergeMessages()
     }
 
     private func startPolling() {
@@ -100,7 +103,8 @@ final class CoachChatViewModel: ObservableObject {
                 do {
                     let latest = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
                     await MainActor.run {
-                        self?.messages = latest
+                        self?.remoteMessages = latest
+                        self?.messages = self?.mergeMessages() ?? latest
                     }
                 } catch {
                     // Best-effort: keep polling silently; UI can still send.
@@ -126,6 +130,19 @@ final class CoachChatViewModel: ObservableObject {
         promptIndex = 0
         promptText = promptCandidates.first ?? "问老师一个问题…"
         startPromptCycle()
+    }
+
+    func addLocalAudioMessage(fileName: String, duration: TimeInterval) {
+        let payload = CoachChatAudioPayload(fileName: fileName, duration: duration)
+        let localMessage = CoachThreadMessage(
+            id: "local-audio-\(UUID().uuidString)",
+            role: .user,
+            content: CoachMessageContent(text: payload.encodedText),
+            linkedAttemptId: linkedAttemptId,
+            createdAt: Date()
+        )
+        localMessages.append(localMessage)
+        messages = mergeMessages()
     }
 
     private func startPromptCycle() {
@@ -167,6 +184,16 @@ final class CoachChatViewModel: ObservableObject {
 
         candidates.append(contentsOf: fallbackPromptCandidates())
         return Array(LinkedHashSet(items: candidates).items)
+    }
+
+    private func mergeMessages() -> [CoachThreadMessage] {
+        var combined = remoteMessages
+        for local in localMessages {
+            if !combined.contains(where: { $0.id == local.id }) {
+                combined.append(local)
+            }
+        }
+        return combined.sorted(by: { $0.createdAt < $1.createdAt })
     }
 
     private func fallbackPromptCandidates() -> [String] {

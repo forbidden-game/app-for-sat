@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 import UIKit
 import StudentCore
@@ -9,6 +10,10 @@ struct CoachChatView: View {
     @State private var showLibraryPicker = false
     @State private var isRecording = false
     @State private var recordingStartedAt = Date()
+    @State private var audioRecorder: AVAudioRecorder?
+    @State private var audioPlayer: AVAudioPlayer?
+    @State private var audioPlayerDelegate = AudioPlayerDelegate()
+    @State private var playingMessageId: String?
 
     @StateObject private var vm: CoachChatViewModel
 
@@ -110,6 +115,7 @@ struct CoachChatView: View {
         let bg = isUser ? AppTheme.accentStrong : AppTheme.surface
         let fg = isUser ? AppTheme.textOnAccent : AppTheme.textPrimary
         let stroke = isUser ? AppTheme.accentStrong : AppTheme.divider
+        let audioPayload = CoachChatAudioPayload.parse(from: msg.content.text)
 
         return HStack(alignment: .top, spacing: 10) {
             if isUser { Spacer(minLength: 40) }
@@ -120,10 +126,20 @@ struct CoachChatView: View {
             }
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(msg.content.text)
-                    .font(.body)
-                    .foregroundStyle(fg)
-                    .fixedSize(horizontal: false, vertical: true)
+                if let audioPayload {
+                    AudioMessageBubble(
+                        payload: audioPayload,
+                        isUser: isUser,
+                        foreground: fg,
+                        isPlaying: playingMessageId == msg.id,
+                        onPlay: { togglePlayback(messageId: msg.id, payload: audioPayload) }
+                    )
+                } else {
+                    Text(msg.content.text)
+                        .font(.body)
+                        .foregroundStyle(fg)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 if msg.role == .assistant, msg.content.status == "streaming" {
                     Text("…")
@@ -307,14 +323,155 @@ struct CoachChatView: View {
     }
 
     private func toggleRecording() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            if isRecording {
-                isRecording = false
-            } else {
-                recordingStartedAt = Date()
-                isRecording = true
+        if isRecording {
+            stopRecording()
+        } else {
+            startRecording()
+        }
+    }
+
+    private func startRecording() {
+        if #available(iOS 17.0, *) {
+            switch AVAudioApplication.shared.recordPermission {
+            case .granted:
+                startRecordingSession()
+            case .denied:
+                vm.errorMessage = "需要麦克风权限才能录音。"
+            case .undetermined:
+                AVAudioApplication.requestRecordPermission { granted in
+                    DispatchQueue.main.async {
+                        if granted {
+                            startRecordingSession()
+                        } else {
+                            vm.errorMessage = "需要麦克风权限才能录音。"
+                        }
+                    }
+                }
+            @unknown default:
+                vm.errorMessage = "麦克风权限异常，请稍后重试。"
+            }
+        } else {
+            let session = AVAudioSession.sharedInstance()
+            switch session.recordPermission {
+            case .granted:
+                startRecordingSession()
+            case .denied:
+                vm.errorMessage = "需要麦克风权限才能录音。"
+            case .undetermined:
+                session.requestRecordPermission { granted in
+                    DispatchQueue.main.async {
+                        if granted {
+                            startRecordingSession()
+                        } else {
+                            vm.errorMessage = "需要麦克风权限才能录音。"
+                        }
+                    }
+                }
+            @unknown default:
+                vm.errorMessage = "麦克风权限异常，请稍后重试。"
             }
         }
+    }
+
+    private func startRecordingSession() {
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetoothHFP])
+            try session.setActive(true, options: .notifyOthersOnDeactivation)
+
+            let fileName = "coach-audio-\(UUID().uuidString).m4a"
+            let url = audioFileURL(fileName: fileName)
+            let settings: [String: Any] = [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: 44_100,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+
+            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
+            audioRecorder?.prepareToRecord()
+            audioRecorder?.record()
+
+            recordingStartedAt = Date()
+            withAnimation(.easeInOut(duration: 0.2)) {
+                isRecording = true
+            }
+        } catch {
+            vm.errorMessage = "录音启动失败，请稍后重试。"
+            audioRecorder = nil
+            isRecording = false
+        }
+    }
+
+    private func stopRecording() {
+        guard let recorder = audioRecorder else {
+            isRecording = false
+            return
+        }
+
+        recorder.stop()
+        let duration = recorder.currentTime
+        let url = recorder.url
+        audioRecorder = nil
+
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isRecording = false
+        }
+
+        if duration > 0.3 {
+            vm.addLocalAudioMessage(fileName: url.lastPathComponent, duration: duration)
+        }
+
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        } catch {
+            return
+        }
+    }
+
+    private func togglePlayback(messageId: String, payload: CoachChatAudioPayload) {
+        if playingMessageId == messageId {
+            audioPlayer?.stop()
+            audioPlayer = nil
+            playingMessageId = nil
+            return
+        }
+
+        let url = audioFileURL(fileName: payload.fileName)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            vm.errorMessage = "语音文件不存在。"
+            return
+        }
+
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+            audioPlayer = try AVAudioPlayer(contentsOf: url)
+            audioPlayerDelegate.onFinish = {
+                DispatchQueue.main.async {
+                    playingMessageId = nil
+                    audioPlayer = nil
+                }
+            }
+            audioPlayer?.delegate = audioPlayerDelegate
+            audioPlayer?.play()
+            playingMessageId = messageId
+        } catch {
+            vm.errorMessage = "语音播放失败，请稍后重试。"
+        }
+    }
+
+    private func audioFileURL(fileName: String) -> URL {
+        let directory = audioDirectoryURL()
+        return directory.appendingPathComponent(fileName)
+    }
+
+    private func audioDirectoryURL() -> URL {
+        let base = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first ?? FileManager.default.temporaryDirectory
+        let directory = base.appendingPathComponent("CoachAudio", isDirectory: true)
+        if !FileManager.default.fileExists(atPath: directory.path) {
+            try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        return directory
     }
 }
 
@@ -368,5 +525,58 @@ private struct RecordingWave: View {
                 }
             }
         }
+    }
+}
+
+private struct AudioMessageBubble: View {
+    let payload: CoachChatAudioPayload
+    let isUser: Bool
+    let foreground: Color
+    let isPlaying: Bool
+    let onPlay: () -> Void
+
+    var body: some View {
+        Button(action: onPlay) {
+            HStack(spacing: 8) {
+                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                    .font(.system(size: 12, weight: .bold))
+
+                Text(durationText)
+                    .font(.footnote.weight(.semibold))
+
+                AudioMiniWave(color: foreground.opacity(0.7))
+            }
+            .foregroundStyle(foreground)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var durationText: String {
+        let totalSeconds = max(0, Int(payload.duration.rounded()))
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+}
+
+private struct AudioMiniWave: View {
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ForEach(0..<6, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(color)
+                    .frame(width: 2, height: 4 + CGFloat(index % 3) * 2)
+            }
+        }
+    }
+}
+
+private final class AudioPlayerDelegate: NSObject, AVAudioPlayerDelegate {
+    var onFinish: (() -> Void)?
+
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        onFinish?()
     }
 }
