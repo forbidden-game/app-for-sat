@@ -134,7 +134,7 @@ export async function createUser(
   input: UserInput,
 ): Promise<UserListItem> {
   const context = await requireAdmin(accessToken);
-  const { supabase, admin } = context;
+  const { supabase } = context;
   const { email, display_name, role } = normalizeInput(input);
 
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email);

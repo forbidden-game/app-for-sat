@@ -3,3 +3,4 @@
 # Xcode user data
 **/xcuserdata/
 supabase/.temp/
+supabase/env.local

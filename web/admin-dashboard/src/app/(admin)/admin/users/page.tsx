@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   createUser,
@@ -39,11 +39,7 @@ export default function UsersPage() {
   const [hasNext, setHasNext] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>("");
 
-  useEffect(() => {
-    void loadUsers(1);
-  }, [supabase]);
-
-  async function getAccessToken() {
+  const getAccessToken = useCallback(async () => {
     if (!supabase) {
       setError("Supabase not configured.");
       return null;
@@ -57,9 +53,9 @@ export default function UsersPage() {
     }
 
     return session.access_token;
-  }
+  }, [supabase]);
 
-  async function loadUsers(targetPage: number) {
+  const loadUsers = useCallback(async (targetPage: number) => {
     const safePage = Math.max(1, targetPage);
     setLoading(true);
     setError(null);
@@ -85,7 +81,11 @@ export default function UsersPage() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [getAccessToken]);
+
+  useEffect(() => {
+    void loadUsers(1);
+  }, [loadUsers]);
 
   const filteredUsers = useMemo(() => {
     if (!roleFilter) return users;

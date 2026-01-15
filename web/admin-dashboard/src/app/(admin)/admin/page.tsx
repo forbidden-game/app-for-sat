@@ -52,7 +52,11 @@ export default function AdminPage() {
         }
       } catch (loadError) {
         if (active) {
-          setError("Failed to load admin overview.");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load admin overview.",
+          );
         }
       } finally {
         if (active) {

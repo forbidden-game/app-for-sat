@@ -40,7 +40,7 @@ describe("Questions Actions", () => {
       const input = questionFactory.mcq({ stem: "Integration test MCQ" });
       const options = input.options ?? [];
 
-      const question = await createQuestion(
+      await createQuestion(
         accessToken,
         {
           subject: input.subject!,
@@ -65,7 +65,7 @@ describe("Questions Actions", () => {
 
       const input = questionFactory.numeric({ stem: "Integration test numeric" });
 
-      const question = await createQuestion(
+      await createQuestion(
         accessToken,
         {
           subject: input.subject!,
@@ -126,8 +126,6 @@ describe("Questions Actions", () => {
   });
 
   describe("listQuestions", () => {
-    let createdQuestionId: string;
-
     beforeEach(async () => {
       if (skipIfNoSupabase()) return;
 
@@ -136,7 +134,7 @@ describe("Questions Actions", () => {
         subject: "TestSubject",
       });
 
-      const question = await createQuestion(
+      await createQuestion(
         accessToken,
         {
           subject: input.subject!,
@@ -149,7 +147,6 @@ describe("Questions Actions", () => {
         input.options ?? [],
         []
       );
-      createdQuestionId = question.id;
     });
 
     it("returns paginated questions", async () => {

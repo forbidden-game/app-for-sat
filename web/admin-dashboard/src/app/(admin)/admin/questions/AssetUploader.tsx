@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
@@ -155,7 +156,7 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
               key={asset.id}
               className="group relative overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50"
             >
-              <img
+              <Image
                 src={asset.asset_url}
                 alt="Question asset"
                 className="h-24 w-full object-cover"
