@@ -376,9 +376,9 @@ export default function ImportQuestionsPage() {
       "question_type": "mcq | numeric",
       "stem": "string",
       "answer_key": { "correct": "string | number" },
-      "metadata": { ... },
-      "options": [{ "label": "A", "content": "..." }],
-      "tags": [{ "name": "...", "category": "..." }]
+      "metadata": { … },
+      "options": [{ "label": "A", "content": "…" }],
+      "tags": [{ "name": "…", "category": "…" }]
     }
   ]
 }`}
