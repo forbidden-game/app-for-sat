@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C5924C1A2F19A6B40026A01C /* SwiftMath in Frameworks */ = {isa = PBXBuildFile; productRef = F254AA7C6B3D4661BE03404C /* SwiftMath */; };
 		C5A1F0F02F0B0001008EE419 /* StudentCore in Frameworks */ = {isa = PBXBuildFile; productRef = C5A1F1102F0B0001008EE419 /* StudentCore */; };
 /* End PBXBuildFile section */
 
@@ -27,6 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C5924C1A2F19A6B40026A01C /* SwiftMath in Frameworks */,
 				C5A1F0F02F0B0001008EE419 /* StudentCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -71,6 +73,7 @@
 			name = StudentApp;
 			packageProductDependencies = (
 				C5A1F1102F0B0001008EE419 /* StudentCore */,
+				F254AA7C6B3D4661BE03404C /* SwiftMath */,
 			);
 			productName = StudentApp;
 			productReference = C54E8FAF2F0A86A0008EE419 /* StudentApp.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../StudentCore" */,
+				2B8281DB6C2B4A22A14666E0 /* XCRemoteSwiftPackageReference "SwiftMath" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C54E8FB02F0A86A0008EE419 /* Products */;
@@ -359,11 +363,27 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		2B8281DB6C2B4A22A14666E0 /* XCRemoteSwiftPackageReference "SwiftMath" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mgriebling/SwiftMath.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.7.3;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		C5A1F1102F0B0001008EE419 /* StudentCore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = C5A1F1002F0B0001008EE419 /* XCLocalSwiftPackageReference "../StudentCore" */;
 			productName = StudentCore;
+		};
+		F254AA7C6B3D4661BE03404C /* SwiftMath */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2B8281DB6C2B4A22A14666E0 /* XCRemoteSwiftPackageReference "SwiftMath" */;
+			productName = SwiftMath;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

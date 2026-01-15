@@ -44,13 +44,20 @@ public struct MathRenderRequest: Hashable {
 public enum MathRenderPlan: Equatable {
     case plainText(AttributedString)
     case webHTML(MathHTMLPayload)
-    case nativeAttributed(AttributedString)
+    case nativeLabel(MathNativePayload)
 }
 
 public struct MathHTMLPayload: Equatable {
     public let html: String
     public let accessibilityText: String
     public let estimatedHeight: CGFloat
+}
+
+public struct MathNativePayload: Equatable {
+    public let latex: String
+    public let plainText: String
+    public let style: MathTextStyle
+    public let isDisplay: Bool
 }
 
 public enum MathRenderFailure: Error, Equatable {
@@ -60,7 +67,12 @@ public enum MathRenderFailure: Error, Equatable {
 }
 
 public protocol MathNativeRendering {
-    func renderAttributed(latex: String, style: MathTextStyle, maxWidth: CGFloat) throws -> AttributedString
+    func payload(
+        latex: String,
+        plainText: String,
+        style: MathTextStyle,
+        isDisplay: Bool
+    ) -> MathNativePayload?
 }
 
 public protocol MathRenderPlanning {
@@ -118,17 +130,16 @@ public final class MathRenderPlanner: MathRenderPlanning {
 
         if let nativeRenderer,
            shouldUseNative(doc: doc, policy: policy) {
-            let latex = doc.normalizedText
-            if !latex.isEmpty {
-                if let attributed = try? nativeRenderer.renderAttributed(
-                    latex: latex,
-                    style: request.style,
-                    maxWidth: request.width
-                ) {
-                    let plan = MathRenderPlan.nativeAttributed(attributed)
-                    cache.store(plan, forKey: cacheKey)
-                    return plan
-                }
+            let latex = nativeLatex(from: doc)
+            if let payload = nativeRenderer.payload(
+                latex: latex,
+                plainText: doc.plainText,
+                style: request.style,
+                isDisplay: false
+            ) {
+                let plan = MathRenderPlan.nativeLabel(payload)
+                cache.store(plan, forKey: cacheKey)
+                return plan
             }
         }
 
@@ -186,6 +197,22 @@ public final class MathRenderPlanner: MathRenderPlanning {
             }
         }
         return true
+    }
+
+    private func nativeLatex(from doc: MathMarkupDocument) -> String {
+        var parts: [String] = []
+        for segment in doc.segments {
+            switch segment {
+            case .text:
+                continue
+            case .inlineMath(let latex), .blockMath(let latex):
+                let trimmed = latex.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    parts.append(trimmed)
+                }
+            }
+        }
+        return parts.joined(separator: " ")
     }
 }
 

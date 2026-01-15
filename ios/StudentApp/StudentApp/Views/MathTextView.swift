@@ -16,7 +16,10 @@ struct MathTextView: View {
     @State private var plan: MathRenderPlan = .plainText(AttributedString(""))
     @State private var fallbackText: String = ""
 
-    private static let planner = MathRenderPlanner()
+    private static let planner: MathRenderPlanner = {
+        let native = AppConfig.swiftMathEnabled ? SwiftMathRenderer() : nil
+        return MathRenderPlanner(nativeRenderer: native)
+    }()
     private static let webPool = MathWebViewPool()
 
     init(text: String, style: MathTextStyle = .body) {
@@ -69,14 +72,11 @@ struct MathTextView: View {
                     .foregroundStyle(AppTheme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: style.alignment)
             )
-        case .nativeAttributed(let attributed):
+        case .nativeLabel(let payload):
             return AnyView(
-                Text(attributed)
-                    .font(.system(size: style.fontSize, weight: style.fontWeight))
-                    .lineSpacing(style.lineSpacing)
-                    .multilineTextAlignment(style.textAlignment)
-                    .foregroundStyle(AppTheme.textPrimary)
+                SwiftMathLabelView(payload: payload)
                     .frame(maxWidth: .infinity, alignment: style.alignment)
+                    .accessibilityLabel(Text(payload.plainText))
             )
         case .webHTML(let payload):
             return AnyView(
@@ -110,8 +110,8 @@ struct MathTextView: View {
         switch plan {
         case .plainText:
             fallbackText = text
-        case .nativeAttributed:
-            fallbackText = text
+        case .nativeLabel(let payload):
+            fallbackText = payload.plainText
         case .webHTML(let payload):
             fallbackText = payload.accessibilityText
             measuredHeight = max(1, payload.estimatedHeight)
