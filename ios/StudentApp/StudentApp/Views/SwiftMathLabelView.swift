@@ -4,15 +4,26 @@ import UIKit
 
 struct SwiftMathLabelView: UIViewRepresentable {
     let payload: MathNativePayload
+    let onError: (() -> Void)?
+
+    init(payload: MathNativePayload, onError: (() -> Void)? = nil) {
+        self.payload = payload
+        self.onError = onError
+    }
 
     func makeUIView(context: Context) -> MTMathUILabel {
         let label = MTMathUILabel()
         label.setContentHuggingPriority(.required, for: .vertical)
         label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.displayErrorInline = false
         return label
     }
 
     func updateUIView(_ uiView: MTMathUILabel, context: Context) {
+        if context.coordinator.lastLatex != payload.latex {
+            context.coordinator.lastLatex = payload.latex
+            context.coordinator.didReportError = false
+        }
         let fontManager = MTFontManager()
         let mathFont = fontManager.font(
             withName: MathFont.latinModernFont.rawValue,
@@ -25,6 +36,10 @@ struct SwiftMathLabelView: UIViewRepresentable {
         uiView.labelMode = payload.isDisplay ? .display : .text
         uiView.contentInsets = MTEdgeInsets()
         uiView.latex = payload.latex
+        if uiView.error != nil, context.coordinator.didReportError == false {
+            context.coordinator.didReportError = true
+            onError?()
+        }
         uiView.invalidateIntrinsicContentSize()
     }
 
@@ -35,6 +50,15 @@ struct SwiftMathLabelView: UIViewRepresentable {
     ) -> CGSize? {
         let size = proposal.replacingUnspecifiedDimensions()
         return uiView.sizeThatFits(size)
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator {
+        var didReportError = false
+        var lastLatex: String?
     }
 }
 

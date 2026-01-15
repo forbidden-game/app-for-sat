@@ -129,8 +129,8 @@ final class MathRenderPlanner: MathRenderPlanning {
         }
 
         if let nativeRenderer,
-           shouldUseNative(doc: doc, policy: policy) {
-            let latex = nativeLatex(from: doc)
+           let latex = nativeLatex(from: doc),
+           shouldUseNative(doc: doc, latex: latex, policy: policy) {
             if let payload = nativeRenderer.payload(
                 latex: latex,
                 plainText: doc.plainText,
@@ -163,10 +163,11 @@ final class MathRenderPlanner: MathRenderPlanning {
         return plan
     }
 
-    private func shouldUseNative(doc: MathMarkupDocument, policy: MathRenderPolicy) -> Bool {
+    private func shouldUseNative(doc: MathMarkupDocument, latex: String, policy: MathRenderPolicy) -> Bool {
         var hasTextSegments = false
         var hasBlockMath = false
         var totalInlineChars = 0
+        var mathSegments = 0
 
         for segment in doc.segments {
             switch segment {
@@ -176,8 +177,10 @@ final class MathRenderPlanner: MathRenderPlanning {
                 }
             case .blockMath(let latex):
                 hasBlockMath = true
+                mathSegments += 1
                 totalInlineChars += latex.count
             case .inlineMath(let latex):
+                mathSegments += 1
                 totalInlineChars += latex.count
             }
         }
@@ -185,10 +188,22 @@ final class MathRenderPlanner: MathRenderPlanning {
         if hasBlockMath {
             return false
         }
+        if mathSegments != 1 {
+            return false
+        }
         if hasTextSegments && !policy.allowNativeWithTextSegments {
             return false
         }
         if totalInlineChars > policy.maxInlineCharsForNative {
+            return false
+        }
+        if doc.warnings.contains(where: { if case .unbalancedDelimiters = $0 { return true } else { return false } }) {
+            return false
+        }
+        if doc.warnings.contains(where: { if case .invalidEnvironment = $0 { return true } else { return false } }) {
+            return false
+        }
+        if !SwiftMathLatexValidator.isSafe(latex) {
             return false
         }
         if !policy.allowNativeWithUnknownCommands {
@@ -199,7 +214,7 @@ final class MathRenderPlanner: MathRenderPlanning {
         return true
     }
 
-    private func nativeLatex(from doc: MathMarkupDocument) -> String {
+    private func nativeLatex(from doc: MathMarkupDocument) -> String? {
         var parts: [String] = []
         for segment in doc.segments {
             switch segment {
@@ -212,7 +227,8 @@ final class MathRenderPlanner: MathRenderPlanning {
                 }
             }
         }
-        return parts.joined(separator: " ")
+        guard parts.count == 1 else { return nil }
+        return parts[0]
     }
 }
 

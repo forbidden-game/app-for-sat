@@ -12,14 +12,17 @@ struct MathTextView: View {
     @State private var isRendered = false
     @State private var renderFailed = false
     @State private var lastKey: String = ""
+    @State private var lastForceWebKey: String?
     @State private var width: CGFloat = 0
     @State private var plan: MathRenderPlan = .plainText(AttributedString(""))
     @State private var fallbackText: String = ""
+    @State private var forceWebKey: String?
 
     private static let planner: MathRenderPlanner = {
         let native = AppConfig.swiftMathEnabled ? SwiftMathRenderer() : nil
         return MathRenderPlanner(nativeRenderer: native)
     }()
+    private static let webPlanner = MathRenderPlanner(cache: MathRenderCache(), nativeRenderer: nil)
     private static let webPool = MathWebViewPool()
 
     init(text: String, style: MathTextStyle = .body) {
@@ -44,7 +47,7 @@ struct MathTextView: View {
                     .frame(height: max(1, measuredHeight))
             }
 
-            content(for: activePlan, requestKey: requestKey)
+            content(for: activePlan, requestKey: requestKey, request: request)
         }
         .frame(maxWidth: .infinity, alignment: style.alignment)
         .background(WidthReader())
@@ -61,7 +64,7 @@ struct MathTextView: View {
         }
     }
 
-    private func content(for plan: MathRenderPlan, requestKey: String) -> some View {
+    private func content(for plan: MathRenderPlan, requestKey: String, request: MathRenderRequest) -> some View {
         switch plan {
         case .plainText(let text):
             return AnyView(
@@ -74,7 +77,10 @@ struct MathTextView: View {
             )
         case .nativeLabel(let payload):
             return AnyView(
-                SwiftMathLabelView(payload: payload)
+                SwiftMathLabelView(payload: payload, onError: {
+                    forceWebKey = requestKey
+                    updatePlan(request: request, key: requestKey)
+                })
                     .frame(maxWidth: .infinity, alignment: style.alignment)
                     .accessibilityLabel(Text(payload.plainText))
             )
@@ -99,12 +105,17 @@ struct MathTextView: View {
     }
 
     private func updatePlan(request: MathRenderRequest, key: String) {
-        guard key != lastKey else { return }
+        let forceWeb = (forceWebKey == key)
+        if key == lastKey, lastForceWebKey == forceWebKey {
+            return
+        }
         lastKey = key
+        lastForceWebKey = forceWebKey
         renderFailed = false
         isRendered = false
 
-        let plan = Self.planner.plan(for: request)
+        let planner = forceWeb ? Self.webPlanner : Self.planner
+        let plan = planner.plan(for: request)
         self.plan = plan
 
         switch plan {
