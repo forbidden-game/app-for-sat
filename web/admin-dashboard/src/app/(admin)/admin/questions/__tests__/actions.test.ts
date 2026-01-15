@@ -40,7 +40,7 @@ describe("Questions Actions", () => {
       const input = questionFactory.mcq({ stem: "Integration test MCQ" });
       const options = input.options ?? [];
 
-      await createQuestion(
+      const question = await createQuestion(
         accessToken,
         {
           subject: input.subject!,
@@ -65,7 +65,7 @@ describe("Questions Actions", () => {
 
       const input = questionFactory.numeric({ stem: "Integration test numeric" });
 
-      await createQuestion(
+      const question = await createQuestion(
         accessToken,
         {
           subject: input.subject!,
