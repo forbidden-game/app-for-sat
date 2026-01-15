@@ -9,6 +9,7 @@ export const config = {
 type SubmitAttemptBody = {
   session_id: string;
   question_id: string;
+  client_submission_id?: string | null;
   answer?: string | number | null;
   duration_ms?: number | null;
   skipped?: boolean | null;
@@ -164,61 +165,108 @@ serve(async (req) => {
       ? null
       : Math.trunc(body.student_selected_step_index);
 
-  const { data: insertedAttempt, error: insertError } = await supabase
-    .from("attempts")
-    .insert({
-      session_id: body.session_id,
-      question_id: body.question_id,
-      student_id: studentId,
-      answer: attemptAnswer,
-      is_correct: skipped ? null : result.isCorrect,
-      duration_ms: durationMs,
-      skipped: skipped,
-      student_selected_step_index: selectedStepIndex,
-      student_selected_step_is_unknown: selectedStepIsUnknown,
-    })
-    .select("id")
-    .single();
+  const clientSubmissionId =
+    typeof body.client_submission_id === "string" && body.client_submission_id.trim().length > 0
+      ? body.client_submission_id.trim()
+      : null;
 
-  if (insertError || !insertedAttempt) {
-    return jsonResponse({ error: "attempt_insert_failed" }, 500);
-  }
-
-  if (!skipped && result.isCorrect) {
-    const { count: correctCount, error: correctCountError } = await supabase
+  if (clientSubmissionId) {
+    const { data: existingByClient, error: existingByClientError } = await supabase
       .from("attempts")
-      .select("id", { count: "exact", head: true })
-      .eq("session_id", body.session_id)
-      .eq("question_id", body.question_id)
+      .select("id, is_correct, skipped")
+      .eq("client_submission_id", clientSubmissionId)
       .eq("student_id", studentId)
-      .eq("is_correct", true);
+      .maybeSingle();
 
-    if (correctCountError) {
-      return jsonResponse({ error: "correct_count_failed" }, 500);
+    if (existingByClientError) {
+      return jsonResponse({ error: "attempt_lookup_failed" }, 500);
     }
 
-    if ((correctCount ?? 0) === 1) {
-      const { data: sessionCountRow, error: sessionCountError } = await supabase
-        .from("sessions")
-        .select("correct_count")
-        .eq("id", body.session_id)
-        .single();
-
-      if (sessionCountError || !sessionCountRow) {
-        return jsonResponse({ error: "session_count_failed" }, 500);
-      }
-
-      const nextCount = (sessionCountRow.correct_count ?? 0) + 1;
-      const { error: updateError } = await supabase
-        .from("sessions")
-        .update({ correct_count: nextCount })
-        .eq("id", body.session_id);
-
-      if (updateError) {
-        return jsonResponse({ error: "session_update_failed" }, 500);
-      }
+    if (existingByClient) {
+      return jsonResponse(
+        {
+          isCorrect: existingByClient.is_correct === true,
+          attemptId: existingByClient.id,
+        },
+        200,
+      );
     }
   }
 
-  return jsonResponse({ isCorrect: result.isCorrect, attemptId: insertedAttempt.id }, 200);
+  const attemptPayload = {
+    session_id: body.session_id,
+    question_id: body.question_id,
+    student_id: studentId,
+    answer: attemptAnswer,
+    is_correct: skipped ? null : result.isCorrect,
+    duration_ms: durationMs,
+    skipped: skipped,
+    student_selected_step_index: selectedStepIndex,
+    student_selected_step_is_unknown: selectedStepIsUnknown,
+    client_submission_id: clientSubmissionId,
+  };
+
+  const { data: existingAttempt, error: existingAttemptError } = await supabase
+    .from("attempts")
+    .select("id")
+    .eq("session_id", body.session_id)
+    .eq("question_id", body.question_id)
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingAttemptError) {
+    return jsonResponse({ error: "attempt_lookup_failed" }, 500);
+  }
+
+  let attemptRowId: string;
+  if (existingAttempt) {
+    const { data: updatedAttempt, error: updateError } = await supabase
+      .from("attempts")
+      .update(attemptPayload)
+      .eq("id", existingAttempt.id)
+      .select("id")
+      .single();
+
+    if (updateError || !updatedAttempt) {
+      return jsonResponse({ error: "attempt_update_failed" }, 500);
+    }
+
+    attemptRowId = updatedAttempt.id;
+  } else {
+    const { data: insertedAttempt, error: insertError } = await supabase
+      .from("attempts")
+      .insert(attemptPayload)
+      .select("id")
+      .single();
+
+    if (insertError || !insertedAttempt) {
+      return jsonResponse({ error: "attempt_insert_failed" }, 500);
+    }
+
+    attemptRowId = insertedAttempt.id;
+  }
+
+  const { count: correctCount, error: correctCountError } = await supabase
+    .from("attempts")
+    .select("id", { count: "exact", head: true })
+    .eq("session_id", body.session_id)
+    .eq("student_id", studentId)
+    .eq("is_correct", true);
+
+  if (correctCountError) {
+    return jsonResponse({ error: "correct_count_failed" }, 500);
+  }
+
+  const { error: updateSessionError } = await supabase
+    .from("sessions")
+    .update({ correct_count: correctCount ?? 0 })
+    .eq("id", body.session_id);
+
+  if (updateSessionError) {
+    return jsonResponse({ error: "session_update_failed" }, 500);
+  }
+
+  return jsonResponse({ isCorrect: result.isCorrect, attemptId: attemptRowId }, 200);
 });

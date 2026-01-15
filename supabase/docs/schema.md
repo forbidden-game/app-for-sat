@@ -248,6 +248,7 @@
 
 **字段**
 - `id` uuid，PK，default `gen_random_uuid()`
+- `client_submission_id` uuid（客户端幂等 ID，可为空）
 - `session_id` uuid，FK -> `sessions.id`
 - `question_id` uuid，FK -> `questions.id`
 - `student_id` uuid，FK -> `profiles.id`
@@ -517,6 +518,7 @@
 
 ## 显式索引
 - `attempts_student_created_at_idx` on `attempts(student_id, created_at)`
+- `attempts_client_submission_id_uidx` on `attempts(client_submission_id)`（unique, nullable）
 - `sessions_student_created_at_idx` on `sessions(student_id, created_at)`
 - `question_banks_active_order_idx` on `question_banks(is_active, sort_order)`
 - `question_bank_questions_bank_position_idx` on `question_bank_questions(bank_id, position)`
