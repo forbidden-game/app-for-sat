@@ -27,7 +27,7 @@ struct ContentView: View {
                 AuthView(vm: vm)
             }
         }
-        .preferredColorScheme(.dark)
+        .fontDesign(.serif)
         .onAppear {
             pushTokenManager.updateAuth(userId: vm.user?.id)
         }
