@@ -162,7 +162,7 @@ struct CoachChatView: View {
 
             if !isUser { Spacer(minLength: 40) }
         }
-        .framjiue(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+        .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
 
     private var composer: some View {
