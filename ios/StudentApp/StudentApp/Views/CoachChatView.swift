@@ -162,7 +162,7 @@ struct CoachChatView: View {
 
             if !isUser { Spacer(minLength: 40) }
         }
-        .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+        .framjiue(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
 
     private var composer: some View {
@@ -582,7 +582,7 @@ private struct AudioMessageBubble: View {
                 Image(systemName: isPlaying ? "stop.fill" : "play.fill")
                     .font(.system(size: 12, weight: .bold))
 
-                Text(durationText)
+                Text(displayTimeText)
                     .font(.footnote.weight(.semibold))
                     .frame(width: 36, alignment: .leading)
 
@@ -598,11 +598,19 @@ private struct AudioMessageBubble: View {
         .buttonStyle(.plain)
     }
 
-    private var durationText: String {
+    private var displayTimeText: String {
+        if isPlaying {
+            let currentSeconds = max(0, Int(Double(payload.duration) * min(max(progress, 0), 1)))
+            return Self.format(seconds: currentSeconds)
+        }
         let totalSeconds = max(0, Int(payload.duration.rounded()))
-        let minutes = totalSeconds / 60
-        let seconds = totalSeconds % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        return Self.format(seconds: totalSeconds)
+    }
+
+    private static func format(seconds: Int) -> String {
+        let minutes = seconds / 60
+        let remainder = seconds % 60
+        return String(format: "%d:%02d", minutes, remainder)
     }
 
     private var bubbleWidth: CGFloat {
