@@ -606,6 +606,20 @@
 
 ---
 
+### `public.coach_memory_entries`
+**用途**：王校长长期记忆（daily + curated）。
+
+**字段**（摘要）
+- `id` uuid, PK
+- `student_id` uuid
+- `scope` text (`daily` | `curated`)
+- `content` text
+- `tags` text[]
+- `source` text
+- `created_at` timestamptz
+
+---
+
 ### `public.ai_jobs`
 **用途**：异步任务队列（`attempt_insight` / `coach_reply` / `snapshot_refresh` / `progress_report` 等）。
 
