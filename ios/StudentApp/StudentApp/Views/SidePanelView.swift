@@ -32,7 +32,7 @@ struct SidePanelView: View {
 
             VStack(spacing: 12) {
                 Circle()
-                    .fill(AppTheme.surfaceRaised)
+                    .fill(AppTheme.surface)
                     .frame(width: 72, height: 72)
                     .overlay(
                         Text(initials)
@@ -59,7 +59,7 @@ struct SidePanelView: View {
                 .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appSurface(
-                    fill: AppTheme.surface,
+                    fill: AppTheme.surfaceRaised,
                     stroke: AppTheme.divider
                 )
             }
@@ -77,7 +77,7 @@ struct SidePanelView: View {
                 .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appSurface(
-                    fill: AppTheme.surface,
+                    fill: AppTheme.surfaceRaised,
                     stroke: AppTheme.divider
                 )
             }
@@ -97,7 +97,7 @@ struct SidePanelView: View {
                     .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .appSurface(
-                        fill: AppTheme.surface,
+                        fill: AppTheme.surfaceRaised,
                         stroke: AppTheme.divider
                     )
                 }
@@ -117,7 +117,7 @@ struct SidePanelView: View {
                 .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .appSurface(
-                    fill: AppTheme.surface,
+                    fill: AppTheme.surfaceRaised,
                     stroke: AppTheme.divider
                 )
             }
@@ -137,11 +137,11 @@ struct SidePanelView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: AppMetrics.panelCornerRadius, style: .continuous)
-                .fill(AppTheme.surfaceRaised)
+                .fill(AppTheme.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: AppMetrics.panelCornerRadius, style: .continuous)
-                .stroke(AppTheme.divider, lineWidth: 1)
+                .stroke(AppTheme.dividerStrong, lineWidth: 1)
         )
         .shadow(color: AppTheme.shadowStrong, radius: AppMetrics.panelShadowRadius, x: 0, y: AppMetrics.panelShadowY)
     }

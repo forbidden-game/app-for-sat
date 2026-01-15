@@ -57,7 +57,7 @@ struct QuestionBankSelectionView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: AppMetrics.headerSpacing) {
             Text(dayString)
-                .font(.system(size: 34, weight: .semibold, design: .rounded))
+                .font(.system(size: 34, weight: .semibold))
                 .foregroundStyle(AppTheme.textPrimary)
 
             Text(dateString)
@@ -89,8 +89,8 @@ struct QuestionBankSelectionView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppMetrics.cardPadding)
         .appSurface(
-            fill: AppTheme.surfaceRaised,
-            stroke: AppTheme.divider,
+            fill: AppTheme.surface,
+            stroke: AppTheme.dividerStrong,
             cornerRadius: AppMetrics.cardCornerRadius,
             shadowRadius: AppMetrics.cardShadowRadius,
             shadowY: AppMetrics.cardShadowY

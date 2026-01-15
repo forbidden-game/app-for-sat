@@ -80,8 +80,8 @@ struct AuthView: View {
         .padding(.vertical, AppMetrics.fieldPaddingVertical)
         .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
         .appSurface(
-            fill: AppTheme.surfaceRaised,
-            stroke: AppTheme.divider
+            fill: AppTheme.surface,
+            stroke: AppTheme.dividerStrong
         )
     }
 

@@ -56,11 +56,11 @@ struct SessionResultView: View {
 
                 VStack(spacing: 4) {
                     Text("\(result.correctCount)/\(result.totalQuestions)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 32, weight: .bold))
                         .foregroundStyle(AppTheme.textPrimary)
 
                     Text(String(format: "%.0f%%", percentage))
-                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(AppTheme.textSecondary)
                 }
                 .opacity(appeared ? 1 : 0)
@@ -111,7 +111,7 @@ struct SessionResultView: View {
         } label: {
             HStack(spacing: 14) {
                 Text("\(questionResult.position)")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(AppTheme.textMuted)
                     .frame(width: AppMetrics.badgeSizeSmall, height: AppMetrics.badgeSizeSmall)
                     .background(AppTheme.surfaceRaised)
