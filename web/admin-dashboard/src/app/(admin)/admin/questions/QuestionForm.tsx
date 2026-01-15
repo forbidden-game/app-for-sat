@@ -237,12 +237,14 @@ export function QuestionForm({
                 value={opt.label}
                 onChange={(e) => handleOptionChange(index, "label", e.target.value)}
                 placeholder="A"
+                aria-label={`Option ${index + 1} label`}
               />
               <input
                 className="flex-1 rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                 value={opt.content}
                 onChange={(e) => handleOptionChange(index, "content", e.target.value)}
                 placeholder="Option content..."
+                aria-label={`Option ${index + 1} content`}
               />
               <label className="flex items-center gap-1 text-sm">
                 <input
@@ -258,6 +260,7 @@ export function QuestionForm({
                   type="button"
                   onClick={() => removeOption(index)}
                   className="text-red-500 hover:text-red-700"
+                  aria-label={`Remove option ${index + 1}`}
                 >
                   ×
                 </button>

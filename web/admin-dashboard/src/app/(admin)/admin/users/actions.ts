@@ -1,7 +1,8 @@
 "use server";
 
 import "server-only";
-import { requireAdmin, type AdminContext } from "@/lib/adminAuth";
+import { requireAdmin } from "@/lib/adminAuth";
+import { recordAdminEvent } from "@/lib/adminAudit";
 
 const USER_ROLES = ["student", "parent", "admin"] as const;
 
@@ -48,12 +49,6 @@ type ProfileRow = {
   created_at: string;
 };
 
-type AuditEntry = {
-  action: string;
-  entity_type: string;
-  entity_id: string | null;
-  payload: Record<string, unknown>;
-};
 
 function assertRole(role: string): UserRole {
   if (!USER_ROLES.includes(role as UserRole)) {
@@ -89,23 +84,6 @@ function buildUserListItem(authUser: AuthUser, profile?: ProfileRow | null): Use
   };
 }
 
-async function recordAuditLog(
-  supabase: AdminContext["supabase"],
-  adminId: string,
-  entry: AuditEntry,
-) {
-  const { error } = await supabase.from("admin_audit_logs").insert({
-    actor_id: adminId,
-    action: entry.action,
-    entity_type: entry.entity_type,
-    entity_id: entry.entity_id,
-    payload: entry.payload,
-  });
-
-  if (error) {
-    throw new Error("Failed to write audit log.");
-  }
-}
 
 export async function listUsers(
   accessToken: string,
@@ -155,7 +133,8 @@ export async function createUser(
   accessToken: string,
   input: UserInput,
 ): Promise<UserListItem> {
-  const { supabase, admin } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase, admin } = context;
   const { email, display_name, role } = normalizeInput(input);
 
   const { data, error } = await supabase.auth.admin.inviteUserByEmail(email);
@@ -184,11 +163,11 @@ export async function createUser(
     throw new Error("Failed to load created user profile.");
   }
 
-  await recordAuditLog(supabase, admin.id, {
+  await recordAdminEvent(context, {
     action: "user.create",
-    entity_type: "user",
-    entity_id: createdUser.id,
-    payload: {
+    resourceType: "users",
+    resourceId: createdUser.id,
+    metadata: {
       email,
       role,
       display_name,
@@ -204,7 +183,8 @@ export async function updateUser(
   userId: string,
   input: UserInput,
 ): Promise<UserListItem> {
-  const { supabase, admin } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase, admin } = context;
   const { email, display_name, role } = normalizeInput(input);
 
   if (admin.id === userId && role !== "admin") {
@@ -270,11 +250,11 @@ export async function updateUser(
 
   const updatedProfile = updatedProfileRows[0] as ProfileRow;
 
-  await recordAuditLog(supabase, admin.id, {
+  await recordAdminEvent(context, {
     action: "user.update",
-    entity_type: "user",
-    entity_id: userId,
-    payload: {
+    resourceType: "users",
+    resourceId: userId,
+    metadata: {
       before,
       after: {
         email,
@@ -288,7 +268,8 @@ export async function updateUser(
 }
 
 export async function deleteUser(accessToken: string, userId: string): Promise<void> {
-  const { supabase, admin } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase, admin } = context;
 
   if (admin.id === userId) {
     throw new Error("You cannot delete your own account.");
@@ -323,10 +304,10 @@ export async function deleteUser(accessToken: string, userId: string): Promise<v
     throw new Error("Failed to delete user.");
   }
 
-  await recordAuditLog(supabase, admin.id, {
+  await recordAdminEvent(context, {
     action: "user.delete",
-    entity_type: "user",
-    entity_id: userId,
-    payload: { before },
+    resourceType: "users",
+    resourceId: userId,
+    metadata: { before },
   });
 }

@@ -406,13 +406,17 @@ export default function QuestionsPage() {
               result?.questions.map((q) => (
                 <tr
                   key={q.id}
-                  className="cursor-pointer border-t border-zinc-100 hover:bg-zinc-50"
-                  onClick={() => openEditDrawer(q.id)}
+                  className="border-t border-zinc-100 hover:bg-zinc-50"
                 >
                   <td className="px-4 py-3">
-                    <div className="font-medium text-zinc-900">
+                    <button
+                      type="button"
+                      onClick={() => openEditDrawer(q.id)}
+                      className="text-left font-medium text-zinc-900 hover:underline"
+                      aria-label={`Edit question ${truncate(q.stem, 60)}`}
+                    >
                       {truncate(q.stem, 60)}
-                    </div>
+                    </button>
                     {q.tags.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {q.tags.slice(0, 3).map((tag, i) => (

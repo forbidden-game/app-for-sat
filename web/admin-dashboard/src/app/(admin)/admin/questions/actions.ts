@@ -2,6 +2,7 @@
 
 import "server-only";
 import { requireAdmin } from "@/lib/adminAuth";
+import { recordAdminEvent } from "@/lib/adminAudit";
 
 export type QuestionOption = {
   id: string;
@@ -220,7 +221,8 @@ export async function createQuestion(
   options: OptionInput[],
   tagIds: string[],
 ): Promise<Question> {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const payload = validateQuestionInput(input);
 
   const { data: question, error: questionError } = await supabase
@@ -260,6 +262,17 @@ export async function createQuestion(
     }
   }
 
+  await recordAdminEvent(context, {
+    action: "question.create",
+    resourceType: "questions",
+    resourceId: question.id,
+    metadata: {
+      subject: payload.subject,
+      module: payload.module,
+      difficulty: payload.difficulty,
+    },
+  });
+
   return getQuestion(accessToken, question.id);
 }
 
@@ -270,7 +283,8 @@ export async function updateQuestion(
   options: OptionInput[],
   tagIds: string[],
 ): Promise<Question> {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const payload = validateQuestionInput(input);
 
   const { error: questionError } = await supabase
@@ -311,16 +325,34 @@ export async function updateQuestion(
     }
   }
 
+  await recordAdminEvent(context, {
+    action: "question.update",
+    resourceType: "questions",
+    resourceId: id,
+    metadata: {
+      subject: payload.subject,
+      module: payload.module,
+      difficulty: payload.difficulty,
+    },
+  });
+
   return getQuestion(accessToken, id);
 }
 
 export async function deleteQuestion(accessToken: string, id: string) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const { error } = await supabase.from("questions").delete().eq("id", id);
 
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "question.delete",
+    resourceType: "questions",
+    resourceId: id,
+  });
 }
 
 export async function listQuestionTypes(accessToken: string): Promise<QuestionType[]> {
@@ -370,7 +402,8 @@ export async function createQuestionAsset(
   assetType: string,
   storagePath: string,
 ): Promise<QuestionAsset> {
-  const { supabase, admin } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase, admin } = context;
   const { data, error } = await supabase
     .from("question_assets")
     .insert({
@@ -387,11 +420,20 @@ export async function createQuestionAsset(
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "question_asset.create",
+    resourceType: "question_assets",
+    resourceId: data.id,
+    metadata: { question_id: questionId, asset_type: assetType },
+  });
+
   return data as QuestionAsset;
 }
 
 export async function deleteQuestionAsset(accessToken: string, assetId: string) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const { error } = await supabase
     .from("question_assets")
     .update({ status: "deleted" })
@@ -400,6 +442,12 @@ export async function deleteQuestionAsset(accessToken: string, assetId: string) 
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "question_asset.delete",
+    resourceType: "question_assets",
+    resourceId: assetId,
+  });
 }
 
 export async function getDistinctValues(

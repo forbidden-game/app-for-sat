@@ -2,6 +2,7 @@
 
 import "server-only";
 import { requireAdmin } from "@/lib/adminAuth";
+import { recordAdminEvent } from "@/lib/adminAudit";
 
 export type BankQuestion = {
   question_id: string;
@@ -125,7 +126,8 @@ export async function addQuestionToBank(
   bankId: string,
   questionId: string,
 ): Promise<void> {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
 
   const { data: maxPos } = await supabase
     .from("question_bank_questions")
@@ -149,6 +151,13 @@ export async function addQuestionToBank(
     }
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "bank.add_question",
+    resourceType: "question_bank_questions",
+    resourceId: `${bankId}:${questionId}`,
+    metadata: { bank_id: bankId, question_id: questionId, position: nextPosition },
+  });
 }
 
 export async function removeQuestionFromBank(
@@ -156,7 +165,8 @@ export async function removeQuestionFromBank(
   bankId: string,
   questionId: string,
 ): Promise<void> {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
 
   const { error } = await supabase
     .from("question_bank_questions")
@@ -167,6 +177,13 @@ export async function removeQuestionFromBank(
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "bank.remove_question",
+    resourceType: "question_bank_questions",
+    resourceId: `${bankId}:${questionId}`,
+    metadata: { bank_id: bankId, question_id: questionId },
+  });
 }
 
 export async function reorderBankQuestions(
@@ -174,7 +191,8 @@ export async function reorderBankQuestions(
   bankId: string,
   items: Array<{ question_id: string; position: number }>,
 ): Promise<void> {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
 
   const { error } = await supabase.rpc("reorder_bank_questions", {
     p_bank_id: bankId,
@@ -184,6 +202,13 @@ export async function reorderBankQuestions(
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "bank.reorder_questions",
+    resourceType: "question_bank_questions",
+    resourceId: bankId,
+    metadata: { count: items.length },
+  });
 }
 
 export async function getBankInfo(

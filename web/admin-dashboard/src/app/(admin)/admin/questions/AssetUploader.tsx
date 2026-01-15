@@ -159,12 +159,15 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
                 src={asset.asset_url}
                 alt="Question asset"
                 className="h-24 w-full object-cover"
+                width={192}
+                height={96}
               />
               <button
                 type="button"
                 onClick={() => handleDelete(asset.id)}
                 className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition group-hover:opacity-100"
                 title="Delete"
+                aria-label="Delete asset"
               >
                 <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

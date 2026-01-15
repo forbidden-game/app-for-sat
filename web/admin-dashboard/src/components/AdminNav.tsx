@@ -8,10 +8,12 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 
 const links = [
   { href: "/admin", label: "Overview" },
+  { href: "/admin/ai-config", label: "AI Config" },
   { href: "/admin/users", label: "Users" },
   { href: "/admin/questions", label: "Questions" },
   { href: "/admin/banks", label: "Banks" },
   { href: "/admin/tags", label: "Tags" },
+  { href: "/admin/audit", label: "Audit" },
 ];
 
 export function AdminNav() {
@@ -41,19 +43,19 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-10 border-b border-zinc-200 bg-white/90 backdrop-blur">
+    <nav className="sticky top-0 z-20 border-b border-[color:var(--border)] bg-white/85 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center gap-6 px-6 py-4">
         <div className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold text-zinc-900">SAT Prep</span>
-          <span className="text-xs text-zinc-400">Admin Console</span>
+          <span className="text-sm font-semibold text-[color:var(--ink)]">SAT Prep</span>
+          <span className="text-xs text-[color:var(--ink-muted)]">Admin Console</span>
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-zinc-700">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-[color:var(--ink-muted)]">
             {links.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-3 py-1 transition hover:bg-zinc-100 hover:text-zinc-900"
+                className="rounded-full px-3 py-1 transition hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)]"
               >
                 {link.label}
               </Link>
@@ -64,7 +66,7 @@ export function AdminNav() {
               <span className="text-xs text-red-600">{errorMessage}</span>
             ) : null}
             <button
-              className="rounded-full border border-zinc-300 px-4 py-1 text-sm text-zinc-700 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full border border-[color:var(--border)] bg-white px-4 py-1 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
               onClick={handleSignOut}
               disabled={!supabase || isSigningOut}

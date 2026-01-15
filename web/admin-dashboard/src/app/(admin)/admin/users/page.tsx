@@ -192,10 +192,14 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-xs uppercase tracking-[0.2em] text-zinc-400">
+          <label
+            className="text-xs uppercase tracking-[0.2em] text-zinc-400"
+            htmlFor="role-filter"
+          >
             Filter role
           </label>
           <select
+            id="role-filter"
             className="rounded-full border border-zinc-200 bg-white px-3 py-2 text-sm"
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value)}

@@ -229,6 +229,7 @@ export default function TagsPage() {
             className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
+            aria-label="Filter category"
           >
             <option value="">All categories</option>
             {TAG_CATEGORIES.map((cat) => (
@@ -273,19 +274,20 @@ export default function TagsPage() {
                 {categoryTags.map((tag) => (
                   <div
                     key={tag.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => openEditDrawer(tag)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") openEditDrawer(tag);
-                    }}
                     className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
                       editingId === tag.id
                         ? "border-zinc-900 bg-zinc-900 text-white"
                         : "border-zinc-200 bg-white text-zinc-700 hover:border-zinc-300"
                     }`}
                   >
-                    <span>{tag.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => openEditDrawer(tag)}
+                      className="text-left"
+                      aria-label={`Edit tag ${tag.name}`}
+                    >
+                      {tag.name}
+                    </button>
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
                         className="text-xs hover:text-zinc-900"
@@ -295,6 +297,7 @@ export default function TagsPage() {
                         }}
                         type="button"
                         title="Edit"
+                        aria-label={`Edit tag ${tag.name}`}
                       >
                         ✎
                       </button>
@@ -306,6 +309,7 @@ export default function TagsPage() {
                         }}
                         type="button"
                         title="Delete"
+                        aria-label={`Delete tag ${tag.name}`}
                       >
                         ×
                       </button>

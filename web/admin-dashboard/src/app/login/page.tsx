@@ -35,11 +35,19 @@ export default function LoginPage() {
             </p>
           ) : supabase ? (
             <form onSubmit={onSubmit} className="mt-4 space-y-3">
+              <label className="text-xs uppercase tracking-[0.16em] text-zinc-400" htmlFor="admin-email">
+                Email
+              </label>
               <input
+                id="admin-email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email"
+                required
               />
               <button
                 className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white"

@@ -2,6 +2,7 @@
 
 import "server-only";
 import { requireAdmin } from "@/lib/adminAuth";
+import { recordAdminEvent } from "@/lib/adminAudit";
 
 export type Tag = {
   id: string;
@@ -45,9 +46,10 @@ export async function listTags(accessToken: string) {
 }
 
 export async function createTag(accessToken: string, input: TagInput) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const payload = validateTagInput(input);
-  
+
   const { data, error } = await supabase
     .from("tags")
     .insert(payload)
@@ -60,13 +62,21 @@ export async function createTag(accessToken: string, input: TagInput) {
     }
     throw new Error(error.message);
   }
+  await recordAdminEvent(context, {
+    action: "tag.create",
+    resourceType: "tags",
+    resourceId: data.id,
+    metadata: payload,
+  });
+
   return data as Tag;
 }
 
 export async function updateTag(accessToken: string, id: string, input: TagInput) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const payload = validateTagInput(input);
-  
+
   const { data, error } = await supabase
     .from("tags")
     .update(payload)
@@ -80,16 +90,30 @@ export async function updateTag(accessToken: string, id: string, input: TagInput
     }
     throw new Error(error.message);
   }
+  await recordAdminEvent(context, {
+    action: "tag.update",
+    resourceType: "tags",
+    resourceId: id,
+    metadata: payload,
+  });
+
   return data as Tag;
 }
 
 export async function deleteTag(accessToken: string, id: string) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const { error } = await supabase.from("tags").delete().eq("id", id);
-  
+
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "tag.delete",
+    resourceType: "tags",
+    resourceId: id,
+  });
 }
 
 export async function getTagCategories() {

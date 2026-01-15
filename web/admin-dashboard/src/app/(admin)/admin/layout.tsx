@@ -8,7 +8,7 @@ export default function AdminLayout({
 }) {
   return (
     <AdminGate>
-      <div className="min-h-screen bg-zinc-50">
+      <div className="min-h-screen">
         <AdminNav />
         {children}
       </div>

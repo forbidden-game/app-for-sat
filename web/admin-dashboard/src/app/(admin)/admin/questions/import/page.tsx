@@ -232,6 +232,7 @@ export default function ImportQuestionsPage() {
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               value={format}
               onChange={(event) => setFormat(event.target.value as ImportFormat)}
+              aria-label="Import format"
             >
               <option value="csv">CSV</option>
               <option value="json">JSON</option>
@@ -241,6 +242,7 @@ export default function ImportQuestionsPage() {
               accept=".csv,.json"
               onChange={handleFileChange}
               className="text-sm"
+              aria-label="Import file"
             />
             {file ? (
               <button

@@ -2,6 +2,7 @@
 
 import "server-only";
 import { requireAdmin } from "@/lib/adminAuth";
+import { recordAdminEvent } from "@/lib/adminAudit";
 
 const BANK_MODES = ["fixed", "daily_mix"] as const;
 
@@ -101,7 +102,8 @@ export async function listQuestionBanks(accessToken: string) {
 }
 
 export async function createQuestionBank(accessToken: string, input: QuestionBankInput) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const payload = validateBankInput(input);
   const { data, error } = await supabase
     .from("question_banks")
@@ -114,6 +116,14 @@ export async function createQuestionBank(accessToken: string, input: QuestionBan
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "bank.create",
+    resourceType: "question_banks",
+    resourceId: data.id,
+    metadata: { slug: payload.slug, mode: payload.mode },
+  });
+
   return data as QuestionBank;
 }
 
@@ -122,7 +132,8 @@ export async function updateQuestionBank(
   id: string,
   input: QuestionBankInput,
 ) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const payload = validateBankInput(input);
   const { data, error } = await supabase
     .from("question_banks")
@@ -136,13 +147,28 @@ export async function updateQuestionBank(
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "bank.update",
+    resourceType: "question_banks",
+    resourceId: id,
+    metadata: { slug: payload.slug, mode: payload.mode, is_active: payload.is_active },
+  });
+
   return data as QuestionBank;
 }
 
 export async function deleteQuestionBank(accessToken: string, id: string) {
-  const { supabase } = await requireAdmin(accessToken);
+  const context = await requireAdmin(accessToken);
+  const { supabase } = context;
   const { error } = await supabase.from("question_banks").delete().eq("id", id);
   if (error) {
     throw new Error(error.message);
   }
+
+  await recordAdminEvent(context, {
+    action: "bank.delete",
+    resourceType: "question_banks",
+    resourceId: id,
+  });
 }

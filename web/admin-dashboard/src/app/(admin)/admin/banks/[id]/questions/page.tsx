@@ -222,6 +222,7 @@ export default function BankQuestionsPage() {
               className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
               value={searchSubject}
               onChange={(e) => setSearchSubject(e.target.value)}
+              aria-label="Filter by subject"
             >
               <option value="">All Subjects</option>
               {availableSubjects.map((subject) => (
@@ -237,6 +238,7 @@ export default function BankQuestionsPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              aria-label="Search questions"
             />
             <button
               type="button"
@@ -322,6 +324,7 @@ export default function BankQuestionsPage() {
                     onClick={() => handleMoveUp(index)}
                     disabled={index === 0 || saving}
                     className="text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-30"
+                    aria-label="Move question up"
                   >
                     ▲
                   </button>
@@ -330,6 +333,7 @@ export default function BankQuestionsPage() {
                     onClick={() => handleMoveDown(index)}
                     disabled={index === questions.length - 1 || saving}
                     className="text-xs text-zinc-400 hover:text-zinc-700 disabled:opacity-30"
+                    aria-label="Move question down"
                   >
                     ▼
                   </button>
