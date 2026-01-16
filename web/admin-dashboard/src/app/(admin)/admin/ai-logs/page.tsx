@@ -2,13 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { getSupabaseClient } from "@/lib/supabaseClient";
-import { listAiAgentLogs, type AiAgentLog } from "./actions";
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
+import { getSupabaseClient } from "@/lib/supabaseClient";
+
+import { DebugPanel } from "./DebugPanel";
+import { listAiAgentLogs, type AiAgentLog } from "./actions";
+import { formatDateTime, maskPII, serializeJson } from "./ai-log-utils";
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value === "object" && value !== null) return value as Record<string, unknown>;
+  return null;
 }
 
 export default function AiLogsPage() {
@@ -24,7 +27,7 @@ export default function AiLogsPage() {
   const [kindFilter, setKindFilter] = useState(() => searchParams.get("kind") ?? "all");
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "all");
   const [providerFilter, setProviderFilter] = useState(() => searchParams.get("provider") ?? "all");
-  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+  const [maskEnabled, setMaskEnabled] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -150,35 +153,23 @@ export default function AiLogsPage() {
     return filteredLogs.find((log) => log.id === selectedId) ?? null;
   }, [filteredLogs, selectedId]);
 
+  const previousSuccessLog = useMemo(() => {
+    if (!selectedLog) return null;
+    const index = logs.findIndex((log) => log.id === selectedLog.id);
+    if (index === -1) return null;
+    for (let idx = index + 1; idx < logs.length; idx += 1) {
+      const candidate = logs[idx];
+      if (candidate.kind === selectedLog.kind && candidate.status === "done") {
+        return candidate;
+      }
+    }
+    return null;
+  }, [logs, selectedLog]);
+
   const events = useMemo(() => {
     if (!selectedLog || !Array.isArray(selectedLog.events)) return [];
-    return selectedLog.events as Array<Record<string, unknown>>;
+    return selectedLog.events.map((event) => toRecord(event)).filter(Boolean) as Array<Record<string, unknown>>;
   }, [selectedLog]);
-
-  const promptPack = useMemo(() => {
-    if (!selectedLog) return "";
-    return JSON.stringify(
-      {
-        system_prompt: selectedLog.system_prompt,
-        prompts: selectedLog.prompts,
-        model: `${selectedLog.model_provider}/${selectedLog.model_id}`,
-        prompt_version: selectedLog.prompt_version,
-      },
-      null,
-      2,
-    );
-  }, [selectedLog]);
-
-  async function handleCopy(text: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopyStatus("Copied.");
-    } catch {
-      setCopyStatus("Copy failed.");
-    } finally {
-      setTimeout(() => setCopyStatus(null), 1600);
-    }
-  }
 
   if (loading) {
     return (
@@ -365,14 +356,16 @@ export default function AiLogsPage() {
                     System Prompt
                   </div>
                   <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
-                    {selectedLog.system_prompt ?? ""}
+                    {maskEnabled ? maskPII(selectedLog.system_prompt ?? "") : (selectedLog.system_prompt ?? "")}
                   </pre>
                 </div>
 
                 <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
                   <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Prompts</div>
                   <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
-                    {JSON.stringify(selectedLog.prompts ?? [], null, 2)}
+                    {maskEnabled
+                      ? maskPII(serializeJson(selectedLog.prompts ?? [], 2))
+                      : serializeJson(selectedLog.prompts ?? [], 2)}
                   </pre>
                 </div>
 
@@ -395,7 +388,7 @@ export default function AiLogsPage() {
                                 {type}
                               </div>
                               <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-[color:var(--ink)]">
-                                {JSON.stringify(event, null, 2)}
+                                {maskEnabled ? maskPII(serializeJson(event, 2)) : serializeJson(event, 2)}
                               </pre>
                             </div>
                           </div>
@@ -413,52 +406,13 @@ export default function AiLogsPage() {
           )}
         </section>
 
-        <aside className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Debug Panel</div>
-          {selectedLog ? (
-            <>
-              <div className="space-y-2 text-xs text-[color:var(--ink)]">
-                <div className="flex min-w-0 items-start justify-between gap-2">
-                  <span className="shrink-0 text-[color:var(--ink-muted)]">Job</span>
-                  <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.job_id ?? "—"}</span>
-                </div>
-                <div className="flex min-w-0 items-start justify-between gap-2">
-                  <span className="shrink-0 text-[color:var(--ink-muted)]">Student</span>
-                  <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.student_id ?? "—"}</span>
-                </div>
-                <div className="flex min-w-0 items-start justify-between gap-2">
-                  <span className="shrink-0 text-[color:var(--ink-muted)]">Attempt</span>
-                  <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.attempt_id ?? "—"}</span>
-                </div>
-                <div className="flex min-w-0 items-start justify-between gap-2">
-                  <span className="shrink-0 text-[color:var(--ink-muted)]">Updated</span>
-                  <span className="min-w-0 flex-1 text-right tabular-nums">
-                    {formatDateTime(selectedLog.created_at)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3 text-xs text-[color:var(--ink-muted)] break-words">
-                {selectedLog.error ? selectedLog.error : "No errors reported."}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleCopy(promptPack)}
-                className="touch-manipulation rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
-              >
-                Copy Prompt Pack
-              </button>
-              {copyStatus ? (
-                <div className="text-xs text-[color:var(--ink-muted)]" role="status" aria-live="polite">
-                  {copyStatus}
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div className="text-xs text-[color:var(--ink-muted)]">No session selected.</div>
-          )}
-        </aside>
+        <DebugPanel
+          key={selectedLog?.id ?? "empty"}
+          selectedLog={selectedLog}
+          previousSuccessLog={previousSuccessLog}
+          maskEnabled={maskEnabled}
+          onToggleMask={setMaskEnabled}
+        />
       </section>
     </main>
     </>

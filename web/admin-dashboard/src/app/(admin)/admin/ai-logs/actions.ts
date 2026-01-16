@@ -13,8 +13,8 @@ export type AiAgentLog = {
   model_id: string;
   prompt_version: string | null;
   system_prompt: string | null;
-  prompts: string[];
-  events: Array<Record<string, unknown>>;
+  prompts: unknown;
+  events: unknown;
   status: "done" | "error";
   error: string | null;
   created_at: string;

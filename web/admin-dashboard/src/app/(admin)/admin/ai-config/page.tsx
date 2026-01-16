@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   archiveAiPromptConfig,
@@ -259,6 +260,38 @@ export default function AiConfigPage() {
         </div>
       </header>
 
+      <section className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-[color:var(--ink)]">AI Debug Workbench</h2>
+            <p className="text-sm text-[color:var(--ink-muted)]">
+              Prompt debug + student context live in AI Logs. Use it to diff prompt packs, inspect provenance, and
+              replay with overrides.
+            </p>
+          </div>
+          <Link
+            href="/admin/ai-logs"
+            className="mt-2 inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-2 text-xs font-semibold text-[color:var(--ink)] transition hover:bg-[color:var(--surface)]"
+          >
+            Open AI Logs
+          </Link>
+        </div>
+        <div className="mt-4 grid gap-2 text-xs text-[color:var(--ink-muted)] md:grid-cols-2">
+          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+            Context Stack · Snapshot / Attempt / Performance / Curriculum
+          </div>
+          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+            Prompt Pack Diff · current vs last success + token estimate
+          </div>
+          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+            Provenance · per-section sources + raw JSON
+          </div>
+          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+            Privacy + Replay · PII mask, pin/override, debug notes
+          </div>
+        </div>
+      </section>
+
       {error ? (
         <div
           className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
@@ -290,7 +323,7 @@ export default function AiConfigPage() {
               className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="sk-or-..."
+              placeholder="sk-or-…"
               autoComplete="off"
             />
           </label>
