@@ -48,7 +48,7 @@ final class QuestionFeedState: ObservableObject {
             next.freeResponse = value
         }
         next.isFocused = false
-        next.showFeedback = true
+        next.showFeedback = false
         inputState = next
     }
 

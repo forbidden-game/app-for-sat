@@ -178,6 +178,8 @@ struct QuestionFeedView: View {
 
             ProgressView(value: progress)
                 .tint(AppTheme.accent)
+
+            answerStatusPill(for: question)
         }
     }
 
@@ -218,7 +220,7 @@ struct QuestionFeedView: View {
         let optionStroke = isSelected ? AppTheme.accentStrong : AppTheme.divider
 
         return Button {
-            guard isCurrentQuestion, !state.inputState.showFeedback else { return }
+            guard isCurrentQuestion else { return }
             triggerSelectionHaptic()
             withAnimation(.easeInOut(duration: 0.15)) {
                 state.applySelection(.option(option.label))
@@ -265,7 +267,7 @@ struct QuestionFeedView: View {
             .scaleEffect(isFeedback ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
-        .disabled(!isCurrentQuestion || state.inputState.showFeedback)
+        .disabled(!isCurrentQuestion)
     }
 
     // MARK: - Free Response
@@ -273,7 +275,7 @@ struct QuestionFeedView: View {
     private func freeResponseField(questionId: String, questionIndex: Int) -> some View {
         let isCurrentQuestion = questionIndex == state.currentIndex
         let showingFeedback = isCurrentQuestion && state.inputState.showFeedback
-        let isEnabled = isCurrentQuestion && !state.inputState.showFeedback
+        let isEnabled = isCurrentQuestion
         let storedValue = store[questionId]?.displayString ?? ""
         
         return HStack(spacing: 12) {
@@ -292,7 +294,7 @@ struct QuestionFeedView: View {
                     }
                 }
                 .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
-                .disabled(!isCurrentQuestion || state.inputState.showFeedback)
+                .disabled(!isCurrentQuestion)
         }
         .padding(.vertical, AppMetrics.fieldPaddingVertical)
         .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
@@ -325,6 +327,33 @@ struct QuestionFeedView: View {
         return questionTitle(for: question)
     }
 
+    private func answerStatusPill(for question: Question) -> some View {
+        let raw = store[question.id]?.displayString ?? ""
+        let isAnswered = !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let title = isAnswered ? "Answered · Editable" : "Not answered"
+        let icon = isAnswered ? "checkmark.seal.fill" : "circle"
+        let fill = isAnswered ? AppTheme.accentSoft : AppTheme.surfaceRaised
+        let stroke = isAnswered ? AppTheme.accentStrong : AppTheme.divider
+        let textColor = isAnswered ? AppTheme.accentStrong : AppTheme.textMuted
+
+        return HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.caption.weight(.semibold))
+            Text(title)
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundStyle(textColor)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(fill)
+        .clipShape(Capsule())
+        .overlay(
+            Capsule()
+                .stroke(stroke, lineWidth: 1)
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
     private var freeResponseBinding: Binding<String> {
         Binding(
             get: { state.inputState.freeResponse },
@@ -334,7 +363,7 @@ struct QuestionFeedView: View {
 
     private func commitFreeResponse(questionId: String) {
         let trimmed = state.inputState.freeResponse.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !state.inputState.showFeedback else { return }
+        guard !trimmed.isEmpty else { return }
         state.setFocus(false)
         triggerSelectionHaptic()
         recordAnswer(trimmed, questionId: questionId)
