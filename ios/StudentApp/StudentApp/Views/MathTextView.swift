@@ -45,7 +45,6 @@ struct MathTextView: View {
             if case .webHTML = activePlan {
                 Color.clear
                     .frame(height: max(1, measuredHeight))
-                    .allowsHitTesting(false)
             }
 
             content(for: activePlan, requestKey: requestKey, request: request)
@@ -83,7 +82,6 @@ struct MathTextView: View {
                     updatePlan(request: request, key: requestKey)
                 })
                     .frame(maxWidth: .infinity, alignment: style.alignment)
-                    .allowsHitTesting(false)
                     .accessibilityLabel(Text(payload.plainText))
             )
         case .webHTML(let payload):

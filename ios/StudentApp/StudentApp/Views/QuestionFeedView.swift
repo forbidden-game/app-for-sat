@@ -255,16 +255,8 @@ struct QuestionFeedView: View {
 
                 MathTextView(text: option.content, style: .option)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .allowsHitTesting(false)
 
                 Spacer()
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(AppTheme.accentStrong)
-                        .transition(.scale.combined(with: .opacity))
-                }
             }
             .padding(.vertical, AppMetrics.rowPaddingVertical)
             .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
@@ -274,10 +266,6 @@ struct QuestionFeedView: View {
                 shadowRadius: AppMetrics.rowShadowRadius,
                 shadowY: AppMetrics.rowShadowY,
                 showShadow: isSelected
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
-                    .stroke(isSelected ? AppTheme.accentStrong : Color.clear, lineWidth: 2)
             )
             .overlay(alignment: .leading) {
                 if isSelected {
@@ -289,7 +277,6 @@ struct QuestionFeedView: View {
                 }
             }
             .scaleEffect(scale)
-            .animation(.easeInOut(duration: 0.2), value: isSelected)
         }
         .buttonStyle(.plain)
         .disabled(!isCurrentQuestion || state.inputState.showFeedback)
