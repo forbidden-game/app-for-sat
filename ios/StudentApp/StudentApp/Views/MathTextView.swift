@@ -99,6 +99,7 @@ struct MathTextView: View {
                 .frame(height: max(1, measuredHeight))
                 .frame(maxWidth: .infinity, alignment: style.alignment)
                 .opacity(isRendered ? 1 : 0)
+                .allowsHitTesting(false)
                 .accessibilityLabel(Text(payload.accessibilityText))
             )
         }
