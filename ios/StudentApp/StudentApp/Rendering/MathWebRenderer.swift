@@ -61,6 +61,7 @@ final class MathWebRenderer: NSObject, MathRenderer, WKNavigationDelegate, WKScr
         webView.navigationDelegate = self
         webView.isOpaque = false
         webView.backgroundColor = .clear
+        webView.isUserInteractionEnabled = false
         webView.scrollView.isScrollEnabled = false
         webView.loadHTMLString(payload.html, baseURL: MathHTMLBuilderV2.localAssetBaseURL)
 
