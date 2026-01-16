@@ -175,6 +175,24 @@ export default function AiConfigPage() {
     });
   }
 
+  function applyPublishedConfig(updated: AiPromptConfig) {
+    setConfigs((prev) => {
+      const next = prev.map((row) => {
+        if (row.kind !== updated.kind || row.status !== "published") return row;
+        return {
+          ...row,
+          status: "archived",
+          updated_at: updated.updated_at,
+        };
+      });
+      return [updated, ...next];
+    });
+    setForms((prev) => ({
+      ...prev,
+      [updated.kind]: normalizeForm(updated, updated.kind),
+    }));
+  }
+
   async function handlePublish(kind: AiPromptKind) {
     if (!supabase) return;
     const { data: sessionData } = await supabase.auth.getSession();
@@ -186,7 +204,7 @@ export default function AiConfigPage() {
 
     try {
       const updated = await publishAiPromptConfig(session.access_token, forms[kind]);
-      setConfigs((prev) => [updated, ...prev]);
+      applyPublishedConfig(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to publish config.");
     } finally {
@@ -248,7 +266,7 @@ export default function AiConfigPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">AI Config</h1>
+          <h1 className="text-balance text-2xl font-semibold text-[color:var(--ink)]">AI Config</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Control prompt versions and model routing for the AI coach pipeline.
           </p>
@@ -257,38 +275,6 @@ export default function AiConfigPage() {
           OpenAI default: gpt-5.2 · OpenRouter default: anthropic/claude-haiku-4.5
         </div>
       </header>
-
-      <section className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-[color:var(--ink)]">AI Debug Workbench</h2>
-            <p className="text-sm text-[color:var(--ink-muted)]">
-              Prompt debug + student context live in AI Logs. Use it to diff prompt packs, inspect provenance, and replay
-              with overrides.
-            </p>
-          </div>
-          <Link
-            href="/admin/ai-logs"
-            className="mt-2 inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
-          >
-            Open AI Logs
-          </Link>
-        </div>
-        <div className="mt-4 grid gap-2 text-xs text-[color:var(--ink-muted)] md:grid-cols-2">
-          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
-            Context Stack · Snapshot / Attempt / Performance / Curriculum
-          </div>
-          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
-            Prompt Pack Diff · current vs last success + token estimate
-          </div>
-          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
-            Provenance · per-section sources + raw JSON
-          </div>
-          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
-            Privacy + Replay · PII mask, pin/override, debug notes
-          </div>
-        </div>
-      </section>
 
       {error ? (
         <div
@@ -302,189 +288,223 @@ export default function AiConfigPage() {
       <section className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-[color:var(--ink)]">OpenRouter Key</h2>
-            <p className="text-sm text-[color:var(--ink-muted)]">Used by AI coach agents when provider is OpenRouter.</p>
+            <h2 className="text-balance text-lg font-semibold text-[color:var(--ink)]">Providers & Routing</h2>
+            <p className="text-sm text-[color:var(--ink-muted)]">
+              Manage provider keys and pick a model per job type (each task can route independently).
+            </p>
           </div>
-          <div className="text-xs text-[color:var(--ink-muted)]">
-            {keyLoading ? "Loading…" : keyStatus?.hasKey ? `Stored · last4 ${keyStatus.last4 ?? "—"}` : "Not set"}
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-          <label
-            className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-            htmlFor="openrouter-key"
+          <Link
+            href="/admin/ai-logs"
+            className="mt-2 inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
-            OpenRouter API key
-            <input
-              id="openrouter-key"
-              name="openrouter-key"
-              type="password"
-              className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="sk-or-…"
-              autoComplete="off"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={handleSaveKey}
-            disabled={keySaving || keyInput.trim().length === 0}
-            className="mt-6 h-10 rounded-full bg-[color:var(--accent)] px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-          >
-            {keySaving ? "Saving…" : "Save Key"}
-          </button>
+            Open AI Logs
+          </Link>
         </div>
-        {keyError ? (
-          <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
-            {keyError}
-          </p>
-        ) : null}
-        {keyStatus?.updatedAt ? (
-          <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
-        ) : null}
-      </section>
 
-      <div className="grid gap-6">
-        {(Object.keys(KIND_META) as AiPromptKind[]).map((kind) => {
-          const history = configsByKind[kind];
-          const published = history.find((row) => row.status === "published");
-
-          return (
-            <section key={kind} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-lg font-semibold text-[color:var(--ink)]">{KIND_META[kind].label}</h2>
-                  <p className="text-sm text-[color:var(--ink-muted)]">{KIND_META[kind].description}</p>
-                  {published ? (
-                    <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
-                      Published: {published.prompt_version} · {published.model_provider}/{published.model_id}
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-xs text-[color:var(--danger-strong)]">No published config yet.</p>
-                  )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handlePublish(kind)}
-                  disabled={savingKind === kind}
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-                >
-                  {savingKind === kind ? "Publishing…" : "Publish New Version"}
-                </button>
+        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">OpenRouter</p>
+                <h3 className="text-balance text-base font-semibold text-[color:var(--ink)]">Provider Key</h3>
+                <p className="text-xs text-[color:var(--ink-muted)]">Required when any task uses OpenRouter.</p>
               </div>
+              <div className="text-xs text-[color:var(--ink-muted)]">
+                {keyLoading ? "Loading…" : keyStatus?.hasKey ? `Stored · last4 ${keyStatus.last4 ?? "—"}` : "Not set"}
+              </div>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+              <label
+                className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                htmlFor="openrouter-key"
+              >
+                OpenRouter API key
+                <input
+                  id="openrouter-key"
+                  name="openrouter-key"
+                  type="password"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  placeholder="sk-or-…"
+                  autoComplete="off"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={handleSaveKey}
+                disabled={keySaving || keyInput.trim().length === 0}
+                className="mt-6 h-10 rounded-full bg-[color:var(--accent)] px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+              >
+                {keySaving ? "Saving…" : "Save API Key"}
+              </button>
+            </div>
+            {keyError ? (
+              <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
+                {keyError}
+              </p>
+            ) : null}
+            {keyStatus?.updatedAt ? (
+              <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
+            ) : null}
+            <p className="mt-4 text-xs text-[color:var(--ink-muted)]">
+              Defaults: OpenAI gpt-5.2 · OpenRouter anthropic/claude-haiku-4.5
+            </p>
+          </div>
 
-              <div className="mt-6 grid gap-4">
-                <div className="grid gap-3 md:grid-cols-3">
-                  <label
-                    className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-                    htmlFor={`${kind}-version`}
-                  >
-                    Prompt version
-                    <input
-                      id={`${kind}-version`}
-                      name={`${kind}-version`}
-                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                      value={forms[kind].prompt_version}
-                      onChange={(e) => updateForm(kind, { prompt_version: e.target.value })}
-                      placeholder="ai-coach-insight-v3…"
-                      autoComplete="off"
-                    />
-                  </label>
-                  <label
-                    className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-                    htmlFor={`${kind}-provider`}
-                  >
-                    Model provider
-                    <select
-                      id={`${kind}-provider`}
-                      name={`${kind}-provider`}
-                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
-                      value={forms[kind].model_provider}
-                      onChange={(e) => handleProviderChange(kind, e.target.value as "minimax" | "openai" | "openrouter")}
+          <div className="grid gap-6">
+            {(Object.keys(KIND_META) as AiPromptKind[]).map((kind) => {
+              const history = configsByKind[kind];
+              const published = history.find((row) => row.status === "published");
+
+              return (
+                <section
+                  key={kind}
+                  className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                        {KIND_META[kind].label}
+                      </p>
+                      <h2 className="text-balance text-lg font-semibold text-[color:var(--ink)]">
+                        {KIND_META[kind].description}
+                      </h2>
+                      {published ? (
+                        <p className="mt-2 break-words text-xs text-[color:var(--ink-muted)]">
+                          Published: {published.prompt_version} · {published.model_provider}/{published.model_id}
+                        </p>
+                      ) : (
+                        <p className="mt-2 text-xs text-[color:var(--danger-strong)]">No published config yet.</p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handlePublish(kind)}
+                      disabled={savingKind === kind}
+                      className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
                     >
-                      <option value="minimax">MiniMax</option>
-                      <option value="openai">OpenAI</option>
-                      <option value="openrouter">OpenRouter</option>
-                    </select>
-                  </label>
-                  <label
-                    className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-                    htmlFor={`${kind}-model`}
-                  >
-                    Model ID
-                    <input
-                      id={`${kind}-model`}
-                      name={`${kind}-model`}
-                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                      value={forms[kind].model_id}
-                      onChange={(e) => updateForm(kind, { model_id: e.target.value })}
-                      placeholder="gpt-5.2…"
-                      autoComplete="off"
-                    />
-                  </label>
-                </div>
-
-                <label
-                  className="grid gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-                  htmlFor={`${kind}-prompt`}
-                >
-                  System prompt
-                  <textarea
-                    id={`${kind}-prompt`}
-                    name={`${kind}-prompt`}
-                    className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                    value={forms[kind].system_prompt}
-                    onChange={(e) => updateForm(kind, { system_prompt: e.target.value })}
-                    autoComplete="off"
-                  />
-                </label>
-              </div>
-
-              {history.length > 0 ? (
-                <div className="mt-6 border-t border-[color:var(--border)] pt-4">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Recent Versions</p>
-                  <div className="mt-2 space-y-2">
-                    {history.slice(0, 3).map((row) => (
-                      <div
-                        key={row.id}
-                        className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs"
-                      >
-                        <div className="text-[color:var(--ink-muted)]">
-                          {row.prompt_version} · {row.model_provider}/{row.model_id}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
-                              row.status === "published"
-                                ? "bg-[color:var(--accent-strong)]"
-                                : row.status === "archived"
-                                  ? "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
-                                  : "bg-[color:var(--danger-strong)]"
-                            }`}
-                          >
-                            {row.status}
-                          </span>
-                          {row.status !== "archived" ? (
-                            <button
-                              type="button"
-                              onClick={() => handleArchive(row.id)}
-                              disabled={archivingId === row.id}
-                              className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
-                            >
-                              {archivingId === row.id ? "Archiving…" : "Archive"}
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    ))}
+                      {savingKind === kind ? "Publishing…" : "Publish New Version"}
+                    </button>
                   </div>
-                </div>
-              ) : null}
-            </section>
-          );
-        })}
-      </div>
+
+                  <div className="mt-6 grid gap-4">
+                    <div className="grid gap-3 md:grid-cols-3">
+                      <label
+                        className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                        htmlFor={`${kind}-version`}
+                      >
+                        Prompt version
+                        <input
+                          id={`${kind}-version`}
+                          name={`${kind}-version`}
+                          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                          value={forms[kind].prompt_version}
+                          onChange={(e) => updateForm(kind, { prompt_version: e.target.value })}
+                          placeholder="ai-coach-insight-v3…"
+                          autoComplete="off"
+                        />
+                      </label>
+                      <label
+                        className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                        htmlFor={`${kind}-provider`}
+                      >
+                        Model provider
+                        <select
+                          id={`${kind}-provider`}
+                          name={`${kind}-provider`}
+                          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                          value={forms[kind].model_provider}
+                          onChange={(e) =>
+                            handleProviderChange(kind, e.target.value as "minimax" | "openai" | "openrouter")
+                          }
+                        >
+                          <option value="minimax">MiniMax</option>
+                          <option value="openai">OpenAI</option>
+                          <option value="openrouter">OpenRouter</option>
+                        </select>
+                      </label>
+                      <label
+                        className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                        htmlFor={`${kind}-model`}
+                      >
+                        Model ID
+                        <input
+                          id={`${kind}-model`}
+                          name={`${kind}-model`}
+                          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                          value={forms[kind].model_id}
+                          onChange={(e) => updateForm(kind, { model_id: e.target.value })}
+                          placeholder="gpt-5.2…"
+                          autoComplete="off"
+                        />
+                      </label>
+                    </div>
+
+                    <label
+                      className="grid gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                      htmlFor={`${kind}-prompt`}
+                    >
+                      System prompt
+                      <textarea
+                        id={`${kind}-prompt`}
+                        name={`${kind}-prompt`}
+                        className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                        value={forms[kind].system_prompt}
+                        onChange={(e) => updateForm(kind, { system_prompt: e.target.value })}
+                        autoComplete="off"
+                      />
+                    </label>
+                  </div>
+
+                  {history.length > 0 ? (
+                    <div className="mt-6 border-t border-[color:var(--border)] pt-4">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                        Recent Versions
+                      </p>
+                      <div className="mt-2 space-y-2">
+                        {history.slice(0, 3).map((row) => (
+                          <div
+                            key={row.id}
+                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs"
+                          >
+                            <div className="min-w-0 break-words text-[color:var(--ink-muted)]">
+                              {row.prompt_version} · {row.model_provider}/{row.model_id}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
+                                  row.status === "published"
+                                    ? "bg-[color:var(--accent-strong)]"
+                                    : row.status === "archived"
+                                      ? "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
+                                      : "bg-[color:var(--danger-strong)]"
+                                }`}
+                              >
+                                {row.status}
+                              </span>
+                              {row.status !== "archived" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleArchive(row.id)}
+                                  disabled={archivingId === row.id}
+                                  className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
+                                >
+                                  {archivingId === row.id ? "Archiving…" : "Archive"}
+                                </button>
+                              ) : null}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
