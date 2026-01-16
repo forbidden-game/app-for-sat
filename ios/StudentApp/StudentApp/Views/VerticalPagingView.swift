@@ -6,6 +6,7 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
     @Binding var currentPage: Int
     @Binding var canPageUp: Bool
     @Binding var canPageDown: Bool
+    let onMoveBeyondEnd: (() -> Void)?
     let makePage: (Int) -> Page
 
     init(
@@ -13,12 +14,14 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
         currentPage: Binding<Int>,
         canPageUp: Binding<Bool>,
         canPageDown: Binding<Bool>,
+        onMoveBeyondEnd: (() -> Void)? = nil,
         @ViewBuilder makePage: @escaping (Int) -> Page
     ) {
         self.pageCount = pageCount
         self._currentPage = currentPage
         self._canPageUp = canPageUp
         self._canPageDown = canPageDown
+        self.onMoveBeyondEnd = onMoveBeyondEnd
         self.makePage = makePage
     }
 
@@ -51,6 +54,7 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
         ])
 
         context.coordinator.containerView = container
+        context.coordinator.slotViews = context.coordinator.buildSlots(in: scrollView, container: container)
         context.coordinator.configurePages(in: scrollView, force: true)
         return scrollView
     }
@@ -65,10 +69,13 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
     final class Coordinator: NSObject, UIScrollViewDelegate, VerticalPagingGestureGate {
         var parent: VerticalPagingView
         weak var containerView: UIView?
+        var slotViews: [UIView] = []
         var hostingControllers: [UIHostingController<Page>] = []
+        private var viewConstraints: [ObjectIdentifier: [NSLayoutConstraint]] = [:]
         var pageIndices: [Int] = []
         var currentIndex: Int = 0
         private var didSetInitialOffset = false
+        private var lastRefreshedPage: Int = -1
 
         init(parent: VerticalPagingView) {
             self.parent = parent
@@ -78,37 +85,62 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
         var canPageUp: Bool { parent.canPageUp }
         var canPageDown: Bool { parent.canPageDown }
 
+        func buildSlots(in scrollView: UIScrollView, container: UIView) -> [UIView] {
+            let slots = (0..<3).map { _ in UIView() }
+            slots.forEach {
+                $0.translatesAutoresizingMaskIntoConstraints = false
+                $0.backgroundColor = .clear
+                container.addSubview($0)
+            }
+
+            let pageHeight = scrollView.frameLayoutGuide.heightAnchor
+            NSLayoutConstraint.activate([
+                slots[0].topAnchor.constraint(equalTo: container.topAnchor),
+                slots[0].leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                slots[0].trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                slots[0].heightAnchor.constraint(equalTo: pageHeight),
+
+                slots[1].topAnchor.constraint(equalTo: slots[0].bottomAnchor),
+                slots[1].leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                slots[1].trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                slots[1].heightAnchor.constraint(equalTo: pageHeight),
+
+                slots[2].topAnchor.constraint(equalTo: slots[1].bottomAnchor),
+                slots[2].leadingAnchor.constraint(equalTo: container.leadingAnchor),
+                slots[2].trailingAnchor.constraint(equalTo: container.trailingAnchor),
+                slots[2].heightAnchor.constraint(equalTo: pageHeight),
+                slots[2].bottomAnchor.constraint(equalTo: container.bottomAnchor)
+            ])
+            return slots
+        }
+
         func configurePages(in scrollView: VerticalPagingScrollView, force: Bool) {
             let total = parent.pageCount
             guard total > 0 else { return }
 
             let clamped = max(0, min(parent.currentPage, total - 1))
-            if clamped != currentIndex {
+            let currentChanged = clamped != currentIndex
+            if currentChanged {
                 currentIndex = clamped
             }
 
             var shouldForce = force
             if hostingControllers.isEmpty {
+                guard slotViews.count == 3 else { return }
                 hostingControllers = (0..<3).map { _ in UIHostingController(rootView: parent.makePage(0)) }
-                for controller in hostingControllers {
-                    controller.view.translatesAutoresizingMaskIntoConstraints = false
+                for (index, controller) in hostingControllers.enumerated() {
                     controller.view.backgroundColor = .clear
-                    containerView?.addSubview(controller.view)
+                    attach(controller, to: slotViews[index])
                 }
-                layoutPages(in: scrollView)
                 shouldForce = true
             }
 
-            let previous = max(currentIndex - 1, 0)
-            let next = min(currentIndex + 1, total - 1)
-            let desired = [previous, currentIndex, next]
+            let desired = desiredIndices(for: currentIndex, total: total)
 
-            if shouldForce || desired != pageIndices {
-                pageIndices = desired
-                for (index, controller) in hostingControllers.enumerated() {
-                    let pageIndex = desired[index]
-                    controller.rootView = parent.makePage(pageIndex)
-                }
+            if shouldForce || pageIndices.isEmpty || currentChanged {
+                applyIndices(desired, updateAll: true)
+            } else if desired != pageIndices {
+                applyIndices(desired, updateAll: false)
             }
 
             let pageHeight = scrollView.bounds.height
@@ -118,30 +150,8 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
                     didSetInitialOffset = true
                 }
             }
-        }
 
-        private func layoutPages(in scrollView: UIScrollView) {
-            guard hostingControllers.count == 3, let containerView else { return }
-            let views = hostingControllers.map { $0.view! }
-            let pageHeight = scrollView.frameLayoutGuide.heightAnchor
-
-            NSLayoutConstraint.activate([
-                views[0].topAnchor.constraint(equalTo: containerView.topAnchor),
-                views[0].leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                views[0].trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                views[0].heightAnchor.constraint(equalTo: pageHeight),
-
-                views[1].topAnchor.constraint(equalTo: views[0].bottomAnchor),
-                views[1].leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                views[1].trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                views[1].heightAnchor.constraint(equalTo: pageHeight),
-
-                views[2].topAnchor.constraint(equalTo: views[1].bottomAnchor),
-                views[2].leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-                views[2].trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-                views[2].heightAnchor.constraint(equalTo: pageHeight),
-                views[2].bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
-            ])
+            refreshPagesIfNeeded()
         }
 
         func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
@@ -161,23 +171,138 @@ struct VerticalPagingView<Page: View>: UIViewRepresentable {
             let position = Int(round(pagingScrollView.contentOffset.y / pageHeight))
 
             if position == 0 {
-                if currentIndex > 0 {
-                    currentIndex -= 1
-                    if parent.currentPage != currentIndex {
-                        parent.currentPage = currentIndex
-                    }
-                }
+                moveToPrevious(in: pagingScrollView)
             } else if position == 2 {
-                if currentIndex + 1 < parent.pageCount {
-                    currentIndex += 1
-                    if parent.currentPage != currentIndex {
-                        parent.currentPage = currentIndex
-                    }
+                moveToNext(in: pagingScrollView)
+            } else {
+                recenter(pagingScrollView)
+            }
+        }
+
+        private func moveToNext(in scrollView: VerticalPagingScrollView) {
+            guard currentIndex + 1 < parent.pageCount else {
+                parent.onMoveBeyondEnd?()
+                recenter(scrollView)
+                return
+            }
+            currentIndex += 1
+            if parent.currentPage != currentIndex {
+                parent.currentPage = currentIndex
+            }
+            rotateForNext()
+            let desired = desiredIndices(for: currentIndex, total: parent.pageCount)
+            applyIndices(desired, updateAll: false)
+            refreshPagesIfNeeded()
+            recenter(scrollView)
+        }
+
+        private func moveToPrevious(in scrollView: VerticalPagingScrollView) {
+            guard currentIndex > 0 else {
+                recenter(scrollView)
+                return
+            }
+            currentIndex -= 1
+            if parent.currentPage != currentIndex {
+                parent.currentPage = currentIndex
+            }
+            rotateForPrevious()
+            let desired = desiredIndices(for: currentIndex, total: parent.pageCount)
+            applyIndices(desired, updateAll: false)
+            refreshPagesIfNeeded()
+            recenter(scrollView)
+        }
+
+        private func recenter(_ scrollView: UIScrollView) {
+            let pageHeight = scrollView.bounds.height
+            guard pageHeight > 0 else { return }
+            scrollView.setContentOffset(CGPoint(x: 0, y: pageHeight), animated: false)
+        }
+
+        private func desiredIndices(for current: Int, total: Int) -> [Int] {
+            let previous = max(current - 1, 0)
+            let next = min(current + 1, total - 1)
+            return [previous, current, next]
+        }
+
+        private func applyIndices(_ desired: [Int], updateAll: Bool) {
+            if pageIndices.count != 3 {
+                pageIndices = desired
+                for (index, controller) in hostingControllers.enumerated() {
+                    controller.rootView = parent.makePage(desired[index])
+                }
+                return
+            }
+            for (index, controller) in hostingControllers.enumerated() {
+                if updateAll || pageIndices[index] != desired[index] {
+                    pageIndices[index] = desired[index]
+                    controller.rootView = parent.makePage(desired[index])
                 }
             }
+        }
 
-            configurePages(in: pagingScrollView, force: false)
-            pagingScrollView.setContentOffset(CGPoint(x: 0, y: pageHeight), animated: false)
+        private func rotateForNext() {
+            guard hostingControllers.count == 3, slotViews.count == 3, pageIndices.count == 3 else { return }
+            let top = hostingControllers[0]
+            let middle = hostingControllers[1]
+            let bottom = hostingControllers[2]
+            hostingControllers = [middle, bottom, top]
+
+            let topIndex = pageIndices[0]
+            let middleIndex = pageIndices[1]
+            let bottomIndex = pageIndices[2]
+            pageIndices = [middleIndex, bottomIndex, topIndex]
+
+            reattachControllers()
+        }
+
+        private func rotateForPrevious() {
+            guard hostingControllers.count == 3, slotViews.count == 3, pageIndices.count == 3 else { return }
+            let top = hostingControllers[0]
+            let middle = hostingControllers[1]
+            let bottom = hostingControllers[2]
+            hostingControllers = [bottom, top, middle]
+
+            let topIndex = pageIndices[0]
+            let middleIndex = pageIndices[1]
+            let bottomIndex = pageIndices[2]
+            pageIndices = [bottomIndex, topIndex, middleIndex]
+
+            reattachControllers()
+        }
+
+        private func reattachControllers() {
+            UIView.performWithoutAnimation {
+                for (index, controller) in hostingControllers.enumerated() {
+                    attach(controller, to: slotViews[index])
+                }
+            }
+        }
+
+        private func attach(_ controller: UIHostingController<Page>, to slot: UIView) {
+            let view = controller.view!
+            if let constraints = viewConstraints[ObjectIdentifier(view)] {
+                NSLayoutConstraint.deactivate(constraints)
+            }
+            view.removeFromSuperview()
+            slot.addSubview(view)
+            view.translatesAutoresizingMaskIntoConstraints = false
+            let constraints = [
+                view.topAnchor.constraint(equalTo: slot.topAnchor),
+                view.leadingAnchor.constraint(equalTo: slot.leadingAnchor),
+                view.trailingAnchor.constraint(equalTo: slot.trailingAnchor),
+                view.bottomAnchor.constraint(equalTo: slot.bottomAnchor)
+            ]
+            NSLayoutConstraint.activate(constraints)
+            viewConstraints[ObjectIdentifier(view)] = constraints
+        }
+
+        private func refreshPagesIfNeeded() {
+            guard parent.currentPage != lastRefreshedPage else { return }
+            lastRefreshedPage = parent.currentPage
+            guard hostingControllers.count == 3, pageIndices.count == 3 else { return }
+            for (index, controller) in hostingControllers.enumerated() {
+                controller.rootView = parent.makePage(pageIndices[index])
+            }
         }
     }
 }

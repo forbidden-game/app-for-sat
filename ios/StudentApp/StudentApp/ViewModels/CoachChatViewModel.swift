@@ -9,6 +9,7 @@ final class CoachChatViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isSending = false
     @Published var promptText: String = "问老师一个问题…"
+    @Published private(set) var promptCandidates: [String] = []
 
     private let studentId: String
     private let linkedAttemptId: String?
@@ -16,7 +17,6 @@ final class CoachChatViewModel: ObservableObject {
     private var pollingTask: Task<Void, Never>?
     private var promptTask: Task<Void, Never>?
     private var promptIndex = 0
-    private var promptCandidates: [String] = []
     private var remoteMessages: [CoachThreadMessage] = []
     private var localMessages: [CoachThreadMessage] = []
 
@@ -81,6 +81,11 @@ final class CoachChatViewModel: ObservableObject {
         }
     }
 
+    func sendPrompt(_ text: String) async {
+        draftText = text
+        await send()
+    }
+
     private func upsertMessage(_ msg: CoachThreadMessage) {
         if let idx = remoteMessages.firstIndex(where: { $0.id == msg.id }) {
             remoteMessages[idx] = msg
@@ -116,17 +121,15 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     private func loadPromptCandidates() async {
+        let candidates: [String]
         do {
             let snapshot = try await service.fetchStudentSnapshot(studentId: studentId)
-            promptCandidates = buildPromptCandidates(snapshot: snapshot)
+            candidates = buildPromptCandidates(snapshot: snapshot)
         } catch {
-            promptCandidates = fallbackPromptCandidates()
+            candidates = fallbackPromptCandidates()
         }
 
-        if promptCandidates.isEmpty {
-            promptCandidates = fallbackPromptCandidates()
-        }
-
+        promptCandidates = candidates.isEmpty ? fallbackPromptCandidates() : candidates
         promptIndex = 0
         promptText = promptCandidates.first ?? "问老师一个问题…"
         startPromptCycle()

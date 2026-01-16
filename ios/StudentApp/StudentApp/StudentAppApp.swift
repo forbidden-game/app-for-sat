@@ -11,6 +11,10 @@ import SwiftUI
 struct StudentAppApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
+    init() {
+        AppFont.registerCoachFontIfNeeded()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

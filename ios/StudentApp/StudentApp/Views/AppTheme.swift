@@ -1,6 +1,7 @@
 import SwiftUI
 #if canImport(UIKit)
 import UIKit
+import CoreText
 #endif
 
 // Semantic color tokens (usage rules):
@@ -12,6 +13,71 @@ import UIKit
 // - Divider/Shadow: separation and elevation layers
 
 enum AppTheme {
+    // Coach Chat warm palette (mid-change: scoped usage)
+    static let coachBackgroundTop = dynamicColor(
+        light: UIColor(red: 0.99, green: 0.97, blue: 0.96, alpha: 1),
+        dark: UIColor(red: 0.07, green: 0.07, blue: 0.10, alpha: 1)
+    )
+    static let coachBackgroundBottom = dynamicColor(
+        light: UIColor(red: 0.93, green: 0.95, blue: 1.0, alpha: 1),
+        dark: UIColor(red: 0.11, green: 0.12, blue: 0.18, alpha: 1)
+    )
+    static let coachSurface = dynamicColor(
+        light: UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 1),
+        dark: UIColor(red: 0.15, green: 0.15, blue: 0.22, alpha: 1)
+    )
+    static let coachSurfaceAlt = dynamicColor(
+        light: UIColor(red: 0.95, green: 0.96, blue: 1.00, alpha: 1),
+        dark: UIColor(red: 0.20, green: 0.20, blue: 0.28, alpha: 1)
+    )
+    static let coachSurfacePressed = dynamicColor(
+        light: UIColor(red: 0.92, green: 0.93, blue: 0.98, alpha: 1),
+        dark: UIColor(red: 0.24, green: 0.24, blue: 0.32, alpha: 1)
+    )
+    static let coachTextPrimary = dynamicColor(
+        light: UIColor(red: 0.12, green: 0.11, blue: 0.29, alpha: 1),
+        dark: UIColor(red: 0.95, green: 0.94, blue: 0.98, alpha: 1)
+    )
+    static let coachTextSecondary = dynamicColor(
+        light: UIColor(red: 0.32, green: 0.30, blue: 0.48, alpha: 1),
+        dark: UIColor(red: 0.78, green: 0.80, blue: 0.90, alpha: 1)
+    )
+    static let coachTextMuted = dynamicColor(
+        light: UIColor(red: 0.48, green: 0.46, blue: 0.62, alpha: 1),
+        dark: UIColor(red: 0.66, green: 0.68, blue: 0.78, alpha: 1)
+    )
+    static let coachTextOnAccent = dynamicColor(
+        light: UIColor(red: 1.00, green: 1.00, blue: 1.00, alpha: 1),
+        dark: UIColor(red: 0.98, green: 0.98, blue: 0.99, alpha: 1)
+    )
+    static let coachAccent = dynamicColor(
+        light: UIColor(red: 0.31, green: 0.27, blue: 0.90, alpha: 1),
+        dark: UIColor(red: 0.58, green: 0.56, blue: 0.95, alpha: 1)
+    )
+    static let coachAccentStrong = dynamicColor(
+        light: UIColor(red: 0.26, green: 0.23, blue: 0.78, alpha: 1),
+        dark: UIColor(red: 0.64, green: 0.62, blue: 0.98, alpha: 1)
+    )
+    static let coachAccentSoft = dynamicColor(
+        light: UIColor(red: 0.90, green: 0.92, blue: 1.00, alpha: 1),
+        dark: UIColor(red: 0.20, green: 0.20, blue: 0.30, alpha: 1)
+    )
+    static let coachBorder = dynamicColor(
+        light: UIColor(red: 0.78, green: 0.82, blue: 0.98, alpha: 1),
+        dark: UIColor(red: 0.28, green: 0.30, blue: 0.40, alpha: 1)
+    )
+    static let coachBorderStrong = dynamicColor(
+        light: UIColor(red: 0.70, green: 0.74, blue: 0.92, alpha: 1),
+        dark: UIColor(red: 0.36, green: 0.38, blue: 0.48, alpha: 1)
+    )
+    static let coachShadowStrong = dynamicColor(
+        light: UIColor(white: 0.0, alpha: 0.14),
+        dark: UIColor(white: 0.0, alpha: 0.55)
+    )
+    static let coachShadowSoft = dynamicColor(
+        light: UIColor(white: 0.0, alpha: 0.06),
+        dark: UIColor(white: 0.0, alpha: 0.35)
+    )
     static let backgroundPrimary = dynamicColor(
         light: UIColor(red: 0.99, green: 0.98, blue: 0.97, alpha: 1),
         dark: UIColor(red: 0.08, green: 0.07, blue: 0.06, alpha: 1)
@@ -99,6 +165,14 @@ enum AppTheme {
         )
     }
 
+    static var coachBackgroundGradient: LinearGradient {
+        LinearGradient(
+            colors: [coachBackgroundTop, coachBackgroundBottom],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
     private static func dynamicColor(light: UIColor, dark: UIColor) -> Color {
         #if canImport(UIKit)
         return Color(
@@ -109,6 +183,77 @@ enum AppTheme {
         #else
         return Color.black
         #endif
+    }
+}
+
+enum AppFont {
+    private static var didRegisterCoachFont = false
+
+    static func registerCoachFontIfNeeded() {
+        #if canImport(UIKit)
+        guard !didRegisterCoachFont else { return }
+        defer { didRegisterCoachFont = true }
+        guard !UIFont.familyNames.contains("Noto Sans SC") else { return }
+        guard let url = Bundle.main.url(forResource: "NotoSansSC", withExtension: "ttf", subdirectory: "Fonts") else { return }
+        CTFontManagerRegisterFontsForURL(url as CFURL, .process, nil)
+        #endif
+    }
+
+    static func coach(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
+        if let uiFont = notoFont(size: size, weight: weight) {
+            return Font(uiFont)
+        }
+        if let uiFont = pingFangFont(size: size, weight: weight) {
+            return Font(uiFont)
+        }
+        return .system(size: size, weight: weight, design: .rounded)
+    }
+
+    private static func notoFont(size: CGFloat, weight: Font.Weight) -> UIFont? {
+        let family = "Noto Sans SC"
+        guard UIFont.familyNames.contains(family) else { return nil }
+        let descriptor = UIFontDescriptor(fontAttributes: [UIFontDescriptor.AttributeName.family: family])
+        let traits = [UIFontDescriptor.TraitKey.weight: uiFontWeight(for: weight)]
+        let styled = descriptor.addingAttributes([UIFontDescriptor.AttributeName.traits: traits])
+        return UIFont(descriptor: styled, size: size)
+    }
+
+    private static func pingFangFont(size: CGFloat, weight: Font.Weight) -> UIFont? {
+        let name: String
+        switch weight {
+        case .semibold:
+            name = "PingFangSC-Semibold"
+        case .medium:
+            name = "PingFangSC-Medium"
+        case .bold:
+            name = "PingFangSC-Bold"
+        default:
+            name = "PingFangSC-Regular"
+        }
+        return UIFont(name: name, size: size)
+    }
+
+    private static func uiFontWeight(for weight: Font.Weight) -> UIFont.Weight {
+        switch weight {
+        case .ultraLight:
+            return .ultraLight
+        case .thin:
+            return .thin
+        case .light:
+            return .light
+        case .medium:
+            return .medium
+        case .semibold:
+            return .semibold
+        case .bold:
+            return .bold
+        case .heavy:
+            return .heavy
+        case .black:
+            return .black
+        default:
+            return .regular
+        }
     }
 }
 

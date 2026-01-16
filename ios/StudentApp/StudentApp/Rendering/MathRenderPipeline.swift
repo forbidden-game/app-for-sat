@@ -286,13 +286,6 @@ private enum MathTextHeightEstimator {
 
 private enum InlineMarkdownRenderer {
     static func render(_ text: String) -> AttributedString {
-        guard text.contains("*") || text.contains("_") else {
-            return AttributedString(text)
-        }
-
-        let options = AttributedString.MarkdownParsingOptions(
-            interpretedSyntax: .inlineOnlyPreservingWhitespace
-        )
-        return (try? AttributedString(markdown: text, options: options)) ?? AttributedString(text)
+        AttributedString(text)
     }
 }
