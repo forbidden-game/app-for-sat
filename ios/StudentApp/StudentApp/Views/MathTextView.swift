@@ -1,9 +1,11 @@
 import SwiftUI
 import WebKit
+import UIKit
 
 struct MathTextView: View {
     let text: String
     var style: MathTextStyle = .body
+    var textColor: Color = AppTheme.textPrimary
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
@@ -25,18 +27,21 @@ struct MathTextView: View {
     private static let webPlanner = MathRenderPlanner(cache: MathRenderCache(), nativeRenderer: nil)
     private static let webPool = MathWebViewPool()
 
-    init(text: String, style: MathTextStyle = .body) {
+    init(text: String, style: MathTextStyle = .body, textColor: Color = AppTheme.textPrimary) {
         self.text = text
         self.style = style
+        self.textColor = textColor
     }
 
     var body: some View {
+        let resolvedTextColorHex = ColorHexBuilder.hex(for: textColor, scheme: colorScheme)
         let request = MathRenderRequest(
             text: text,
             style: style,
             width: max(width, 1),
             colorScheme: colorScheme,
-            displayScale: displayScale
+            displayScale: displayScale,
+            textColorHex: resolvedTextColorHex
         )
         let requestKey = MathRenderKeyBuilder.key(for: request)
         let activePlan = renderFailed ? MathRenderPlan.plainText(AttributedString(fallbackText)) : plan
@@ -72,12 +77,12 @@ struct MathTextView: View {
                     .font(.system(size: style.fontSize, weight: style.fontWeight))
                     .lineSpacing(style.lineSpacing)
                     .multilineTextAlignment(style.textAlignment)
-                    .foregroundStyle(AppTheme.textPrimary)
+                    .foregroundStyle(textColor)
                     .frame(maxWidth: .infinity, alignment: style.alignment)
             )
         case .nativeLabel(let payload):
             return AnyView(
-                SwiftMathLabelView(payload: payload, onError: {
+                SwiftMathLabelView(payload: payload, textColor: textColor, onError: {
                     forceWebKey = requestKey
                     updatePlan(request: request, key: requestKey)
                 })
@@ -184,6 +189,19 @@ struct MathTextStyle: Equatable {
         textAlign: "left",
         textAlignment: .leading
     )
+
+    static func chatBubble(isUser: Bool) -> MathTextStyle {
+        MathTextStyle(
+            fontSize: 16,
+            fontWeight: .medium,
+            fontWeightValue: 500,
+            lineHeight: 1.5,
+            lineSpacing: 3,
+            alignment: isUser ? .trailing : .leading,
+            textAlign: isUser ? "right" : "left",
+            textAlignment: isUser ? .trailing : .leading
+        )
+    }
 
     var cacheKey: String {
         "\(fontSize)|\(fontWeightValue)|\(lineHeight)|\(lineSpacing)|\(textAlign)"
@@ -292,5 +310,32 @@ private struct WidthKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
+    }
+}
+
+private enum ColorHexBuilder {
+    static func hex(for color: Color, scheme: ColorScheme) -> String {
+        let uiColor = UIColor(color)
+        let traits = UITraitCollection(userInterfaceStyle: scheme == .dark ? .dark : .light)
+        let resolved = uiColor.resolvedColor(with: traits)
+        return resolved.hexString
+    }
+}
+
+private extension UIColor {
+    var hexString: String {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        guard getRed(&red, green: &green, blue: &blue, alpha: &alpha) else {
+            return "#1A1A1A"
+        }
+        return String(
+            format: "#%02X%02X%02X",
+            Int(red * 255),
+            Int(green * 255),
+            Int(blue * 255)
+        )
     }
 }

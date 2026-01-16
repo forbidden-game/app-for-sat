@@ -14,6 +14,7 @@ struct CoachChatMessageBubble: View {
 
     var body: some View {
         let audioPayload = CoachChatAudioPayload.parse(from: message.content.text)
+        let imagePayload = CoachChatImagePayload.parse(from: message.content.text)
         let foreground = isUser ? AppTheme.textOnAccent : AppTheme.textPrimary
         let bubbleBackground = isUser ? AppTheme.accentStrong : AppTheme.surfaceRaised
         let bubbleStroke = isUser ? AppTheme.accentStrong : AppTheme.dividerStrong
@@ -27,7 +28,7 @@ struct CoachChatMessageBubble: View {
             }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
                     if let audioPayload {
                         AudioMessageBubble(
                             payload: audioPayload,
@@ -37,11 +38,19 @@ struct CoachChatMessageBubble: View {
                             progress: playingMessageId == message.id ? playbackProgress : 0,
                             onPlay: { onPlayAudio(message.id, audioPayload) }
                         )
+                    } else if let imagePayload {
+                        CoachChatImageBubble(
+                            payload: imagePayload,
+                            isUser: isUser,
+                            foreground: foreground
+                        )
                     } else {
-                        Text(message.content.text)
-                            .font(.body)
-                            .foregroundStyle(foreground)
-                            .fixedSize(horizontal: false, vertical: true)
+                        MathTextView(
+                            text: message.content.text,
+                            style: .chatBubble(isUser: isUser),
+                            textColor: foreground
+                        )
+                        .fixedSize(horizontal: false, vertical: true)
                     }
 
                     if message.role == .assistant, message.content.status == "streaming" {
@@ -97,5 +106,53 @@ struct CoachChatTypingIndicator: View {
                 }
             }
         }
+    }
+}
+
+private struct CoachChatImageBubble: View {
+    let payload: CoachChatImagePayload
+    let isUser: Bool
+    let foreground: Color
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let image = CoachChatImageStore.loadImage(fileName: payload.fileName) {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: imageSize.width, height: imageSize.height)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(AppTheme.divider, lineWidth: 1)
+                    )
+            } else {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(AppTheme.surface)
+                    .frame(width: imageSize.width, height: imageSize.height)
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(foreground.opacity(0.6))
+                    )
+            }
+
+            if let caption = payload.caption, !caption.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                MathTextView(
+                    text: caption,
+                    style: .chatBubble(isUser: isUser),
+                    textColor: foreground
+                )
+                .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var imageSize: CGSize {
+        let maxWidth: CGFloat = 220
+        let width = payload.width > 0 ? min(maxWidth, payload.width) : maxWidth
+        let ratio = payload.width > 0 && payload.height > 0 ? payload.height / payload.width : 0.75
+        let height = max(120, width * ratio)
+        return CGSize(width: width, height: height)
     }
 }

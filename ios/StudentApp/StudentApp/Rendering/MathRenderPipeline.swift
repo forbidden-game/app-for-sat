@@ -9,19 +9,22 @@ struct MathRenderRequest: Hashable {
     let width: CGFloat
     let colorScheme: ColorScheme
     let displayScale: CGFloat
+    let textColorHex: String
 
     init(
         text: String,
         style: MathTextStyle,
         width: CGFloat,
         colorScheme: ColorScheme,
-        displayScale: CGFloat
+        displayScale: CGFloat,
+        textColorHex: String
     ) {
         self.text = text
         self.style = style
         self.width = width
         self.colorScheme = colorScheme
         self.displayScale = displayScale
+        self.textColorHex = textColorHex
     }
 
     static func == (lhs: MathRenderRequest, rhs: MathRenderRequest) -> Bool {
@@ -29,7 +32,8 @@ struct MathRenderRequest: Hashable {
         lhs.style == rhs.style &&
         lhs.width == rhs.width &&
         lhs.colorScheme == rhs.colorScheme &&
-        lhs.displayScale == rhs.displayScale
+        lhs.displayScale == rhs.displayScale &&
+        lhs.textColorHex == rhs.textColorHex
     }
 
     func hash(into hasher: inout Hasher) {
@@ -38,6 +42,7 @@ struct MathRenderRequest: Hashable {
         hasher.combine(width)
         hasher.combine(colorScheme == .dark ? "dark" : "light")
         hasher.combine(displayScale)
+        hasher.combine(textColorHex)
     }
 }
 
@@ -144,10 +149,11 @@ final class MathRenderPlanner: MathRenderPlanning {
         }
 
         let html = MathHTMLBuilderV2.html(
-            for: doc.normalizedText,
+            for: doc,
             style: request.style,
             colorScheme: request.colorScheme,
-            displayScale: request.displayScale
+            displayScale: request.displayScale,
+            textColorHex: request.textColorHex
         )
         let estimatedHeight = MathTextHeightEstimator.estimatedHeight(
             for: doc.plainText,
@@ -286,6 +292,33 @@ private enum MathTextHeightEstimator {
 
 private enum InlineMarkdownRenderer {
     static func render(_ text: String) -> AttributedString {
-        AttributedString(text)
+        let normalized = normalizeListMarkers(in: text)
+        if let rendered = try? AttributedString(
+            markdown: normalized,
+            options: AttributedString.MarkdownParsingOptions(interpretedSyntax: .inlineOnlyPreservingWhitespace)
+        ) {
+            return rendered
+        }
+        return AttributedString(normalized)
+    }
+
+    private static func normalizeListMarkers(in text: String) -> String {
+        let lines = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+        let normalized = lines.map { line -> String in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
+                let content = trimmed.dropFirst(2)
+                return "• \(content)"
+            }
+            if let dotRange = trimmed.range(of: ". "), trimmed.startIndex < dotRange.lowerBound {
+                let prefix = trimmed[..<dotRange.lowerBound]
+                if prefix.allSatisfy({ $0.isNumber }) {
+                    let content = trimmed[dotRange.upperBound...]
+                    return "• \(content)"
+                }
+            }
+            return String(line)
+        }
+        return normalized.joined(separator: "\n")
     }
 }

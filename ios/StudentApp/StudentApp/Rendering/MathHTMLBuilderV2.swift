@@ -1,16 +1,17 @@
 import Foundation
+import StudentCore
 import SwiftUI
 
 enum MathHTMLBuilderV2 {
     static func html(
-        for text: String,
+        for doc: MathMarkupDocument,
         style: MathTextStyle,
         colorScheme: ColorScheme,
-        displayScale: CGFloat
+        displayScale: CGFloat,
+        textColorHex: String
     ) -> String {
-        let bodyText = buildBody(from: text)
+        let bodyText = buildBody(from: doc)
         let assetBlock = MathAssetLoaderV2.assetBlockHTML
-        let textColor = colorScheme == .dark ? "#F2EDE6" : "#1A1A1A"
         return """
         <!doctype html>
         <html>
@@ -27,7 +28,7 @@ enum MathHTMLBuilderV2 {
                 font-size: \(style.fontSize)px;
                 font-weight: \(style.fontWeightValue);
                 line-height: \(style.lineHeight);
-                color: \(textColor);
+                color: \(textColorHex);
                 -webkit-text-size-adjust: 100%;
                 -webkit-font-smoothing: antialiased;
                 opacity: 0;
@@ -48,6 +49,17 @@ enum MathHTMLBuilderV2 {
               }
               .katex { font-size: 1em; }
               .katex-display { margin: 0.35em 0; }
+              a { color: inherit; text-decoration: underline; }
+              code {
+                font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 0.95em;
+                background: rgba(0, 0, 0, 0.08);
+                padding: 1px 4px;
+                border-radius: 4px;
+              }
+              @media (prefers-color-scheme: dark) {
+                code { background: rgba(255, 255, 255, 0.12); }
+              }
             </style>
           </head>
           <body data-scale="\(displayScale)">
@@ -108,20 +120,26 @@ enum MathHTMLBuilderV2 {
         MathAssetLoaderV2.localAssetBaseURL
     }
 
-    private static func buildBody(from text: String) -> String {
-        let normalized = text
-            .replacingOccurrences(of: "\r\n", with: "\n")
-            .replacingOccurrences(of: "\r", with: "\n")
+    private static func buildBody(from doc: MathMarkupDocument) -> String {
+        var output = ""
+        for segment in doc.segments {
+            switch segment {
+            case .text(let text):
+                output.append(renderTextSegment(text))
+            case .inlineMath(let latex):
+                output.append("$")
+                output.append(escapeHTML(latex))
+                output.append("$")
+            case .blockMath(let latex):
+                output.append("\n$$")
+                output.append(escapeHTML(latex))
+                output.append("$$\n")
+            }
+        }
 
-        let withMarkers = normalized
-            .replacingOccurrences(of: "\\begin{center}", with: "[[CENTER_START]]")
-            .replacingOccurrences(of: "\\end{center}", with: "[[CENTER_END]]")
-
-        let escaped = escapeHTML(withMarkers)
-
-        return escaped
-            .replacingOccurrences(of: "[[CENTER_START]]", with: "<div class=\"center\">")
-            .replacingOccurrences(of: "[[CENTER_END]]", with: "</div>")
+        return output
+            .replacingOccurrences(of: "\\begin{center}", with: "<div class=\"center\">")
+            .replacingOccurrences(of: "\\end{center}", with: "</div>")
     }
 
     private static func escapeHTML(_ text: String) -> String {
@@ -129,7 +147,97 @@ enum MathHTMLBuilderV2 {
         escaped = escaped.replacingOccurrences(of: "&", with: "&amp;")
         escaped = escaped.replacingOccurrences(of: "<", with: "&lt;")
         escaped = escaped.replacingOccurrences(of: ">", with: "&gt;")
+        escaped = escaped.replacingOccurrences(of: "\"", with: "&quot;")
+        escaped = escaped.replacingOccurrences(of: "'", with: "&#39;")
         return escaped
+    }
+
+    private static func renderTextSegment(_ text: String) -> String {
+        let normalized = text
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+        let listNormalized = normalizeListMarkers(in: normalized)
+        return renderInlineMarkdown(listNormalized)
+    }
+
+    private static func normalizeListMarkers(in text: String) -> String {
+        let lines = text.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+        let normalized = lines.map { line -> String in
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("- ") || trimmed.hasPrefix("* ") {
+                let content = trimmed.dropFirst(2)
+                return "• \(content)"
+            }
+            if let dotRange = trimmed.range(of: ". "), trimmed.startIndex < dotRange.lowerBound {
+                let prefix = trimmed[..<dotRange.lowerBound]
+                if prefix.allSatisfy({ $0.isNumber }) {
+                    let content = trimmed[dotRange.upperBound...]
+                    return "• \(content)"
+                }
+            }
+            return String(line)
+        }
+        return normalized.joined(separator: "\n")
+    }
+
+    private static func renderInlineMarkdown(_ text: String) -> String {
+        var output = ""
+        var index = text.startIndex
+        while index < text.endIndex {
+            let char = text[index]
+            if char == "`" {
+                if let closing = text[index...].dropFirst().firstIndex(of: "`") {
+                    let content = String(text[text.index(after: index)..<closing])
+                    output.append("<code>")
+                    output.append(escapeHTML(content))
+                    output.append("</code>")
+                    index = text.index(after: closing)
+                    continue
+                }
+            }
+            if char == "[" {
+                if let closingBracket = text[index...].firstIndex(of: "]") {
+                    let nextIndex = text.index(after: closingBracket)
+                    if nextIndex < text.endIndex, text[nextIndex] == "(", let closingParen = text[nextIndex...].firstIndex(of: ")") {
+                        let label = String(text[text.index(after: index)..<closingBracket])
+                        let url = String(text[text.index(after: nextIndex)..<closingParen])
+                        output.append("<a href=\"")
+                        output.append(escapeHTML(url))
+                        output.append("\">")
+                        output.append(escapeHTML(label))
+                        output.append("</a>")
+                        index = text.index(after: closingParen)
+                        continue
+                    }
+                }
+            }
+            if char == "*", text[index...].hasPrefix("**") {
+                let start = text.index(index, offsetBy: 2)
+                if let closing = text[start...].range(of: "**")?.lowerBound {
+                    let content = String(text[start..<closing])
+                    output.append("<strong>")
+                    output.append(renderInlineMarkdown(content))
+                    output.append("</strong>")
+                    index = text.index(closing, offsetBy: 2)
+                    continue
+                }
+            }
+            if char == "*" {
+                let start = text.index(after: index)
+                if let closing = text[start...].firstIndex(of: "*") {
+                    let content = String(text[start..<closing])
+                    output.append("<em>")
+                    output.append(escapeHTML(content))
+                    output.append("</em>")
+                    index = text.index(after: closing)
+                    continue
+                }
+            }
+
+            output.append(escapeHTML(String(char)))
+            index = text.index(after: index)
+        }
+        return output
     }
 }
 

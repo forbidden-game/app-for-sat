@@ -10,15 +10,14 @@ struct CoachChatView: View {
     @State private var showLibraryPicker = false
     @State private var isRecording = false
     @State private var recordingStartedAt = Date()
-    @State private var audioRecorder: AVAudioRecorder?
     @State private var audioPlayer: AVAudioPlayer?
     @State private var audioPlayerDelegate = AudioPlayerDelegate()
     @State private var playingMessageId: String?
     @State private var playbackProgress: Double = 0
     @State private var playbackTimer: Timer?
-    @State private var recordingFileURL: URL?
     @State private var isPinnedToBottom = true
     @State private var scrollViewHeight: CGFloat = 0
+    @State private var isSavingImage = false
 
     @StateObject private var vm: CoachChatViewModel
     private let linkedAttemptId: String?
@@ -136,12 +135,12 @@ struct CoachChatView: View {
                 CoachChatComposerView(
                     draftText: $vm.draftText,
                     promptText: vm.promptText,
-                    isSending: vm.isSending,
+                    isSending: vm.isSending || isSavingImage,
                     isRecording: isRecording,
                     recordingStartedAt: recordingStartedAt,
                     pendingImage: pendingImage,
                     errorMessage: vm.errorMessage,
-                    onSend: { Task { await vm.send() } },
+                    onSend: sendMessage,
                     onCamera: openCamera,
                     onLibrary: openLibrary,
                     onToggleRecording: toggleRecording,
@@ -194,117 +193,7 @@ struct CoachChatView: View {
     }
 
     private func toggleRecording() {
-        if isRecording {
-            stopRecording()
-        } else {
-            startRecording()
-        }
-    }
-
-    private func startRecording() {
-        if #available(iOS 17.0, *) {
-            switch AVAudioApplication.shared.recordPermission {
-            case .granted:
-                startRecordingSession()
-            case .denied:
-                vm.errorMessage = "需要麦克风权限才能录音。"
-            case .undetermined:
-                AVAudioApplication.requestRecordPermission { granted in
-                    DispatchQueue.main.async {
-                        if granted {
-                            startRecordingSession()
-                        } else {
-                            vm.errorMessage = "需要麦克风权限才能录音。"
-                        }
-                    }
-                }
-            @unknown default:
-                vm.errorMessage = "麦克风权限异常，请稍后重试。"
-            }
-        } else {
-            let session = AVAudioSession.sharedInstance()
-            switch session.recordPermission {
-            case .granted:
-                startRecordingSession()
-            case .denied:
-                vm.errorMessage = "需要麦克风权限才能录音。"
-            case .undetermined:
-                session.requestRecordPermission { granted in
-                    DispatchQueue.main.async {
-                        if granted {
-                            startRecordingSession()
-                        } else {
-                            vm.errorMessage = "需要麦克风权限才能录音。"
-                        }
-                    }
-                }
-            @unknown default:
-                vm.errorMessage = "麦克风权限异常，请稍后重试。"
-            }
-        }
-    }
-
-    private func startRecordingSession() {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetoothHFP])
-            try session.setActive(true, options: .notifyOthersOnDeactivation)
-
-            let fileName = "coach-audio-\(UUID().uuidString).m4a"
-            let url = audioFileURL(fileName: fileName)
-            recordingFileURL = url
-            let settings: [String: Any] = [
-                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 44_100,
-                AVNumberOfChannelsKey: 1,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ]
-
-            audioRecorder = try AVAudioRecorder(url: url, settings: settings)
-            audioRecorder?.prepareToRecord()
-            guard audioRecorder?.record() == true else {
-                throw NSError(domain: "CoachChatView", code: -1, userInfo: [NSLocalizedDescriptionKey: "Record failed"])
-            }
-
-            recordingStartedAt = Date()
-            withAnimation(.easeInOut(duration: 0.2)) {
-                isRecording = true
-            }
-        } catch {
-            vm.errorMessage = "录音启动失败，请稍后重试。"
-            audioRecorder = nil
-            isRecording = false
-        }
-    }
-
-    private func stopRecording() {
-        guard let recorder = audioRecorder else {
-            isRecording = false
-            return
-        }
-
-        recorder.stop()
-        let duration = max(recorder.currentTime, Date().timeIntervalSince(recordingStartedAt))
-        let url = recordingFileURL ?? recorder.url
-        audioRecorder = nil
-        recordingFileURL = nil
-
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isRecording = false
-        }
-
-        let fileSize = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)?.intValue ?? 0
-        if duration >= 0.1, fileSize > 0 {
-            vm.addLocalAudioMessage(fileName: url.lastPathComponent, duration: duration)
-        } else {
-            vm.errorMessage = "录音时间太短或保存失败。"
-        }
-
-        do {
-            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        } catch {
-            return
-        }
+        vm.errorMessage = "语音发送功能暂未接通。"
     }
 
     private func togglePlayback(messageId: String, payload: CoachChatAudioPayload) {
@@ -375,6 +264,24 @@ struct CoachChatView: View {
             try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         }
         return directory
+    }
+
+    private func sendMessage() {
+        Task { @MainActor in
+            let image = pendingImage
+            if let image {
+                isSavingImage = true
+                do {
+                    let payload = try CoachChatImageStore.saveCompressedImage(image)
+                    vm.addLocalImageMessage(payload: payload)
+                    pendingImage = nil
+                } catch {
+                    vm.errorMessage = "图片处理失败，请稍后重试。"
+                }
+                isSavingImage = false
+            }
+            await vm.send()
+        }
     }
 }
 

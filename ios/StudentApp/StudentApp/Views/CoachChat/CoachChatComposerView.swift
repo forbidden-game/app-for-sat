@@ -83,7 +83,8 @@ struct CoachChatComposerView: View {
     }
 
     private var canSend: Bool {
-        !draftText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let trimmed = draftText.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty || pendingImage != nil
     }
 
     private var cameraButton: some View {

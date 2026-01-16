@@ -148,6 +148,18 @@ final class CoachChatViewModel: ObservableObject {
         messages = mergeMessages()
     }
 
+    func addLocalImageMessage(payload: CoachChatImagePayload) {
+        let localMessage = CoachThreadMessage(
+            id: "local-image-\(UUID().uuidString)",
+            role: .user,
+            content: CoachMessageContent(text: payload.encodedText),
+            linkedAttemptId: linkedAttemptId,
+            createdAt: Date()
+        )
+        localMessages.append(localMessage)
+        messages = mergeMessages()
+    }
+
     private func startPromptCycle() {
         promptTask?.cancel()
         promptTask = Task { [weak self] in

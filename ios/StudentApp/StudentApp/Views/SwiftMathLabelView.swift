@@ -4,10 +4,12 @@ import UIKit
 
 struct SwiftMathLabelView: UIViewRepresentable {
     let payload: MathNativePayload
+    let textColor: Color
     let onError: (() -> Void)?
 
-    init(payload: MathNativePayload, onError: (() -> Void)? = nil) {
+    init(payload: MathNativePayload, textColor: Color = AppTheme.textPrimary, onError: (() -> Void)? = nil) {
         self.payload = payload
+        self.textColor = textColor
         self.onError = onError
     }
 
@@ -32,7 +34,7 @@ struct SwiftMathLabelView: UIViewRepresentable {
 
         uiView.font = mathFont
         uiView.textAlignment = mtTextAlignment(from: payload.style.textAlignment)
-        uiView.textColor = UIColor(AppTheme.textPrimary)
+        uiView.textColor = UIColor(textColor)
         uiView.labelMode = payload.isDisplay ? .display : .text
         uiView.contentInsets = MTEdgeInsets()
         uiView.latex = payload.latex
