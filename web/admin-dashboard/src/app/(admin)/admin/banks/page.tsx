@@ -400,13 +400,13 @@ export default function QuestionBanksPage() {
           <table className="w-full text-left text-sm text-[color:var(--ink)]">
             <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               <tr>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Slug</th>
-                <th className="px-4 py-3">Mode</th>
-                <th className="px-4 py-3">Limit</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Order</th>
-                <th className="px-4 py-3">Actions</th>
+                <th scope="col" className="px-4 py-3">Title</th>
+                <th scope="col" className="px-4 py-3">Slug</th>
+                <th scope="col" className="px-4 py-3">Mode</th>
+                <th scope="col" className="px-4 py-3">Limit</th>
+                <th scope="col" className="px-4 py-3">Status</th>
+                <th scope="col" className="px-4 py-3">Order</th>
+                <th scope="col" className="px-4 py-3">Actions</th>
               </tr>
             </thead>
             <tbody>

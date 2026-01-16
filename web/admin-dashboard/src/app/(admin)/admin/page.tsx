@@ -8,13 +8,13 @@ import { getAdminOverview, type AdminOverview } from "./actions";
 function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
+  }).format(date);
 }
 
 export default function AdminPage() {
@@ -149,11 +149,11 @@ export default function AdminPage() {
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
             <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               <tr>
-                <th className="px-4 py-3">Title</th>
-                <th className="px-4 py-3">Slug</th>
-                <th className="px-4 py-3">Mode</th>
-                <th className="px-4 py-3">Limit</th>
-                <th className="px-4 py-3">Status</th>
+                <th scope="col" className="px-4 py-3">Title</th>
+                <th scope="col" className="px-4 py-3">Slug</th>
+                <th scope="col" className="px-4 py-3">Mode</th>
+                <th scope="col" className="px-4 py-3">Limit</th>
+                <th scope="col" className="px-4 py-3">Status</th>
               </tr>
             </thead>
             <tbody>
@@ -205,9 +205,9 @@ export default function AdminPage() {
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
             <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               <tr>
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Role</th>
-                <th className="px-4 py-3">Created</th>
+                <th scope="col" className="px-4 py-3">Name</th>
+                <th scope="col" className="px-4 py-3">Role</th>
+                <th scope="col" className="px-4 py-3">Created</th>
               </tr>
             </thead>
             <tbody>

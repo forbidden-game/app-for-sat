@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { createTag, deleteTag, listTags, updateTag, type Tag, type TagInput } from "./actions";
 
@@ -13,13 +14,16 @@ const EMPTY_FORM: TagInput = {
 
 export default function TagsPage() {
   const supabase = getSupabaseClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<TagInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>("");
+  const [filterCategory, setFilterCategory] = useState<string>(() => searchParams.get("category") ?? "");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
@@ -69,6 +73,25 @@ export default function TagsPage() {
       active = false;
     };
   }, [supabase]);
+
+  useEffect(() => {
+    setFilterCategory(searchParams.get("category") ?? "");
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (filterCategory) {
+      nextParams.set("category", filterCategory);
+    } else {
+      nextParams.delete("category");
+    }
+
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [filterCategory, pathname, router, searchParams]);
 
   const filteredTags = useMemo(() => {
     if (!filterCategory) return tags;
@@ -189,7 +212,7 @@ export default function TagsPage() {
     return (
       <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
-          {error}
+          {error} Try refreshing or checking Supabase config.
         </p>
       </main>
     );
@@ -232,7 +255,7 @@ export default function TagsPage() {
           className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
-          {error}
+          {error} Try refreshing or checking Supabase config.
         </div>
       ) : null}
 

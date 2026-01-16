@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { listTags, type Tag } from "../tags/actions";
 import {
@@ -23,27 +23,55 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   const supabase = getSupabaseClient();
   const isEdit = Boolean(initialData);
 
-  const [subject, setSubject] = useState(initialData?.subject ?? "");
-  const [module, setModule] = useState(initialData?.module ?? "");
-  const [difficulty, setDifficulty] = useState(initialData?.difficulty ?? 3);
-  const [questionType, setQuestionType] = useState(initialData?.question_type ?? "mcq");
-  const [stem, setStem] = useState(initialData?.stem ?? "");
-  const [answerKey, setAnswerKey] = useState<Record<string, unknown>>(initialData?.answer_key ?? { correct: "" });
-  const [options, setOptions] = useState<OptionInput[]>(
+  const initialOptions =
     initialData?.options?.map((o) => ({ label: o.label, content: o.content })) ?? [
       { label: "A", content: "" },
       { label: "B", content: "" },
       { label: "C", content: "" },
       { label: "D", content: "" },
-    ],
-  );
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialData?.tags?.map((t) => t.id) ?? []);
+    ];
+  const initialTagIds = initialData?.tags?.map((t) => t.id) ?? [];
+  const initialAnswerKey = initialData?.answer_key ?? { correct: "" };
+
+  const [subject, setSubject] = useState(initialData?.subject ?? "");
+  const [module, setModule] = useState(initialData?.module ?? "");
+  const [difficulty, setDifficulty] = useState(initialData?.difficulty ?? 3);
+  const [questionType, setQuestionType] = useState(initialData?.question_type ?? "mcq");
+  const [stem, setStem] = useState(initialData?.stem ?? "");
+  const [answerKey, setAnswerKey] = useState<Record<string, unknown>>(initialAnswerKey);
+  const [options, setOptions] = useState<OptionInput[]>(initialOptions);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialTagIds);
 
   const [subjects, setSubjects] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
   const [questionTypes, setQuestionTypes] = useState<QuestionType[]>([]);
   const [allTags, setAllTags] = useState<Tag[]>([]);
   const [loadingMeta, setLoadingMeta] = useState(true);
+  const initialSnapshot = useRef(
+    JSON.stringify({
+      subject: initialData?.subject ?? "",
+      module: initialData?.module ?? "",
+      difficulty: initialData?.difficulty ?? 3,
+      questionType: initialData?.question_type ?? "mcq",
+      stem: initialData?.stem ?? "",
+      answerKey: initialAnswerKey,
+      options: initialOptions,
+      selectedTagIds: initialTagIds,
+    }),
+  );
+  const isDirty = useMemo(() => {
+    const snapshot = JSON.stringify({
+      subject,
+      module,
+      difficulty,
+      questionType,
+      stem,
+      answerKey,
+      options,
+      selectedTagIds,
+    });
+    return snapshot !== initialSnapshot.current;
+  }, [subject, module, difficulty, questionType, stem, answerKey, options, selectedTagIds]);
 
   useEffect(() => {
     async function loadMeta() {
@@ -71,6 +99,17 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
     loadMeta();
   }, [supabase]);
 
+  useEffect(() => {
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      if (!isDirty) return;
+      event.preventDefault();
+      event.returnValue = "";
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty]);
+
   function handleOptionChange(index: number, field: "label" | "content", value: string) {
     setOptions((prev) => prev.map((opt, i) => (i === index ? { ...opt, [field]: value } : opt)));
   }
@@ -86,6 +125,11 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
 
   function toggleTag(tagId: string) {
     setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
+  }
+
+  function handleCancel() {
+    if (isDirty && !window.confirm("Discard unsaved changes?")) return;
+    onCancel();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -249,7 +293,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
                 <button
                   type="button"
                   onClick={() => removeOption(index)}
-                  className="text-[color:var(--danger-strong)]"
+                  className="text-[color:var(--danger-strong)] transition hover:text-[color:var(--danger)]"
                   aria-label={`Remove option ${index + 1}`}
                 >
                   ×
@@ -263,6 +307,8 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
           Correct Answer
           <input
             name="answer"
+            type={questionType === "numeric" ? "number" : "text"}
+            inputMode={questionType === "numeric" ? "decimal" : "text"}
             className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={String(answerKey.correct ?? "")}
             onChange={(e) => {
@@ -317,7 +363,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Cancel

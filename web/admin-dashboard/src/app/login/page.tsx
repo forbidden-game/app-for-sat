@@ -7,17 +7,23 @@ import { getSupabaseClient } from "../../lib/supabaseClient";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const supabase = getSupabaseClient();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!supabase) return;
+    if (!supabase || !email) return;
+    setIsSubmitting(true);
     const redirectTo = `${window.location.origin}/admin`;
-    await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: redirectTo },
-    });
-    setSent(true);
+    try {
+      await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: redirectTo },
+      });
+      setSent(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -53,12 +59,14 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Email…"
                 required
+                disabled={isSubmitting}
               />
               <button
                 className="w-full rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
                 type="submit"
+                disabled={isSubmitting}
               >
-                Send Link
+                {isSubmitting ? "Sending…" : "Send Link"}
               </button>
             </form>
           ) : (

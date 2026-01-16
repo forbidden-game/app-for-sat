@@ -102,7 +102,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
                 className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                 href="/login"
               >
-                Go to login
+                Go to Login
               </Link>
               {displayName ? (
                 <span className="text-xs text-[color:var(--ink-muted)]">Signed in as {displayName}</span>

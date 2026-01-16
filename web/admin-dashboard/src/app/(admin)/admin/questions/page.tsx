@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   createQuestion,
@@ -28,15 +29,18 @@ function truncate(text: string, maxLength: number) {
 function formatDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleDateString("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
-  });
+  }).format(date);
 }
 
 export default function QuestionsPage() {
   const supabase = getSupabaseClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [result, setResult] = useState<ListQuestionsResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,12 +53,20 @@ export default function QuestionsPage() {
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [subject, setSubject] = useState("");
-  const [module, setModule] = useState("");
-  const [difficulty, setDifficulty] = useState<number | "">("");
-  const [questionType, setQuestionType] = useState("");
-  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
+  const [subject, setSubject] = useState(() => searchParams.get("subject") ?? "");
+  const [module, setModule] = useState(() => searchParams.get("module") ?? "");
+  const [difficulty, setDifficulty] = useState<number | "">(() => {
+    const value = searchParams.get("difficulty");
+    const parsed = value ? Number(value) : NaN;
+    return Number.isFinite(parsed) ? parsed : "";
+  });
+  const [questionType, setQuestionType] = useState(() => searchParams.get("type") ?? "");
+  const [page, setPage] = useState(() => {
+    const value = searchParams.get("page");
+    const parsed = value ? Number(value) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
 
   const [subjects, setSubjects] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
@@ -94,6 +106,59 @@ export default function QuestionsPage() {
   useEffect(() => {
     loadQuestions();
   }, [loadQuestions]);
+
+  useEffect(() => {
+    setSearch(searchParams.get("q") ?? "");
+    setSubject(searchParams.get("subject") ?? "");
+    setModule(searchParams.get("module") ?? "");
+    setQuestionType(searchParams.get("type") ?? "");
+    const nextDifficulty = searchParams.get("difficulty");
+    const parsedDifficulty = nextDifficulty ? Number(nextDifficulty) : NaN;
+    setDifficulty(Number.isFinite(parsedDifficulty) ? parsedDifficulty : "");
+    const nextPage = searchParams.get("page");
+    const parsedPage = nextPage ? Number(nextPage) : NaN;
+    setPage(Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (search) {
+      nextParams.set("q", search);
+    } else {
+      nextParams.delete("q");
+    }
+    if (subject) {
+      nextParams.set("subject", subject);
+    } else {
+      nextParams.delete("subject");
+    }
+    if (module) {
+      nextParams.set("module", module);
+    } else {
+      nextParams.delete("module");
+    }
+    if (questionType) {
+      nextParams.set("type", questionType);
+    } else {
+      nextParams.delete("type");
+    }
+    if (difficulty !== "") {
+      nextParams.set("difficulty", String(difficulty));
+    } else {
+      nextParams.delete("difficulty");
+    }
+    if (page > 1) {
+      nextParams.set("page", String(page));
+    } else {
+      nextParams.delete("page");
+    }
+
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [search, subject, module, difficulty, questionType, page, pathname, router, searchParams]);
 
   useEffect(() => {
     async function loadFilters() {
@@ -277,8 +342,9 @@ export default function QuestionsPage() {
         <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Search
           <input
-            type="text"
+            type="search"
             name="search"
+            inputMode="search"
             className="w-48 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
             placeholder="Search stem…"
             value={search}
@@ -369,13 +435,13 @@ export default function QuestionsPage() {
         <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
           <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
             <tr>
-              <th className="px-4 py-3">Stem</th>
-              <th className="w-24 px-4 py-3">Subject</th>
-              <th className="w-24 px-4 py-3">Module</th>
-              <th className="w-16 px-4 py-3">Diff</th>
-              <th className="w-20 px-4 py-3">Type</th>
-              <th className="w-24 px-4 py-3">Created</th>
-              <th className="w-24 px-4 py-3">Actions</th>
+              <th scope="col" className="px-4 py-3">Stem</th>
+              <th scope="col" className="w-24 px-4 py-3">Subject</th>
+              <th scope="col" className="w-24 px-4 py-3">Module</th>
+              <th scope="col" className="w-16 px-4 py-3">Diff</th>
+              <th scope="col" className="w-20 px-4 py-3">Type</th>
+              <th scope="col" className="w-24 px-4 py-3">Created</th>
+              <th scope="col" className="w-24 px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>

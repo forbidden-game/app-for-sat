@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   createUser,
@@ -29,15 +30,22 @@ function formatDateTime(value: string) {
 
 export default function UsersPage() {
   const supabase = getSupabaseClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<UserInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(() => {
+    const value = searchParams.get("page");
+    const parsed = value ? Number(value) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+  });
   const [hasNext, setHasNext] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") ?? "");
 
   const getAccessToken = useCallback(async () => {
     if (!supabase) {
@@ -85,8 +93,35 @@ export default function UsersPage() {
   );
 
   useEffect(() => {
-    void loadUsers(1);
-  }, [loadUsers]);
+    void loadUsers(page);
+  }, [loadUsers, page]);
+
+  useEffect(() => {
+    setRoleFilter(searchParams.get("role") ?? "");
+    const nextPage = searchParams.get("page");
+    const parsedPage = nextPage ? Number(nextPage) : NaN;
+    setPage(Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (roleFilter) {
+      nextParams.set("role", roleFilter);
+    } else {
+      nextParams.delete("role");
+    }
+    if (page > 1) {
+      nextParams.set("page", String(page));
+    } else {
+      nextParams.delete("page");
+    }
+
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [roleFilter, page, pathname, router, searchParams]);
 
   const filteredUsers = useMemo(() => {
     if (!roleFilter) return users;
@@ -167,7 +202,7 @@ export default function UsersPage() {
     return (
       <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
-          {error}
+          {error} Try refreshing or checking Supabase config.
         </p>
       </main>
     );
@@ -192,7 +227,10 @@ export default function UsersPage() {
             name="roleFilter"
             className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
             value={roleFilter}
-            onChange={(event) => setRoleFilter(event.target.value)}
+            onChange={(event) => {
+              setRoleFilter(event.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All</option>
             {ROLE_OPTIONS.map((role) => (
@@ -206,7 +244,7 @@ export default function UsersPage() {
 
       {error ? (
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
-          {error}
+          {error} Try refreshing or checking Supabase config.
         </p>
       ) : null}
 
@@ -222,14 +260,14 @@ export default function UsersPage() {
             <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]">
               <button
                 className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => loadUsers(page - 1)}
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page <= 1 || loading}
               >
                 Prev
               </button>
               <button
                 className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => loadUsers(page + 1)}
+                onClick={() => setPage((prev) => (hasNext ? prev + 1 : prev))}
                 disabled={!hasNext || loading}
               >
                 Next
@@ -240,12 +278,12 @@ export default function UsersPage() {
             <table className="min-w-full text-left text-sm">
               <thead className="sticky top-0 bg-[color:var(--surface)]">
                 <tr className="border-b border-[color:var(--border)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-                  <th className="px-4 py-3">Email</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Role</th>
-                  <th className="px-4 py-3">Created</th>
-                  <th className="px-4 py-3">Last sign-in</th>
-                  <th className="px-4 py-3">Actions</th>
+                  <th scope="col" className="px-4 py-3">Email</th>
+                  <th scope="col" className="px-4 py-3">Name</th>
+                  <th scope="col" className="px-4 py-3">Role</th>
+                  <th scope="col" className="px-4 py-3">Created</th>
+                  <th scope="col" className="px-4 py-3">Last sign-in</th>
+                  <th scope="col" className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -322,6 +360,8 @@ export default function UsersPage() {
               Email
               <input
                 name="email"
+                type="email"
+                inputMode="email"
                 className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.email}
                 onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}

@@ -7,13 +7,13 @@ import { listAdminAuditLogs, type AdminAuditLog } from "./actions";
 function formatDateTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-US", {
+  return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "numeric",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  });
+  }).format(date);
 }
 
 function csvEscape(value: string) {
@@ -130,11 +130,11 @@ export default function AuditLogPage() {
         <table className="w-full text-left text-sm text-[color:var(--ink)]">
           <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
             <tr>
-              <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3">Actor</th>
-              <th className="px-4 py-3">Action</th>
-              <th className="px-4 py-3">Resource</th>
-              <th className="px-4 py-3">Details</th>
+              <th scope="col" className="px-4 py-3">Time</th>
+              <th scope="col" className="px-4 py-3">Actor</th>
+              <th scope="col" className="px-4 py-3">Action</th>
+              <th scope="col" className="px-4 py-3">Resource</th>
+              <th scope="col" className="px-4 py-3">Details</th>
             </tr>
           </thead>
           <tbody>

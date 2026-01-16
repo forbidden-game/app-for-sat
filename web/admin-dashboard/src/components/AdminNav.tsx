@@ -59,6 +59,7 @@ export function AdminNav() {
                 <Link
                   key={link.href}
                   href={link.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={`rounded-full px-3 py-1 transition ${
                     isActive
                       ? "bg-[color:var(--surface-strong)] text-[color:var(--ink)]"
@@ -82,7 +83,7 @@ export function AdminNav() {
               onClick={handleSignOut}
               disabled={!supabase || isSigningOut}
             >
-              {isSigningOut ? "Signing out…" : "Sign out"}
+              {isSigningOut ? "Signing Out…" : "Sign Out"}
             </button>
           </div>
         </div>

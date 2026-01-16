@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
@@ -25,6 +25,9 @@ export default function BankQuestionsPage() {
   const supabase = getSupabaseClient();
   const params = useParams();
   const bankId = params.id as string;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [bankInfo, setBankInfo] = useState<{ title: string; slug: string } | null>(null);
   const [questions, setQuestions] = useState<BankQuestion[]>([]);
@@ -32,12 +35,16 @@ export default function BankQuestionsPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchSubject, setSearchSubject] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get("q") ?? "");
+  const [searchSubject, setSearchSubject] = useState(() => searchParams.get("subject") ?? "");
   const [availableSubjects, setAvailableSubjects] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<AvailableQuestion[]>([]);
   const [searching, setSearching] = useState(false);
-  const [showSearch, setShowSearch] = useState(false);
+  const [showSearch, setShowSearch] = useState(() => {
+    const show = searchParams.get("show");
+    if (show === "1") return true;
+    return Boolean(searchParams.get("q") || searchParams.get("subject"));
+  });
   const [hasSearched, setHasSearched] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -70,6 +77,42 @@ export default function BankQuestionsPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    setSearchQuery(searchParams.get("q") ?? "");
+    setSearchSubject(searchParams.get("subject") ?? "");
+    const show = searchParams.get("show");
+    if (show === "1" || searchParams.get("q") || searchParams.get("subject")) {
+      setShowSearch(true);
+    } else {
+      setShowSearch(false);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (searchQuery) {
+      nextParams.set("q", searchQuery);
+    } else {
+      nextParams.delete("q");
+    }
+    if (searchSubject) {
+      nextParams.set("subject", searchSubject);
+    } else {
+      nextParams.delete("subject");
+    }
+    if (showSearch) {
+      nextParams.set("show", "1");
+    } else {
+      nextParams.delete("show");
+    }
+
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [searchQuery, searchSubject, showSearch, pathname, router, searchParams]);
 
   async function handleSearch() {
     if (!supabase) return;
@@ -233,8 +276,9 @@ export default function BankQuestionsPage() {
               ))}
             </select>
             <input
-              type="text"
+              type="search"
               name="searchQuery"
+              inputMode="search"
               className="min-w-[200px] flex-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
               placeholder="Search by question text…"
               value={searchQuery}
