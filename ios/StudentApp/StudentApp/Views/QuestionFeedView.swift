@@ -208,7 +208,8 @@ struct QuestionFeedView: View {
 
     private func optionButton(_ option: QuestionOption, questionId: String, questionIndex: Int) -> some View {
         let isCurrentQuestion = questionIndex == state.currentIndex
-        let isSelected = isCurrentQuestion && state.inputState.selectedOption == option.label
+        let storedSelection = store[questionId]?.displayString
+        let isSelected = isCurrentQuestion && storedSelection == option.label
         let isFeedback = isCurrentQuestion && state.inputState.showFeedback && isSelected
         let badgeFill = isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised
         let badgeStroke = isSelected ? AppTheme.accentStrong : AppTheme.dividerStrong

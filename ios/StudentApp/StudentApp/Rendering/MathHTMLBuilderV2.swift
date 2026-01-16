@@ -104,6 +104,10 @@ enum MathHTMLBuilderV2 {
         """
     }
 
+    static var localAssetBaseURL: URL? {
+        MathAssetLoaderV2.localAssetBaseURL
+    }
+
     private static func buildBody(from text: String) -> String {
         let normalized = text
             .replacingOccurrences(of: "\r\n", with: "\n")
@@ -133,11 +137,24 @@ private enum MathAssetLoaderV2 {
     private static let katexCSS = loadResource(named: "katex.min", extension: "css")
     private static let katexJS = loadResource(named: "katex.min", extension: "js")
     private static let autoRenderJS = loadResource(named: "auto-render.min", extension: "js")
+    private static let katexFontBaseURL = "https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/fonts/"
+    private static let hasLocalKaTeXFonts: Bool = {
+        let bundle = Bundle.main
+        let candidates = [
+            bundle.url(forResource: "KaTeX_Main-Regular", withExtension: "woff2", subdirectory: "Math/fonts"),
+            bundle.url(forResource: "KaTeX_Main-Regular", withExtension: "woff2", subdirectory: "Resources/Math/fonts"),
+            bundle.url(forResource: "KaTeX_Main-Regular", withExtension: "woff2", subdirectory: "fonts")
+        ]
+        return candidates.contains { $0 != nil }
+    }()
 
     static var assetBlockHTML: String {
         if let katexCSS, let katexJS, let autoRenderJS {
+            let css = hasLocalKaTeXFonts
+                ? katexCSS
+                : katexCSS.replacingOccurrences(of: "url(fonts/", with: "url(\(katexFontBaseURL)")
             return """
-            <style>\(katexCSS)</style>
+            <style>\(css)</style>
             <script>\(katexJS)</script>
             <script>\(autoRenderJS)</script>
             """
@@ -148,6 +165,17 @@ private enum MathAssetLoaderV2 {
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
         """
+    }
+
+    static var localAssetBaseURL: URL? {
+        guard hasLocalKaTeXFonts else { return nil }
+        let bundle = Bundle.main
+        let candidates = [
+            bundle.url(forResource: "katex.min", withExtension: "css", subdirectory: "Math"),
+            bundle.url(forResource: "katex.min", withExtension: "css", subdirectory: "Resources/Math"),
+            bundle.url(forResource: "katex.min", withExtension: "css")
+        ]
+        return candidates.compactMap { $0?.deletingLastPathComponent() }.first
     }
 
     private static func loadResource(named name: String, extension ext: String) -> String? {

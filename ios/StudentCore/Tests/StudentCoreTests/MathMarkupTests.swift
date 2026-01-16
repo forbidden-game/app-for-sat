@@ -24,6 +24,18 @@ final class MathMarkupTests: XCTestCase {
         XCTAssertTrue(doc.warnings.isEmpty)
     }
 
+    func testParseInlineMathWithParenthesesDelimiters() {
+        let parser = MathMarkupParser()
+        let doc = parser.parse("Solve \\(x+1\\) now.")
+        XCTAssertEqual(doc.segments.count, 3)
+        XCTAssertEqual(doc.segments[0], .text("Solve "))
+        XCTAssertEqual(doc.segments[1], .inlineMath("x+1"))
+        XCTAssertEqual(doc.segments[2], .text(" now."))
+        XCTAssertTrue(doc.requiresMathRendering)
+        XCTAssertEqual(doc.normalizedText, "Solve $x+1$ now.")
+        XCTAssertTrue(doc.warnings.isEmpty)
+    }
+
     func testParseBlockMathWithBrackets() {
         let parser = MathMarkupParser()
         let doc = parser.parse("Given \\[x^2\\] is positive.")
@@ -58,10 +70,28 @@ final class MathMarkupTests: XCTestCase {
         XCTAssertTrue(doc.warnings.contains(.invalidEnvironment("foo")))
     }
 
+    func testInvalidEnvironmentStillParsesInlineMath() {
+        let parser = MathMarkupParser()
+        let input = "\\begin{center}Area is $x^2$.\\end{center}"
+        let doc = parser.parse(input)
+        XCTAssertTrue(doc.requiresMathRendering)
+        XCTAssertTrue(doc.normalizedText.contains("$x^2$"))
+        XCTAssertTrue(doc.warnings.contains(.invalidEnvironment("center")))
+    }
+
     func testPlainTextExtractsMathContent() {
         let parser = MathMarkupParser()
         let doc = parser.parse("Area is $\\pi r^2$.")
         XCTAssertTrue(doc.plainText.contains("Area is"))
         XCTAssertTrue(doc.plainText.contains("pi r^2"))
+    }
+
+    func testPlainTextKeepsMarkdownCharacters() {
+        let parser = MathMarkupParser()
+        let input = "a_b * c"
+        let doc = parser.parse(input)
+        XCTAssertFalse(doc.requiresMathRendering)
+        XCTAssertEqual(doc.plainText, input)
+        XCTAssertEqual(doc.normalizedText, input)
     }
 }

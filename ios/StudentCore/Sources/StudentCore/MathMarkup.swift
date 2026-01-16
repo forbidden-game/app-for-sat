@@ -90,12 +90,10 @@ public struct MathMarkupParser: MathMarkupParsing {
                     let name = envMatch.name
                     if !MathEnvironment.allowed.contains(name) {
                         warnings.append(.invalidEnvironment(name))
-                        if let endIndex = envMatch.endIndex {
-                            index = endIndex
-                        } else {
+                        if envMatch.endIndex == nil {
                             warnings.append(.unbalancedDelimiters)
-                            index = scanner.advance(index, by: 7)
                         }
+                        index = scanner.advance(index, by: 1)
                         continue
                     }
 

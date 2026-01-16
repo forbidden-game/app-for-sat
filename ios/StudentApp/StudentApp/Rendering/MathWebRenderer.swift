@@ -62,7 +62,7 @@ final class MathWebRenderer: NSObject, MathRenderer, WKNavigationDelegate, WKScr
         webView.isOpaque = false
         webView.backgroundColor = .clear
         webView.scrollView.isScrollEnabled = false
-        webView.loadHTMLString(payload.html, baseURL: nil)
+        webView.loadHTMLString(payload.html, baseURL: MathHTMLBuilderV2.localAssetBaseURL)
 
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation

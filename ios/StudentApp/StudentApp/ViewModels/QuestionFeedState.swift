@@ -32,13 +32,8 @@ final class QuestionFeedState: ObservableObject {
 
     func resetInput(for questionId: String, from store: AnswerStore, isMultipleChoice: Bool) {
         var next = QuestionInputState()
-        if let answer = store[questionId] {
-            let value = answer.displayString
-            if isMultipleChoice {
-                next.selectedOption = value
-            } else {
-                next.freeResponse = value
-            }
+        if !isMultipleChoice, let answer = store[questionId] {
+            next.freeResponse = answer.displayString
         }
         inputState = next
         autoAdvanceState = AutoAdvanceState()
@@ -47,12 +42,10 @@ final class QuestionFeedState: ObservableObject {
     func applySelection(_ selection: AnswerSelection) {
         var next = inputState
         switch selection {
-        case .option(let value):
-            next.selectedOption = value
+        case .option:
             next.freeResponse = ""
         case .freeResponse(let value):
             next.freeResponse = value
-            next.selectedOption = nil
         }
         next.isFocused = false
         next.showFeedback = true
@@ -87,7 +80,6 @@ final class QuestionFeedState: ObservableObject {
 }
 
 struct QuestionInputState: Equatable {
-    var selectedOption: String? = nil
     var freeResponse: String = ""
     var isFocused: Bool = false
     var showFeedback: Bool = false

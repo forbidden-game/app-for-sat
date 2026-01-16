@@ -9,7 +9,7 @@ protocol AnswerStore: AnyObject {
 }
 
 final class InMemoryAnswerStore: ObservableObject, AnswerStore {
-    @Published private var storage: [String: AnswerValue]
+    private var storage: [String: AnswerValue]
 
     init(initial: [String: AnswerValue] = [:]) {
         storage = initial
@@ -17,10 +17,15 @@ final class InMemoryAnswerStore: ObservableObject, AnswerStore {
 
     subscript(questionId: String) -> AnswerValue? {
         get { storage[questionId] }
-        set { storage[questionId] = newValue }
+        set {
+            objectWillChange.send()
+            storage[questionId] = newValue
+        }
     }
 
     func clear(questionId: String) {
+        guard storage[questionId] != nil else { return }
+        objectWillChange.send()
         storage.removeValue(forKey: questionId)
     }
 
