@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ScrollBoundaryScrollView<Content: View>: View {
     let isActive: Bool
+    let isScrollEnabled: Bool
     let scrollResetID: String
     @Binding var canPageUp: Bool
     @Binding var canPageDown: Bool
@@ -14,8 +15,16 @@ struct ScrollBoundaryScrollView<Content: View>: View {
 
     private let topAnchorID = "scroll-top-anchor"
 
-    init(isActive: Bool, scrollResetID: String, canPageUp: Binding<Bool>, canPageDown: Binding<Bool>, @ViewBuilder content: () -> Content) {
+    init(
+        isActive: Bool,
+        isScrollEnabled: Bool,
+        scrollResetID: String,
+        canPageUp: Binding<Bool>,
+        canPageDown: Binding<Bool>,
+        @ViewBuilder content: () -> Content
+    ) {
         self.isActive = isActive
+        self.isScrollEnabled = isScrollEnabled
         self.scrollResetID = scrollResetID
         self._canPageUp = canPageUp
         self._canPageDown = canPageDown
@@ -48,6 +57,8 @@ struct ScrollBoundaryScrollView<Content: View>: View {
             }
             .coordinateSpace(name: "scroll")
             .scrollIndicators(.hidden)
+            .scrollDisabled(!isScrollEnabled)
+            .allowsHitTesting(isScrollEnabled)
             .background(
                 GeometryReader { proxy in
                     Color.clear.preference(key: ViewportHeightKey.self, value: proxy.size.height)
@@ -68,6 +79,9 @@ struct ScrollBoundaryScrollView<Content: View>: View {
             .onChange(of: isActive) { _, active in
                 if active {
                     resetIfNeeded(proxy)
+                } else {
+                    canPageUp = true
+                    canPageDown = true
                 }
             }
             .onChange(of: scrollResetID) { _, _ in

@@ -55,6 +55,8 @@ struct QuestionFeedView: View {
         }
         .onChange(of: state.currentIndex) { _, newIndex in
             if newIndex >= 0, newIndex < session.questions.count {
+                canPageUp = true
+                canPageDown = true
                 state.setFocus(false)
                 loadAnswer(for: session.questions[newIndex])
             }
@@ -79,27 +81,33 @@ struct QuestionFeedView: View {
         return ZStack(alignment: .top) {
             Color.clear
 
-            VStack(spacing: AppMetrics.sectionSpacing) {
-                header(progress: progress, index: index + 1, total: total, question: question)
+            GeometryReader { proxy in
+                VStack(spacing: AppMetrics.sectionSpacing) {
+                    header(progress: progress, index: index + 1, total: total, question: question)
 
-                ScrollBoundaryScrollView(
-                    isActive: index == state.currentIndex,
-                    scrollResetID: question.id,
-                    canPageUp: $canPageUp,
-                    canPageDown: $canPageDown
-                ) {
-                    VStack(spacing: AppMetrics.sectionSpacing) {
-                        questionCard(text: question.stem)
+                    ScrollBoundaryScrollView(
+                        isActive: index == state.currentIndex,
+                        isScrollEnabled: index == state.currentIndex,
+                        scrollResetID: question.id,
+                        canPageUp: $canPageUp,
+                        canPageDown: $canPageDown
+                    ) {
+                        VStack(spacing: AppMetrics.sectionSpacing) {
+                            questionCard(text: question.stem)
 
-                        if let options = question.options, !options.isEmpty {
-                            optionsGrid(options, questionId: question.id, questionIndex: index)
-                        } else {
-                            freeResponseField(questionId: question.id, questionIndex: index)
+                            if let options = question.options, !options.isEmpty {
+                                optionsGrid(options, questionId: question.id, questionIndex: index)
+                            } else {
+                                freeResponseField(questionId: question.id, questionIndex: index)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.bottom, AppMetrics.pageBottomPadding)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.bottom, AppMetrics.pageBottomPadding)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .clipped()
                 }
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
             }
             .padding(.horizontal, 20)
             .padding(.top, 12)
