@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { listAiAgentLogs, type AiAgentLog } from "./actions";
 
@@ -12,14 +13,17 @@ function formatDateTime(value: string) {
 
 export default function AiLogsPage() {
   const supabase = getSupabaseClient();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [logs, setLogs] = useState<AiAgentLog[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
-  const [kindFilter, setKindFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [providerFilter, setProviderFilter] = useState("all");
+  const [selectedId, setSelectedId] = useState<string | null>(() => searchParams.get("log"));
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
+  const [kindFilter, setKindFilter] = useState(() => searchParams.get("kind") ?? "all");
+  const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "all");
+  const [providerFilter, setProviderFilter] = useState(() => searchParams.get("provider") ?? "all");
   const [copyStatus, setCopyStatus] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,7 +46,11 @@ export default function AiLogsPage() {
         setError(null);
       } catch (err) {
         if (active) {
-          setError(err instanceof Error ? err.message : "Failed to load agent logs.");
+          setError(
+            err instanceof Error
+              ? `${err.message} Refresh the page or sign in again.`
+              : "Failed to load agent logs. Refresh the page or sign in again.",
+          );
         }
       } finally {
         if (active) setLoading(false);
@@ -84,6 +92,48 @@ export default function AiLogsPage() {
       return haystack.includes(normalized);
     });
   }, [logs, kindFilter, statusFilter, providerFilter, query]);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (query) {
+      nextParams.set("q", query);
+    } else {
+      nextParams.delete("q");
+    }
+    if (kindFilter !== "all") {
+      nextParams.set("kind", kindFilter);
+    } else {
+      nextParams.delete("kind");
+    }
+    if (statusFilter !== "all") {
+      nextParams.set("status", statusFilter);
+    } else {
+      nextParams.delete("status");
+    }
+    if (providerFilter !== "all") {
+      nextParams.set("provider", providerFilter);
+    } else {
+      nextParams.delete("provider");
+    }
+    if (selectedId) {
+      nextParams.set("log", selectedId);
+    } else {
+      nextParams.delete("log");
+    }
+    const nextQuery = nextParams.toString();
+    const currentQuery = searchParams.toString();
+    if (nextQuery !== currentQuery) {
+      router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
+    }
+  }, [query, kindFilter, statusFilter, providerFilter, selectedId, pathname, router, searchParams]);
+
+  useEffect(() => {
+    setQuery(searchParams.get("q") ?? "");
+    setKindFilter(searchParams.get("kind") ?? "all");
+    setStatusFilter(searchParams.get("status") ?? "all");
+    setProviderFilter(searchParams.get("provider") ?? "all");
+    setSelectedId(searchParams.get("log"));
+  }, [searchParams]);
 
   useEffect(() => {
     if (filteredLogs.length === 0) {
@@ -141,11 +191,18 @@ export default function AiLogsPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1200px] flex-col gap-6 px-6 py-8">
-      <header className="flex flex-wrap items-end justify-between gap-4">
+    <>
+      <a
+        href="#ai-logs-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-6 focus:top-6 focus:z-50 focus:rounded-full focus:bg-[color:var(--accent)] focus:px-4 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"
+      >
+        Skip to main content
+      </a>
+      <main id="ai-logs-main" className="mx-auto flex max-w-[1320px] flex-col gap-6 overflow-x-hidden px-6 py-8">
+        <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0">
           <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">AI Debug Workbench</h1>
+          <h1 className="text-balance text-2xl font-semibold text-[color:var(--ink)]">AI Debug Workbench</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Unified view for runs, prompts, tool traces, and retry context.
           </p>
@@ -156,54 +213,77 @@ export default function AiLogsPage() {
         </div>
       </header>
 
-      {error ? (
-        <div
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
-          role="alert"
-        >
-          {error}
-        </div>
-      ) : null}
+        {error ? (
+          <div
+            className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+            role="alert"
+          >
+            {error}
+          </div>
+        ) : null}
 
-      <section className="grid gap-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 md:grid-cols-[280px_minmax(0,1fr)_320px]">
+        <section className="grid gap-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 md:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_320px]">
         <aside className="flex min-w-0 flex-col gap-4">
           <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
             <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Filters</div>
             <div className="mt-3 grid gap-2">
+              <label className="sr-only" htmlFor="ai-log-search">
+                Search logs
+              </label>
               <input
+                id="ai-log-search"
+                name="ai-log-search"
+                type="search"
+                inputMode="search"
+                autoComplete="off"
                 className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
                 placeholder="Search job/student/model…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
               <div className="grid gap-2">
+                <label className="sr-only" htmlFor="ai-log-kind">
+                  Filter by kind
+                </label>
                 <select
+                  id="ai-log-kind"
+                  name="ai-log-kind"
                   className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
                   value={kindFilter}
                   onChange={(e) => setKindFilter(e.target.value)}
                 >
-                  <option value="all">All kinds</option>
+                  <option value="all">All Kinds</option>
                   {kindOptions.map((kind) => (
                     <option key={kind} value={kind}>
                       {kind}
                     </option>
                   ))}
                 </select>
+                <label className="sr-only" htmlFor="ai-log-status">
+                  Filter by status
+                </label>
                 <select
+                  id="ai-log-status"
+                  name="ai-log-status"
                   className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <option value="all">All status</option>
+                  <option value="all">All Status</option>
                   <option value="done">done</option>
                   <option value="error">error</option>
                 </select>
+                <label className="sr-only" htmlFor="ai-log-provider">
+                  Filter by provider
+                </label>
                 <select
+                  id="ai-log-provider"
+                  name="ai-log-provider"
                   className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
                   value={providerFilter}
                   onChange={(e) => setProviderFilter(e.target.value)}
                 >
-                  <option value="all">All providers</option>
+                  <option value="all">All Providers</option>
                   {providerOptions.map((provider) => (
                     <option key={provider} value={provider}>
                       {provider}
@@ -214,7 +294,10 @@ export default function AiLogsPage() {
             </div>
           </div>
 
-          <div className="flex-1 space-y-2 overflow-auto pr-1">
+          <div
+            className="flex-1 space-y-2 overflow-auto pr-1"
+            style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
+          >
             {filteredLogs.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]">
                 No sessions match.
@@ -225,13 +308,13 @@ export default function AiLogsPage() {
                   key={log.id}
                   type="button"
                   onClick={() => setSelectedId(log.id)}
-                  className={`flex w-full min-w-0 flex-col gap-2 rounded-2xl border px-3 py-3 text-left text-xs transition ${
+                  className={`touch-manipulation flex w-full min-w-0 flex-col gap-2 rounded-2xl border px-3 py-3 text-left text-xs transition ${
                     log.id === selectedLog?.id
                       ? "border-[color:var(--accent)] bg-[color:var(--surface)]"
                       : "border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface)]"
                   }`}
                 >
-                  <div className="flex min-w-0 items-center justify-between gap-2 text-[color:var(--ink-muted)]">
+                  <div className="flex min-w-0 items-center justify-between gap-2 text-[color:var(--ink-muted)] tabular-nums">
                     <span className="truncate">{formatDateTime(log.created_at)}</span>
                     <span className="rounded-full bg-[color:var(--surface-strong)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
                       {log.kind}
@@ -279,7 +362,7 @@ export default function AiLogsPage() {
               <div className="grid gap-3">
                 <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
                   <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-                    System prompt
+                    System Prompt
                   </div>
                   <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
                     {selectedLog.system_prompt ?? ""}
@@ -294,7 +377,7 @@ export default function AiLogsPage() {
                 </div>
 
                 <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Event timeline</div>
+                  <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Event Timeline</div>
                   <div className="mt-3 grid gap-2">
                     {events.length === 0 ? (
                       <div className="text-xs text-[color:var(--ink-muted)]">No event stream captured.</div>
@@ -304,7 +387,7 @@ export default function AiLogsPage() {
                         const stamp = typeof event.logged_at === "string" ? event.logged_at : "";
                         return (
                           <div key={`${type}-${index}`} className="flex flex-col gap-2 text-xs sm:flex-row sm:gap-3">
-                            <div className="sm:min-w-[120px] text-[color:var(--ink-muted)]">
+                            <div className="sm:min-w-[120px] text-[color:var(--ink-muted)] tabular-nums">
                               {stamp ? formatDateTime(stamp) : "—"}
                             </div>
                             <div className="min-w-0 flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
@@ -337,19 +420,21 @@ export default function AiLogsPage() {
               <div className="space-y-2 text-xs text-[color:var(--ink)]">
                 <div className="flex min-w-0 items-start justify-between gap-2">
                   <span className="shrink-0 text-[color:var(--ink-muted)]">Job</span>
-                  <span className="min-w-0 flex-1 truncate text-right">{selectedLog.job_id ?? "—"}</span>
+                  <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.job_id ?? "—"}</span>
                 </div>
                 <div className="flex min-w-0 items-start justify-between gap-2">
                   <span className="shrink-0 text-[color:var(--ink-muted)]">Student</span>
-                  <span className="min-w-0 flex-1 truncate text-right">{selectedLog.student_id ?? "—"}</span>
+                  <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.student_id ?? "—"}</span>
                 </div>
                 <div className="flex min-w-0 items-start justify-between gap-2">
                   <span className="shrink-0 text-[color:var(--ink-muted)]">Attempt</span>
-                  <span className="min-w-0 flex-1 truncate text-right">{selectedLog.attempt_id ?? "—"}</span>
+                  <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.attempt_id ?? "—"}</span>
                 </div>
                 <div className="flex min-w-0 items-start justify-between gap-2">
                   <span className="shrink-0 text-[color:var(--ink-muted)]">Updated</span>
-                  <span className="min-w-0 flex-1 text-right">{formatDateTime(selectedLog.created_at)}</span>
+                  <span className="min-w-0 flex-1 text-right tabular-nums">
+                    {formatDateTime(selectedLog.created_at)}
+                  </span>
                 </div>
               </div>
 
@@ -360,11 +445,15 @@ export default function AiLogsPage() {
               <button
                 type="button"
                 onClick={() => handleCopy(promptPack)}
-                className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
+                className="touch-manipulation rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
               >
-                Copy prompt pack
+                Copy Prompt Pack
               </button>
-              {copyStatus ? <div className="text-xs text-[color:var(--ink-muted)]">{copyStatus}</div> : null}
+              {copyStatus ? (
+                <div className="text-xs text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+                  {copyStatus}
+                </div>
+              ) : null}
             </>
           ) : (
             <div className="text-xs text-[color:var(--ink-muted)]">No session selected.</div>
@@ -372,5 +461,6 @@ export default function AiLogsPage() {
         </aside>
       </section>
     </main>
+    </>
   );
 }
