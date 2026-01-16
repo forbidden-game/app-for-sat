@@ -1,16 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --ink: #101214;
-  --ink-muted: #5b6068;
-  --surface: #ffffff;
-  --surface-soft: #f7f2ea;
-  --surface-strong: #efe7dc;
-  --accent: #00a39a;
-  --accent-strong: #0b6f6a;
-  --highlight: #ff8c42;
-  --border: #e2d9cc;
-  --shadow: 0 18px 40px rgba(15, 17, 19, 0.12);
+  --ink: #0b0f14;
+  --ink-muted: #6c7583;
+  --surface: #f7f9fc;
+  --surface-soft: #eef2f7;
+  --surface-strong: #e2e8f0;
+  --accent: #12d6c7;
+  --accent-strong: #0f9e94;
+  --highlight: #7dd3fc;
+  --danger: #f68a7a;
+  --danger-strong: #c7473a;
+  --border: #d4dbe5;
+  --shadow: 0 16px 36px rgba(8, 15, 24, 0.08);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
 }
 
 @theme inline {
@@ -28,9 +33,24 @@
 }
 
 body {
-  background: radial-gradient(1200px circle at 12% -10%, #fff6e9 0%, transparent 55%),
-    radial-gradient(900px circle at 100% 0%, #f1f6f5 0%, transparent 50%),
-    #f5efe6;
+  background-color: #e9eff6;
+  background-image:
+    radial-gradient(1000px circle at 12% -20%, rgba(18, 214, 199, 0.18), transparent 45%),
+    radial-gradient(900px circle at 100% 0%, rgba(125, 211, 252, 0.2), transparent 45%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(12, 20, 32, 0.05) 0,
+      rgba(12, 20, 32, 0.05) 1px,
+      transparent 1px,
+      transparent 140px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(12, 20, 32, 0.04) 0,
+      rgba(12, 20, 32, 0.04) 1px,
+      transparent 1px,
+      transparent 140px
+    );
   color: var(--ink);
   font-family: var(--font-sans);
 }

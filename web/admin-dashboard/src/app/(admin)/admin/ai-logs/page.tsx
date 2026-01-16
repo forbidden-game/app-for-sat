@@ -14,6 +14,15 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
+type TabId = "summary" | "prompts" | "events" | "debug";
+
+const TAB_OPTIONS: Array<{ id: TabId; label: string }> = [
+  { id: "summary", label: "Summary" },
+  { id: "prompts", label: "Prompts" },
+  { id: "events", label: "Events" },
+  { id: "debug", label: "Debug" },
+];
+
 export default function AiLogsPage() {
   const supabase = getSupabaseClient();
   const router = useRouter();
@@ -28,6 +37,7 @@ export default function AiLogsPage() {
   const [statusFilter, setStatusFilter] = useState(() => searchParams.get("status") ?? "all");
   const [providerFilter, setProviderFilter] = useState(() => searchParams.get("provider") ?? "all");
   const [maskEnabled, setMaskEnabled] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabId>("summary");
 
   useEffect(() => {
     let active = true;
@@ -171,9 +181,15 @@ export default function AiLogsPage() {
     return selectedLog.events.map((event) => toRecord(event)).filter(Boolean) as Array<Record<string, unknown>>;
   }, [selectedLog]);
 
+  useEffect(() => {
+    if (!selectedLog) {
+      setActiveTab("summary");
+    }
+  }, [selectedLog]);
+
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading agent logs…
         </p>
@@ -189,232 +205,331 @@ export default function AiLogsPage() {
       >
         Skip to main content
       </a>
-      <main id="ai-logs-main" className="mx-auto flex max-w-[1320px] flex-col gap-6 overflow-x-hidden px-6 py-8">
+      <main id="ai-logs-main" className="mx-auto flex max-w-[1440px] flex-col gap-5 overflow-x-hidden px-6 pb-10 pt-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-balance text-2xl font-semibold text-[color:var(--ink)]">AI Debug Workbench</h1>
-          <p className="text-sm text-[color:var(--ink-muted)]">
-            Unified view for runs, prompts, tool traces, and retry context.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-muted)]">
-          <span className="rounded-full border border-[color:var(--border)] px-3 py-1">Live</span>
-          <span>{logs.length} sessions</span>
-        </div>
-      </header>
+          <div className="min-w-0">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
+            <h1 className="text-balance text-2xl font-semibold text-[color:var(--ink)]">AI Debug Workbench</h1>
+            <p className="text-sm text-[color:var(--ink-muted)]">
+              Unified view for runs, prompts, tool traces, and retry context.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-muted)]">
+            <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1">
+              Live
+            </span>
+            <span>
+              {filteredLogs.length} / {logs.length} sessions
+            </span>
+          </div>
+        </header>
 
         {error ? (
           <div
-            className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+            className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
             role="alert"
           >
             {error}
           </div>
         ) : null}
 
-        <section className="grid gap-4 rounded-3xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 md:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[280px_minmax(0,1fr)_320px]">
-        <aside className="flex min-w-0 flex-col gap-4">
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Filters</div>
-            <div className="mt-3 grid gap-2">
-              <label className="sr-only" htmlFor="ai-log-search">
-                Search logs
+        <section className="flex flex-wrap items-center gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
+          <div className="flex flex-1 flex-wrap items-center gap-3">
+            <label className="sr-only" htmlFor="ai-log-search">
+              Search logs
+            </label>
+            <input
+              id="ai-log-search"
+              name="ai-log-search"
+              type="search"
+              inputMode="search"
+              autoComplete="off"
+              className="min-w-[220px] flex-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs text-[color:var(--ink)]"
+              placeholder="Search job/student/model…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="sr-only" htmlFor="ai-log-kind">
+                Filter by kind
               </label>
-              <input
-                id="ai-log-search"
-                name="ai-log-search"
-                type="search"
-                inputMode="search"
-                autoComplete="off"
-                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
-                placeholder="Search job/student/model…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              <div className="grid gap-2">
-                <label className="sr-only" htmlFor="ai-log-kind">
-                  Filter by kind
-                </label>
-                <select
-                  id="ai-log-kind"
-                  name="ai-log-kind"
-                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
-                  value={kindFilter}
-                  onChange={(e) => setKindFilter(e.target.value)}
-                >
-                  <option value="all">All Kinds</option>
-                  {kindOptions.map((kind) => (
-                    <option key={kind} value={kind}>
-                      {kind}
-                    </option>
-                  ))}
-                </select>
-                <label className="sr-only" htmlFor="ai-log-status">
-                  Filter by status
-                </label>
-                <select
-                  id="ai-log-status"
-                  name="ai-log-status"
-                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">All Status</option>
-                  <option value="done">done</option>
-                  <option value="error">error</option>
-                </select>
-                <label className="sr-only" htmlFor="ai-log-provider">
-                  Filter by provider
-                </label>
-                <select
-                  id="ai-log-provider"
-                  name="ai-log-provider"
-                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
-                  value={providerFilter}
-                  onChange={(e) => setProviderFilter(e.target.value)}
-                >
-                  <option value="all">All Providers</option>
-                  {providerOptions.map((provider) => (
-                    <option key={provider} value={provider}>
-                      {provider}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <select
+                id="ai-log-kind"
+                name="ai-log-kind"
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
+                value={kindFilter}
+                onChange={(e) => setKindFilter(e.target.value)}
+              >
+                <option value="all">All Kinds</option>
+                {kindOptions.map((kind) => (
+                  <option key={kind} value={kind}>
+                    {kind}
+                  </option>
+                ))}
+              </select>
+              <label className="sr-only" htmlFor="ai-log-status">
+                Filter by status
+              </label>
+              <select
+                id="ai-log-status"
+                name="ai-log-status"
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="done">done</option>
+                <option value="error">error</option>
+              </select>
+              <label className="sr-only" htmlFor="ai-log-provider">
+                Filter by provider
+              </label>
+              <select
+                id="ai-log-provider"
+                name="ai-log-provider"
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
+                value={providerFilter}
+                onChange={(e) => setProviderFilter(e.target.value)}
+              >
+                <option value="all">All Providers</option>
+                {providerOptions.map((provider) => (
+                  <option key={provider} value={provider}>
+                    {provider}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
-
-          <div
-            className="flex-1 space-y-2 overflow-auto pr-1"
-            style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
-          >
-            {filteredLogs.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]">
-                No sessions match.
-              </div>
-            ) : (
-              filteredLogs.map((log) => (
-                <button
-                  key={log.id}
-                  type="button"
-                  onClick={() => setSelectedId(log.id)}
-                  className={`touch-manipulation flex w-full min-w-0 flex-col gap-2 rounded-2xl border px-3 py-3 text-left text-xs transition ${
-                    log.id === selectedLog?.id
-                      ? "border-[color:var(--accent)] bg-[color:var(--surface)]"
-                      : "border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface)]"
-                  }`}
-                >
-                  <div className="flex min-w-0 items-center justify-between gap-2 text-[color:var(--ink-muted)] tabular-nums">
-                    <span className="truncate">{formatDateTime(log.created_at)}</span>
-                    <span className="rounded-full bg-[color:var(--surface-strong)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
-                      {log.kind}
-                    </span>
-                  </div>
-                  <div className="truncate font-medium text-[color:var(--ink)]">
-                    {log.model_provider}/{log.model_id}
-                  </div>
-                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-                    <span
-                      className={`rounded-full px-2 py-0.5 ${
-                        log.status === "done" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {log.status}
-                    </span>
-                    {log.error ? <span className="text-amber-700">error</span> : null}
-                  </div>
-                </button>
-              ))
-            )}
+          <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1">
+              {filteredLogs.length} visible
+            </span>
           </div>
-        </aside>
-
-        <section className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          {selectedLog ? (
-            <>
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Session</div>
-                  <div className="text-lg font-semibold text-[color:var(--ink)]">{selectedLog.kind}</div>
-                  <div className="truncate text-xs text-[color:var(--ink-muted)]">
-                    {selectedLog.model_provider}/{selectedLog.model_id} · {selectedLog.prompt_version ?? "—"}
-                  </div>
-                </div>
-                <span
-                  className={`rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.2em] ${
-                    selectedLog.status === "done" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"
-                  }`}
-                >
-                  {selectedLog.status}
-                </span>
-              </div>
-
-              <div className="grid gap-3">
-                <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-                    System Prompt
-                  </div>
-                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
-                    {maskEnabled ? maskPII(selectedLog.system_prompt ?? "") : (selectedLog.system_prompt ?? "")}
-                  </pre>
-                </div>
-
-                <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Prompts</div>
-                  <pre className="mt-2 max-h-52 overflow-auto whitespace-pre-wrap break-words text-xs text-[color:var(--ink)]">
-                    {maskEnabled
-                      ? maskPII(serializeJson(selectedLog.prompts ?? [], 2))
-                      : serializeJson(selectedLog.prompts ?? [], 2)}
-                  </pre>
-                </div>
-
-                <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Event Timeline</div>
-                  <div className="mt-3 grid gap-2">
-                    {events.length === 0 ? (
-                      <div className="text-xs text-[color:var(--ink-muted)]">No event stream captured.</div>
-                    ) : (
-                      events.map((event, index) => {
-                        const type = String(event.type ?? "event");
-                        const stamp = typeof event.logged_at === "string" ? event.logged_at : "";
-                        return (
-                          <div key={`${type}-${index}`} className="flex flex-col gap-2 text-xs sm:flex-row sm:gap-3">
-                            <div className="sm:min-w-[120px] text-[color:var(--ink-muted)] tabular-nums">
-                              {stamp ? formatDateTime(stamp) : "—"}
-                            </div>
-                            <div className="min-w-0 flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
-                              <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-                                {type}
-                              </div>
-                              <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words text-[11px] text-[color:var(--ink)]">
-                                {maskEnabled ? maskPII(serializeJson(event, 2)) : serializeJson(event, 2)}
-                              </pre>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-8 text-sm text-[color:var(--ink-muted)]">
-              Select a session to inspect.
-            </div>
-          )}
         </section>
 
-        <DebugPanel
-          key={selectedLog?.id ?? "empty"}
-          selectedLog={selectedLog}
-          previousSuccessLog={previousSuccessLog}
-          maskEnabled={maskEnabled}
-          onToggleMask={setMaskEnabled}
-        />
-      </section>
-    </main>
+        <section className="grid gap-4 lg:grid-cols-[260px_minmax(0,1fr)]">
+          <aside className="flex min-w-0 flex-col gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+            <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <span>Sessions</span>
+              <span>{filteredLogs.length}</span>
+            </div>
+            <div
+              className="flex-1 space-y-2 overflow-auto pr-1"
+              style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
+            >
+              {filteredLogs.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]">
+                  No sessions match.
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
+                  <button
+                    key={log.id}
+                    type="button"
+                    onClick={() => setSelectedId(log.id)}
+                    className={`touch-manipulation flex w-full min-w-0 flex-col gap-2 rounded-xl border px-3 py-3 text-left text-xs transition ${
+                      log.id === selectedLog?.id
+                        ? "border-[color:var(--accent)] bg-[color:var(--surface)]"
+                        : "border-[color:var(--border)] bg-[color:var(--surface-soft)] hover:bg-[color:var(--surface)]"
+                    }`}
+                  >
+                    <div className="flex min-w-0 items-center justify-between gap-2 text-[color:var(--ink-muted)] tabular-nums">
+                      <span className="truncate">{formatDateTime(log.created_at)}</span>
+                      <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
+                        {log.kind}
+                      </span>
+                    </div>
+                    <div className="truncate font-medium text-[color:var(--ink)]">
+                      {log.model_provider}/{log.model_id}
+                    </div>
+                    <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-white ${
+                          log.status === "done"
+                            ? "bg-[color:var(--accent-strong)]"
+                            : "bg-[color:var(--danger-strong)]"
+                        }`}
+                      >
+                        {log.status}
+                      </span>
+                      {log.error ? <span className="text-[color:var(--danger-strong)]">error</span> : null}
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </aside>
+
+          <section className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+            {selectedLog ? (
+              <>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Session</div>
+                    <div className="text-xl font-semibold text-[color:var(--ink)]">{selectedLog.kind}</div>
+                    <div className="truncate text-xs text-[color:var(--ink-muted)]">
+                      {selectedLog.model_provider}/{selectedLog.model_id} · {selectedLog.prompt_version ?? "—"}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em]">
+                    <span
+                      className={`rounded-full px-3 py-1 text-white ${
+                        selectedLog.status === "done"
+                          ? "bg-[color:var(--accent-strong)]"
+                          : "bg-[color:var(--danger-strong)]"
+                      }`}
+                    >
+                      {selectedLog.status}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMaskEnabled(!maskEnabled)}
+                      className={`rounded-full border px-3 py-1 text-[10px] transition ${
+                        maskEnabled
+                          ? "border-[color:var(--accent)] text-[color:var(--accent-strong)]"
+                          : "border-[color:var(--border)] text-[color:var(--ink-muted)]"
+                      }`}
+                    >
+                      {maskEnabled ? "Masked" : "Raw"}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[color:var(--border)] pb-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {TAB_OPTIONS.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setActiveTab(tab.id)}
+                        className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.2em] transition ${
+                          activeTab === tab.id
+                            ? "border-[color:var(--accent)] bg-[color:var(--surface-strong)] text-[color:var(--ink)]"
+                            : "border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                        }`}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="text-xs text-[color:var(--ink-muted)]">
+                    {selectedLog.prompt_version ?? "—"}
+                  </span>
+                </div>
+
+                {activeTab === "summary" ? (
+                  <div className="grid gap-3">
+                    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
+                      <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                        Session Meta
+                      </div>
+                      <dl className="mt-2 grid gap-2 text-xs text-[color:var(--ink)]">
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[color:var(--ink-muted)]">Model</dt>
+                          <dd className="text-right tabular-nums">
+                            {selectedLog.model_provider}/{selectedLog.model_id}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[color:var(--ink-muted)]">Prompt</dt>
+                          <dd className="text-right tabular-nums">{selectedLog.prompt_version ?? "—"}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[color:var(--ink-muted)]">Job</dt>
+                          <dd className="text-right tabular-nums">{selectedLog.job_id ?? "—"}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[color:var(--ink-muted)]">Student</dt>
+                          <dd className="text-right tabular-nums">{selectedLog.student_id ?? "—"}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[color:var(--ink-muted)]">Attempt</dt>
+                          <dd className="text-right tabular-nums">{selectedLog.attempt_id ?? "—"}</dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <dt className="text-[color:var(--ink-muted)]">Created</dt>
+                          <dd className="text-right tabular-nums">{formatDateTime(selectedLog.created_at)}</dd>
+                        </div>
+                      </dl>
+                    </div>
+
+                    {selectedLog.error ? (
+                      <div className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]">
+                        {selectedLog.error}
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
+                      <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                        System Prompt
+                      </div>
+                      <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] text-[color:var(--ink)]">
+                        {maskEnabled ? maskPII(selectedLog.system_prompt ?? "") : (selectedLog.system_prompt ?? "")}
+                      </pre>
+                    </div>
+                  </div>
+                ) : null}
+
+                {activeTab === "prompts" ? (
+                  <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Prompts</div>
+                    <pre className="mt-2 max-h-[520px] overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] text-[color:var(--ink)]">
+                      {maskEnabled
+                        ? maskPII(serializeJson(selectedLog.prompts ?? [], 2))
+                        : serializeJson(selectedLog.prompts ?? [], 2)}
+                    </pre>
+                  </div>
+                ) : null}
+
+                {activeTab === "events" ? (
+                  <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
+                    <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Event Timeline</div>
+                    <div className="mt-3 grid gap-2">
+                      {events.length === 0 ? (
+                        <div className="text-xs text-[color:var(--ink-muted)]">No event stream captured.</div>
+                      ) : (
+                        events.map((event, index) => {
+                          const type = String(event.type ?? "event");
+                          const stamp = typeof event.logged_at === "string" ? event.logged_at : "";
+                          return (
+                            <div key={`${type}-${index}`} className="flex flex-col gap-2 text-xs sm:flex-row sm:gap-3">
+                              <div className="sm:min-w-[140px] text-[color:var(--ink-muted)] tabular-nums">
+                                {stamp ? formatDateTime(stamp) : "—"}
+                              </div>
+                              <div className="min-w-0 flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
+                                <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                                  {type}
+                                </div>
+                                <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words font-mono text-[11px] text-[color:var(--ink)]">
+                                  {maskEnabled ? maskPII(serializeJson(event, 2)) : serializeJson(event, 2)}
+                                </pre>
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                ) : null}
+
+                {activeTab === "debug" ? (
+                  <DebugPanel
+                    key={selectedLog?.id ?? "empty"}
+                    selectedLog={selectedLog}
+                    previousSuccessLog={previousSuccessLog}
+                    maskEnabled={maskEnabled}
+                    onToggleMask={setMaskEnabled}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-8 text-sm text-[color:var(--ink-muted)]">
+                Select a session to inspect.
+              </div>
+            )}
+          </section>
+        </section>
+      </main>
     </>
   );
 }
