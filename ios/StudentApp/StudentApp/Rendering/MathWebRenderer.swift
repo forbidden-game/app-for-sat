@@ -52,6 +52,8 @@ final class MathWebRenderer: NSObject, MathRenderer, WKNavigationDelegate, WKScr
         }
 
         let controller = webView.configuration.userContentController
+        controller.removeScriptMessageHandler(forName: Message.rendered)
+        controller.removeScriptMessageHandler(forName: Message.height)
         controller.add(self, name: Message.rendered)
         controller.add(self, name: Message.height)
 
