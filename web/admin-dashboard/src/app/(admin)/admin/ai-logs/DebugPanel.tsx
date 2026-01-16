@@ -344,7 +344,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                   </summary>
                   <div className="mt-2 space-y-2">
                     {entries.map((entry, index) => (
-                      <div key={`${entry.label}-${index}`} className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-[11px] text-[color:var(--ink-muted)]">
+                      <div key={`${entry.label}-${index}`} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-[11px] text-[color:var(--ink-muted)]">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[color:var(--ink)]">{entry.label}</span>
                           {entry.timestamp ? <span>{formatDateTime(entry.timestamp)}</span> : null}
@@ -376,7 +376,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
               onClick={() => onToggleMask(!maskEnabled)}
               className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] transition hover:opacity-80 ${
                 maskEnabled
-                  ? "bg-emerald-100 text-emerald-700"
+                  ? "bg-[color:var(--accent-strong)] text-white"
                   : "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
               }`}
             >
@@ -434,11 +434,13 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                           [key]: event.target.value,
                         }))
                       }
-                      className="min-h-[80px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
+                      className="min-h-[80px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
                       placeholder='{"field": "value"}'
                     />
                   </label>
-                  {parsed.error ? <div className="text-[11px] text-amber-700">{parsed.error}</div> : null}
+                  {parsed.error ? (
+                    <div className="text-[11px] text-[color:var(--danger-strong)]">{parsed.error}</div>
+                  ) : null}
                 </div>
               );
             })}
@@ -450,7 +452,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                 name="debug-note"
                 autoComplete="off"
                 onChange={(event) => setNote(event.target.value)}
-                className="min-h-[80px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
+                className="min-h-[80px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
                 placeholder="Why this replay matters…"
               />
             </label>
@@ -471,7 +473,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                 Copy Replay Payload
               </button>
               {Object.values(replayPayload?.overrideErrors ?? {}).length > 0 ? (
-                <div className="text-[11px] text-amber-700">Fix override JSON errors before replay.</div>
+                <div className="text-[11px] text-[color:var(--danger-strong)]">Fix override JSON errors before replay.</div>
               ) : null}
               {copyStatus ? (
                 <div className="text-[11px] text-[color:var(--ink-muted)]" role="status" aria-live="polite">

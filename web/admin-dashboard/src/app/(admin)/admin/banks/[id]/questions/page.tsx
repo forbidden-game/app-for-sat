@@ -81,11 +81,10 @@ export default function BankQuestionsPage() {
     setSearching(true);
     setHasSearched(true);
     try {
-      const results = await searchAvailableQuestions(
-        session.access_token,
-        bankId,
-        { search: searchQuery, subject: searchSubject },
-      );
+      const results = await searchAvailableQuestions(session.access_token, bankId, {
+        search: searchQuery,
+        subject: searchSubject,
+      });
       setSearchResults(results);
     } catch {
       setSearchResults([]);
@@ -172,7 +171,7 @@ export default function BankQuestionsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading…
         </p>
@@ -181,51 +180,47 @@ export default function BankQuestionsPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
+    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-            Admin Console
-          </p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
           <h1 className="text-2xl font-semibold text-[color:var(--ink)]">
             {bankInfo?.title ?? "Bank"} Questions
           </h1>
-          <p className="text-sm text-[color:var(--ink-muted)]">
-            Manage questions in this bank. Drag to reorder.
-          </p>
+          <p className="text-sm text-[color:var(--ink-muted)]">Manage questions in this bank. Drag to reorder.</p>
         </div>
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setShowSearch(!showSearch)}
-            className="rounded-lg border border-[color:var(--border)] px-4 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
-            {showSearch ? "Hide Search" : "+ Add Questions"}
+            {showSearch ? "Hide Search" : "Add Questions"}
           </button>
           <Link
             href="/admin/banks"
-            className="rounded-lg border border-[color:var(--border)] px-4 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
             Back to Banks
           </Link>
         </div>
       </header>
 
-      {error && (
+      {error ? (
         <div
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
         </div>
-      )}
+      ) : null}
 
-      {showSearch && (
+      {showSearch ? (
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-          <div className="flex flex-wrap gap-2 mb-4">
+          <div className="mb-4 flex flex-wrap gap-2">
             <select
               name="searchSubject"
-              className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
               value={searchSubject}
               onChange={(e) => setSearchSubject(e.target.value)}
               aria-label="Filter by subject"
@@ -240,7 +235,7 @@ export default function BankQuestionsPage() {
             <input
               type="text"
               name="searchQuery"
-              className="flex-1 min-w-[200px] rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+              className="min-w-[200px] flex-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
               placeholder="Search by question text…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -252,20 +247,20 @@ export default function BankQuestionsPage() {
               type="button"
               onClick={handleSearch}
               disabled={searching}
-              className="rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
+              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
             >
               {searching ? "…" : "Search"}
             </button>
           </div>
           {searchResults.length > 0 ? (
-            <div className="flex flex-col gap-2 max-h-72 overflow-y-auto">
+            <div className="flex max-h-72 flex-col gap-2 overflow-y-auto">
               {searchResults.map((q) => (
                 <div
                   key={q.id}
-                  className="flex items-center justify-between rounded-lg border border-[color:var(--border)] p-2 hover:bg-[color:var(--surface-soft)]"
+                  className="flex items-center justify-between rounded-xl border border-[color:var(--border)] p-2 hover:bg-[color:var(--surface-soft)]"
                 >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[color:var(--ink)] truncate">{truncate(q.stem, 60)}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-[color:var(--ink)]">{truncate(q.stem, 60)}</p>
                     <p className="text-xs text-[color:var(--ink-muted)]">
                       {q.subject} / {q.module} / D{q.difficulty}
                     </p>
@@ -274,7 +269,7 @@ export default function BankQuestionsPage() {
                     type="button"
                     onClick={() => handleAddQuestion(q.id)}
                     disabled={saving}
-                    className="ml-2 rounded-full border border-green-200 px-3 py-1 text-xs text-green-700 hover:bg-green-50"
+                    className="ml-2 rounded-full border border-[color:var(--accent)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--accent-strong)] hover:bg-[color:var(--surface-soft)]"
                   >
                     Add
                   </button>
@@ -287,53 +282,46 @@ export default function BankQuestionsPage() {
               role="status"
               aria-live="polite"
             >
-              <p className="text-sm text-[color:var(--ink-muted)] mb-2">No questions found</p>
-              <p className="text-xs text-[color:var(--ink-muted)] mb-3">
+              <p className="mb-2 text-sm text-[color:var(--ink-muted)]">No questions found</p>
+              <p className="mb-3 text-xs text-[color:var(--ink-muted)]">
                 {availableSubjects.length === 0
                   ? "There are no questions in the database yet."
                   : "Try adjusting your search filters."}
               </p>
-              {availableSubjects.length === 0 && (
+              {availableSubjects.length === 0 ? (
                 <div className="flex justify-center gap-2">
                   <Link
                     href="/admin/questions/new"
-                    className="rounded-lg border border-[color:var(--border)] px-3 py-1.5 text-xs text-[color:var(--ink)] hover:bg-[color:var(--surface-soft)]"
+                    className="rounded-full border border-[color:var(--border)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                   >
                     Create Question
                   </Link>
                   <Link
                     href="/admin/questions/import"
-                    className="rounded-lg bg-[color:var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
+                    className="rounded-full bg-[color:var(--accent)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
                   >
                     Import Questions
                   </Link>
                 </div>
-              )}
+              ) : null}
             </div>
           ) : (
-            <p className="text-xs text-[color:var(--ink-muted)] text-center py-2">
+            <p className="py-2 text-center text-xs text-[color:var(--ink-muted)]">
               Click Search to find questions to add
             </p>
           )}
         </div>
-      )}
+      ) : null}
 
       <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
         {questions.length === 0 ? (
-          <div
-            className="p-6 text-center text-sm text-[color:var(--ink-muted)]"
-            role="status"
-            aria-live="polite"
-          >
+          <div className="p-6 text-center text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
             No questions in this bank yet.
           </div>
         ) : (
           <div className="divide-y divide-[color:var(--border)]">
             {questions.map((q, index) => (
-              <div
-                key={q.question_id}
-                className="flex items-center gap-3 p-3 hover:bg-[color:var(--surface-soft)]"
-              >
+              <div key={q.question_id} className="flex items-center gap-3 p-3 hover:bg-[color:var(--surface-soft)]">
                 <div className="flex flex-col gap-1">
                   <button
                     type="button"
@@ -354,10 +342,8 @@ export default function BankQuestionsPage() {
                     ▼
                   </button>
                 </div>
-                <span className="w-8 text-center text-sm font-medium text-[color:var(--ink-muted)]">
-                  {q.position}
-                </span>
-                <div className="flex-1 min-w-0">
+                <span className="w-8 text-center text-sm font-medium text-[color:var(--ink-muted)]">{q.position}</span>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm text-[color:var(--ink)]">{truncate(q.stem, 80)}</p>
                   <p className="text-xs text-[color:var(--ink-muted)]">
                     {q.subject} / {q.question_type} / D{q.difficulty}
@@ -367,7 +353,7 @@ export default function BankQuestionsPage() {
                   type="button"
                   onClick={() => handleRemoveQuestion(q.question_id)}
                   disabled={saving}
-                  className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 hover:bg-red-50"
+                  className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)]"
                 >
                   Remove
                 </button>
@@ -377,9 +363,7 @@ export default function BankQuestionsPage() {
         )}
       </div>
 
-      <div className="text-xs text-[color:var(--ink-muted)]">
-        Total: {questions.length} questions
-      </div>
+      <div className="text-xs text-[color:var(--ink-muted)]">Total: {questions.length} questions</div>
     </main>
   );
 }

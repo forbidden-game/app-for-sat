@@ -205,9 +205,7 @@ export default function AiConfigPage() {
 
     try {
       await archiveAiPromptConfig(session.access_token, configId);
-      setConfigs((prev) =>
-        prev.map((row) => (row.id === configId ? { ...row, status: "archived" } : row)),
-      );
+      setConfigs((prev) => prev.map((row) => (row.id === configId ? { ...row, status: "archived" } : row)));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive config.");
     } finally {
@@ -237,7 +235,7 @@ export default function AiConfigPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading AI configs…
         </p>
@@ -246,16 +244,16 @@ export default function AiConfigPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-8">
+    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
           <h1 className="text-2xl font-semibold text-[color:var(--ink)]">AI Config</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Control prompt versions and model routing for the AI coach pipeline.
           </p>
         </div>
-        <div className="text-xs text-[color:var(--ink-muted)]">
+        <div className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           OpenAI default: gpt-5.2 · OpenRouter default: anthropic/claude-haiku-4.5
         </div>
       </header>
@@ -265,13 +263,13 @@ export default function AiConfigPage() {
           <div>
             <h2 className="text-lg font-semibold text-[color:var(--ink)]">AI Debug Workbench</h2>
             <p className="text-sm text-[color:var(--ink-muted)]">
-              Prompt debug + student context live in AI Logs. Use it to diff prompt packs, inspect provenance, and
-              replay with overrides.
+              Prompt debug + student context live in AI Logs. Use it to diff prompt packs, inspect provenance, and replay
+              with overrides.
             </p>
           </div>
           <Link
             href="/admin/ai-logs"
-            className="mt-2 inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-2 text-xs font-semibold text-[color:var(--ink)] transition hover:bg-[color:var(--surface)]"
+            className="mt-2 inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
             Open AI Logs
           </Link>
@@ -294,7 +292,7 @@ export default function AiConfigPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
@@ -305,22 +303,23 @@ export default function AiConfigPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold text-[color:var(--ink)]">OpenRouter Key</h2>
-            <p className="text-sm text-[color:var(--ink-muted)]">
-              Used by AI coach agents when provider is OpenRouter.
-            </p>
+            <p className="text-sm text-[color:var(--ink-muted)]">Used by AI coach agents when provider is OpenRouter.</p>
           </div>
           <div className="text-xs text-[color:var(--ink-muted)]">
             {keyLoading ? "Loading…" : keyStatus?.hasKey ? `Stored · last4 ${keyStatus.last4 ?? "—"}` : "Not set"}
           </div>
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-          <label className="grid gap-1 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]" htmlFor="openrouter-key">
+          <label
+            className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+            htmlFor="openrouter-key"
+          >
             OpenRouter API key
             <input
               id="openrouter-key"
               name="openrouter-key"
               type="password"
-              className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
+              className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
               placeholder="sk-or-…"
@@ -331,20 +330,18 @@ export default function AiConfigPage() {
             type="button"
             onClick={handleSaveKey}
             disabled={keySaving || keyInput.trim().length === 0}
-            className="mt-6 h-10 rounded-full bg-[color:var(--accent)] px-5 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+            className="mt-6 h-10 rounded-full bg-[color:var(--accent)] px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
           >
             {keySaving ? "Saving…" : "Save Key"}
           </button>
         </div>
         {keyError ? (
-          <p className="mt-2 text-xs text-amber-700" role="alert">
+          <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
             {keyError}
           </p>
         ) : null}
         {keyStatus?.updatedAt ? (
-          <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
-            Updated {keyStatus.updatedAt}
-          </p>
+          <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
         ) : null}
       </section>
 
@@ -364,14 +361,14 @@ export default function AiConfigPage() {
                       Published: {published.prompt_version} · {published.model_provider}/{published.model_id}
                     </p>
                   ) : (
-                    <p className="mt-2 text-xs text-amber-600">No Published Config Yet.</p>
+                    <p className="mt-2 text-xs text-[color:var(--danger-strong)]">No published config yet.</p>
                   )}
                 </div>
                 <button
                   type="button"
                   onClick={() => handlePublish(kind)}
                   disabled={savingKind === kind}
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
                 >
                   {savingKind === kind ? "Publishing…" : "Publish New Version"}
                 </button>
@@ -379,24 +376,30 @@ export default function AiConfigPage() {
 
               <div className="mt-6 grid gap-4">
                 <div className="grid gap-3 md:grid-cols-3">
-                  <label className="grid gap-1 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]" htmlFor={`${kind}-version`}>
+                  <label
+                    className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                    htmlFor={`${kind}-version`}
+                  >
                     Prompt version
                     <input
                       id={`${kind}-version`}
                       name={`${kind}-version`}
-                      className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                       value={forms[kind].prompt_version}
                       onChange={(e) => updateForm(kind, { prompt_version: e.target.value })}
                       placeholder="ai-coach-insight-v3…"
                       autoComplete="off"
                     />
                   </label>
-                  <label className="grid gap-1 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]" htmlFor={`${kind}-provider`}>
+                  <label
+                    className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                    htmlFor={`${kind}-provider`}
+                  >
                     Model provider
                     <select
                       id={`${kind}-provider`}
                       name={`${kind}-provider`}
-                      className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                       value={forms[kind].model_provider}
                       onChange={(e) => handleProviderChange(kind, e.target.value as "minimax" | "openai" | "openrouter")}
                     >
@@ -405,12 +408,15 @@ export default function AiConfigPage() {
                       <option value="openrouter">OpenRouter</option>
                     </select>
                   </label>
-                  <label className="grid gap-1 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]" htmlFor={`${kind}-model`}>
+                  <label
+                    className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                    htmlFor={`${kind}-model`}
+                  >
                     Model ID
                     <input
                       id={`${kind}-model`}
                       name={`${kind}-model`}
-                      className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                       value={forms[kind].model_id}
                       onChange={(e) => updateForm(kind, { model_id: e.target.value })}
                       placeholder="gpt-5.2…"
@@ -419,12 +425,15 @@ export default function AiConfigPage() {
                   </label>
                 </div>
 
-                <label className="grid gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]" htmlFor={`${kind}-prompt`}>
+                <label
+                  className="grid gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                  htmlFor={`${kind}-prompt`}
+                >
                   System prompt
                   <textarea
                     id={`${kind}-prompt`}
                     name={`${kind}-prompt`}
-                    className="min-h-[120px] rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                    className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                     value={forms[kind].system_prompt}
                     onChange={(e) => updateForm(kind, { system_prompt: e.target.value })}
                     autoComplete="off"
@@ -434,7 +443,7 @@ export default function AiConfigPage() {
 
               {history.length > 0 ? (
                 <div className="mt-6 border-t border-[color:var(--border)] pt-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Recent Versions</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Recent Versions</p>
                   <div className="mt-2 space-y-2">
                     {history.slice(0, 3).map((row) => (
                       <div
@@ -446,12 +455,12 @@ export default function AiConfigPage() {
                         </div>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] ${
+                            className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
                               row.status === "published"
-                                ? "bg-emerald-100 text-emerald-700"
+                                ? "bg-[color:var(--accent-strong)]"
                                 : row.status === "archived"
                                   ? "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
-                                  : "bg-amber-100 text-amber-700"
+                                  : "bg-[color:var(--danger-strong)]"
                             }`}
                           >
                             {row.status}
@@ -461,7 +470,7 @@ export default function AiConfigPage() {
                               type="button"
                               onClick={() => handleArchive(row.id)}
                               disabled={archivingId === row.id}
-                              className="text-[11px] text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
+                              className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
                             >
                               {archivingId === row.id ? "Archiving…" : "Archive"}
                             </button>

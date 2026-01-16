@@ -312,7 +312,7 @@ export default function QuestionBanksPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading question banks…
         </p>
@@ -322,8 +322,8 @@ export default function QuestionBanksPage() {
 
   if (error && banks.length === 0) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-red-600" role="alert">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
+        <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
       </main>
@@ -331,7 +331,7 @@ export default function QuestionBanksPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-8">
+    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
@@ -343,7 +343,7 @@ export default function QuestionBanksPage() {
           </p>
         </div>
         <button
-          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
+          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
           onClick={openCreateDrawer}
           type="button"
         >
@@ -353,7 +353,7 @@ export default function QuestionBanksPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
@@ -362,25 +362,24 @@ export default function QuestionBanksPage() {
 
       {lastImportResult ? (
         <div
-          className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+          className="rounded-2xl border border-[color:var(--accent)] bg-[color:var(--surface)] px-4 py-3 text-sm"
           role="status"
           aria-live="polite"
         >
           <div className="flex items-center justify-between gap-3">
-            <p className="font-medium">
-              Imported {lastImportResult.inserted_count} questions into{" "}
-              {lastImportResult.bankTitle}.
+            <p className="font-medium text-[color:var(--accent-strong)]">
+              Imported {lastImportResult.inserted_count} questions into {lastImportResult.bankTitle}.
             </p>
             <button
               type="button"
               onClick={() => setLastImportResult(null)}
-              className="text-xs text-green-700 underline"
+              className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
             >
               Dismiss
             </button>
           </div>
           {lastImportResult.error_count > 0 && (
-            <ul className="mt-2 list-inside list-disc text-xs text-amber-700">
+            <ul className="mt-2 list-inside list-disc text-xs text-[color:var(--danger-strong)]">
               {lastImportResult.errors.slice(0, 5).map((err, index) => (
                 <li key={index}>
                   Row {err.index}: {err.error}
@@ -390,7 +389,7 @@ export default function QuestionBanksPage() {
           )}
           <Link
             href={`/admin/banks/${lastImportResult.bankId}/questions`}
-            className="mt-2 inline-block text-xs text-green-700 underline"
+            className="mt-2 inline-block text-[10px] uppercase tracking-[0.2em] text-[color:var(--accent-strong)]"
           >
             View Bank Questions
           </Link>
@@ -399,7 +398,7 @@ export default function QuestionBanksPage() {
 
       <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <table className="w-full text-left text-sm text-[color:var(--ink)]">
-            <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               <tr>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Slug</th>
@@ -437,20 +436,28 @@ export default function QuestionBanksPage() {
                     <td className="px-4 py-3">{bank.mode}</td>
                     <td className="px-4 py-3">{bank.question_limit}</td>
                     <td className="px-4 py-3">
-                      {bank.is_active ? "Active" : "Paused"}
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
+                          bank.is_active
+                            ? "bg-[color:var(--accent-strong)]"
+                            : "bg-[color:var(--danger-strong)]"
+                        }`}
+                      >
+                        {bank.is_active ? "Active" : "Paused"}
+                      </span>
                     </td>
                     <td className="px-4 py-3">{bank.sort_order}</td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-2">
                         <Link
                           href={`/admin/banks/${bank.id}/questions`}
-                          className="rounded-full border border-[color:var(--border)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:border-[color:var(--accent-strong)]"
+                          className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                           onClick={(event) => event.stopPropagation()}
                         >
                           Questions
                         </Link>
                         <button
-                          className="rounded-full border border-[color:var(--border)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:border-[color:var(--accent-strong)]"
+                          className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                           onClick={(event) => {
                             event.stopPropagation();
                             openEditDrawer(bank);
@@ -460,7 +467,7 @@ export default function QuestionBanksPage() {
                           Edit
                         </button>
                         <button
-                          className="rounded-full border border-red-200 px-3 py-1 text-xs text-red-700 transition hover:border-red-300"
+                          className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)]"
                           onClick={(event) => {
                             event.stopPropagation();
                             void handleDelete(bank);
@@ -530,55 +537,55 @@ export default function QuestionBanksPage() {
             ) : null}
 
             <div className="grid gap-3 text-sm text-[color:var(--ink)]">
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Slug
                 <input
                   name="slug"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.slug}
                   onChange={(event) => setForm({ ...form, slug: event.target.value })}
                   placeholder="sat-practice…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Title
                 <input
                   name="title"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.title}
                   onChange={(event) => setForm({ ...form, title: event.target.value })}
                   placeholder="SAT Practice…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Subtitle
                 <input
                   name="subtitle"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.subtitle}
                   onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
                   placeholder="Optional description…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Icon
                 <input
                   name="icon"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.icon}
                   onChange={(event) => setForm({ ...form, icon: event.target.value })}
                   placeholder="sparkle…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Mode
                 <select
                   name="mode"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.mode}
                   onChange={(event) => setForm({ ...form, mode: event.target.value })}
                 >
@@ -589,11 +596,11 @@ export default function QuestionBanksPage() {
                   {MODE_DESCRIPTIONS[form.mode as keyof typeof MODE_DESCRIPTIONS]}
                 </span>
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Question limit
                 <input
                   name="question_limit"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   type="number"
                   value={form.question_limit}
                   onChange={(event) =>
@@ -605,11 +612,11 @@ export default function QuestionBanksPage() {
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1">
+              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 Sort order
                 <input
                   name="sort_order"
-                  className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   type="number"
                   value={form.sort_order}
                   onChange={(event) =>
@@ -631,16 +638,16 @@ export default function QuestionBanksPage() {
                 Active
               </label>
               {form.mode === "daily_mix" && (
-                <label className="grid gap-1">
+                <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                   <span className="flex items-center gap-2">
                     Rule JSON
-                    <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                    <span className="rounded-full border border-[color:var(--accent)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[color:var(--accent-strong)]">
                       Required for Daily Mix
                     </span>
                   </span>
                   <textarea
                     name="rule_json"
-                    className="min-h-[120px] rounded-lg border border-[color:var(--border)] px-3 py-2 font-mono text-xs"
+                    className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 font-mono text-xs"
                     value={form.rule_json}
                     onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
                     placeholder='{"subjects": ["math"], "difficulty_min": 1, "difficulty_max": 5}…'
@@ -660,7 +667,7 @@ export default function QuestionBanksPage() {
                   <div className="flex flex-wrap items-center gap-2 mb-3">
                     <select
                       name="importFormat"
-                      className="rounded-lg border border-[color:var(--border)] px-3 py-2 text-sm"
+                      className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
                       value={importFormat}
                       onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
                       aria-label="Import format"
@@ -689,9 +696,8 @@ export default function QuestionBanksPage() {
                   </div>
 
                   {form.mode !== "fixed" ? (
-                    <p className="text-xs text-amber-600 mb-2">
-                      Import attaches questions to the bank. Daily Mix uses Rule JSON
-                      instead of fixed ordering.
+                    <p className="mb-2 text-xs text-[color:var(--danger-strong)]">
+                      Import attaches questions to the bank. Daily Mix uses Rule JSON instead of fixed ordering.
                     </p>
                   ) : null}
 
@@ -707,7 +713,7 @@ export default function QuestionBanksPage() {
 
                   {importParseErrors.length > 0 && (
                     <div
-                      className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 mb-2"
+                      className="mb-2 rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]"
                       role="alert"
                     >
                       <p className="font-medium mb-1">Parse errors</p>
@@ -723,7 +729,7 @@ export default function QuestionBanksPage() {
 
                   {importParseWarnings.length > 0 && (
                     <div
-                      className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 mb-2"
+                      className="mb-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs text-[color:var(--ink-muted)]"
                       role="status"
                       aria-live="polite"
                     >
@@ -756,7 +762,7 @@ export default function QuestionBanksPage() {
               ) : null}
               <div className="flex flex-wrap gap-2 pt-2">
                 <button
-                  className="rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white disabled:opacity-60"
                   disabled={
                     saving ||
                     importing ||
@@ -770,7 +776,7 @@ export default function QuestionBanksPage() {
                   {drawerMode === "edit" ? "Save Changes" : "Create Bank"}
                 </button>
                 <button
-                  className="rounded-lg border border-[color:var(--border)] px-4 py-2 text-sm text-[color:var(--ink)]"
+                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
                   onClick={closeDrawer}
                   type="button"
                   disabled={saving}

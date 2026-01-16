@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import {
-  getQuestion,
-  updateQuestion,
-  type Question,
-  type QuestionInput,
-  type OptionInput,
-} from "../actions";
+import { getQuestion, updateQuestion, type Question, type QuestionInput, type OptionInput } from "../actions";
 import { QuestionForm } from "../QuestionForm";
 import { AssetUploader } from "../AssetUploader";
 
@@ -48,11 +42,7 @@ export default function EditQuestionPage() {
     loadQuestion();
   }, [supabase, questionId]);
 
-  async function handleSubmit(
-    input: QuestionInput,
-    options: OptionInput[],
-    tagIds: string[],
-  ) {
+  async function handleSubmit(input: QuestionInput, options: OptionInput[], tagIds: string[]) {
     if (!supabase) return;
     setSaving(true);
     setError(null);
@@ -66,13 +56,7 @@ export default function EditQuestionPage() {
     }
 
     try {
-      const updated = await updateQuestion(
-        session.access_token,
-        questionId,
-        input,
-        options,
-        tagIds,
-      );
+      const updated = await updateQuestion(session.access_token, questionId, input, options, tagIds);
       setQuestion(updated);
       setError(null);
     } catch (err) {
@@ -88,7 +72,7 @@ export default function EditQuestionPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading question…
         </p>
@@ -98,8 +82,8 @@ export default function EditQuestionPage() {
 
   if (error && !question) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-12">
-        <p className="text-sm text-red-600" role="alert">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
+        <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
       </main>
@@ -108,7 +92,7 @@ export default function EditQuestionPage() {
 
   if (!question) {
     return (
-      <main className="mx-auto max-w-4xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Question not found.
         </p>
@@ -117,33 +101,27 @@ export default function EditQuestionPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
+    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
-        <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-          Admin Console
-        </p>
+        <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
         <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Edit Question</h1>
         <p className="text-sm text-[color:var(--ink-muted)]">
-          ID: <code className="text-xs bg-[color:var(--surface-soft)] px-1 py-0.5 rounded">{questionId}</code>
+          ID:{" "}
+          <code className="rounded bg-[color:var(--surface-soft)] px-1 py-0.5 text-xs">{questionId}</code>
         </p>
       </header>
 
-      {error && (
+      {error ? (
         <div
-          className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
         </div>
-      )}
+      ) : null}
 
       <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-        <QuestionForm
-          initialData={question}
-          onSubmit={handleSubmit}
-          onCancel={handleCancel}
-          saving={saving}
-        />
+        <QuestionForm initialData={question} onSubmit={handleSubmit} onCancel={handleCancel} saving={saving} />
       </div>
 
       <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">

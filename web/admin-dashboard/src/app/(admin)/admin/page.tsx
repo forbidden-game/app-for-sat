@@ -52,11 +52,7 @@ export default function AdminPage() {
         }
       } catch (loadError) {
         if (active) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Failed to load admin overview.",
-          );
+          setError(loadError instanceof Error ? loadError.message : "Failed to load admin overview.");
         }
       } finally {
         if (active) {
@@ -73,15 +69,12 @@ export default function AdminPage() {
   }, [supabase]);
 
   const metrics = useMemo(() => overview?.metrics ?? [], [overview]);
-  const questionBanks = useMemo(
-    () => overview?.question_banks ?? [],
-    [overview],
-  );
+  const questionBanks = useMemo(() => overview?.question_banks ?? [], [overview]);
   const recentUsers = useMemo(() => overview?.recent_users ?? [], [overview]);
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading admin overview…
         </p>
@@ -91,8 +84,8 @@ export default function AdminPage() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-red-600" role="alert">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
+        <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
       </main>
@@ -101,24 +94,18 @@ export default function AdminPage() {
 
   if (!overview) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-[color:var(--ink-muted)]">
-          No admin data available.
-        </p>
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
+        <p className="text-sm text-[color:var(--ink-muted)]">No admin data available.</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-10 px-6 py-8">
+    <main className="mx-auto flex max-w-[1440px] flex-col gap-8 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-            Admin Console
-          </p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">
-            Operations Overview
-          </h1>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Operations Overview</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Signed in as{" "}
             <span className="font-medium text-[color:var(--ink)]">
@@ -126,7 +113,7 @@ export default function AdminPage() {
             </span>
           </p>
         </div>
-        <div className="text-xs text-[color:var(--ink-muted)]">
+        <div className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Updated {formatDateTime(overview.generated_at)}
         </div>
       </header>
@@ -135,18 +122,14 @@ export default function AdminPage() {
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 shadow-[var(--shadow)]"
+            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
           >
-            <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               {metric.label}
             </p>
-            <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">
-              {metric.value}
-            </p>
+            <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">{metric.value}</p>
             {metric.helper ? (
-              <p className="mt-1 text-xs text-[color:var(--ink-muted)]">
-                {metric.helper}
-              </p>
+              <p className="mt-1 text-xs text-[color:var(--ink-muted)]">{metric.helper}</p>
             ) : null}
           </div>
         ))}
@@ -154,11 +137,9 @@ export default function AdminPage() {
 
       <section id="content" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[color:var(--ink)]">
-            Question Banks
-          </h2>
+          <h2 className="text-lg font-semibold text-[color:var(--ink)]">Question Banks</h2>
           <Link
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
             href="/admin/banks"
           >
             Manage Banks
@@ -166,7 +147,7 @@ export default function AdminPage() {
         </div>
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               <tr>
                 <th className="px-4 py-3">Title</th>
                 <th className="px-4 py-3">Slug</th>
@@ -190,22 +171,18 @@ export default function AdminPage() {
               ) : (
                 questionBanks.map((bank) => (
                   <tr key={bank.id} className="border-t border-[color:var(--border)]">
-                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
-                      {bank.title}
-                    </td>
+                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">{bank.title}</td>
+                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.slug}</td>
+                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.mode}</td>
                     <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
-                      {bank.slug}
-                    </td>
-                    <td className="px-4 py-3">{bank.mode}</td>
-                    <td className="px-4 py-3">
                       {bank.question_limit ?? "N/A"}
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] ${
+                        className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
                           bank.is_active
-                            ? "bg-emerald-100 text-emerald-700"
-                            : "bg-amber-100 text-amber-700"
+                            ? "bg-[color:var(--accent-strong)]"
+                            : "bg-[color:var(--danger-strong)]"
                         }`}
                       >
                         {bank.is_active ? "Active" : "Paused"}
@@ -221,16 +198,12 @@ export default function AdminPage() {
 
       <section id="users" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[color:var(--ink)]">
-            Recent Users
-          </h2>
-          <span className="text-xs text-[color:var(--ink-muted)]">
-            Latest 12 profiles
-          </span>
+          <h2 className="text-lg font-semibold text-[color:var(--ink)]">Recent Users</h2>
+          <span className="text-xs text-[color:var(--ink-muted)]">Latest 12 profiles</span>
         </div>
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-xs uppercase tracking-wide text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               <tr>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Role</th>
@@ -255,7 +228,7 @@ export default function AdminPage() {
                     <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
                       {user.display_name ?? "Unnamed"}
                     </td>
-                    <td className="px-4 py-3">{user.role ?? "unknown"}</td>
+                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{user.role ?? "unknown"}</td>
                     <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                       {formatDateTime(user.created_at)}
                     </td>

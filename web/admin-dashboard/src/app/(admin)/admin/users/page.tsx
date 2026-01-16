@@ -55,33 +55,34 @@ export default function UsersPage() {
     return session.access_token;
   }, [supabase]);
 
-  const loadUsers = useCallback(async (targetPage: number) => {
-    const safePage = Math.max(1, targetPage);
-    setLoading(true);
-    setError(null);
+  const loadUsers = useCallback(
+    async (targetPage: number) => {
+      const safePage = Math.max(1, targetPage);
+      setLoading(true);
+      setError(null);
 
-    const accessToken = await getAccessToken();
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
+      const accessToken = await getAccessToken();
+      if (!accessToken) {
+        setLoading(false);
+        return;
+      }
 
-    try {
-      const result: ListUsersResult = await listUsers(accessToken, {
-        page: safePage,
-        pageSize: PAGE_SIZE,
-      });
-      setUsers(result.users);
-      setPage(result.page);
-      setHasNext(result.hasNext);
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error ? loadError.message : "Failed to load users.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [getAccessToken]);
+      try {
+        const result: ListUsersResult = await listUsers(accessToken, {
+          page: safePage,
+          pageSize: PAGE_SIZE,
+        });
+        setUsers(result.users);
+        setPage(result.page);
+        setHasNext(result.hasNext);
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Failed to load users.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getAccessToken],
+  );
 
   useEffect(() => {
     void loadUsers(1);
@@ -107,18 +108,14 @@ export default function UsersPage() {
     try {
       if (editingId) {
         const updated = await updateUser(accessToken, editingId, form);
-        setUsers((prev) =>
-          prev.map((user) => (user.id === updated.id ? updated : user)),
-        );
+        setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)));
       } else {
         const created = await createUser(accessToken, form);
         setUsers((prev) => [created, ...prev]);
       }
       resetForm();
     } catch (saveError) {
-      setError(
-        saveError instanceof Error ? saveError.message : "Failed to save user.",
-      );
+      setError(saveError instanceof Error ? saveError.message : "Failed to save user.");
     } finally {
       setSaving(false);
     }
@@ -128,9 +125,7 @@ export default function UsersPage() {
     const accessToken = await getAccessToken();
     if (!accessToken) return;
 
-    const confirmed = window.confirm(
-      `Delete user ${user.email ?? user.id}? This removes auth and profile data.`,
-    );
+    const confirmed = window.confirm(`Delete user ${user.email ?? user.id}? This removes auth and profile data.`);
     if (!confirmed) return;
 
     setSaving(true);
@@ -143,11 +138,7 @@ export default function UsersPage() {
         resetForm();
       }
     } catch (deleteError) {
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Failed to delete user.",
-      );
+      setError(deleteError instanceof Error ? deleteError.message : "Failed to delete user.");
     } finally {
       setSaving(false);
     }
@@ -164,7 +155,7 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading users…
         </p>
@@ -174,8 +165,8 @@ export default function UsersPage() {
 
   if (error && users.length === 0) {
     return (
-      <main className="mx-auto max-w-6xl px-6 py-12">
-        <p className="text-sm text-red-600" role="alert">
+      <main className="mx-auto max-w-[1440px] px-6 py-12">
+        <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
       </main>
@@ -183,29 +174,23 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-8">
+    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-            Admin Console
-          </p>
+          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
           <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Users</h1>
           <p className="mt-1 text-sm text-[color:var(--ink-muted)]">
-            Create users via email invite and manage roles across student, parent,
-            and admin accounts.
+            Create users via email invite and manage roles across student, parent, and admin accounts.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <label
-            className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-            htmlFor="role-filter"
-          >
+          <label className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]" htmlFor="role-filter">
             Filter role
           </label>
           <select
             id="role-filter"
             name="roleFilter"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
             value={roleFilter}
             onChange={(event) => setRoleFilter(event.target.value)}
           >
@@ -220,30 +205,30 @@ export default function UsersPage() {
       </header>
 
       {error ? (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-          <div className="flex items-center justify-between border-b border-[color:var(--border)] px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--border)] px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-[color:var(--ink)]">User List</p>
               <p className="text-xs text-[color:var(--ink-muted)]">
                 Showing page {page}. Filters only apply to the current page.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-xs text-[color:var(--ink-muted)]">
+            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]">
               <button
-                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => loadUsers(page - 1)}
                 disabled={page <= 1 || loading}
               >
                 Prev
               </button>
               <button
-                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => loadUsers(page + 1)}
                 disabled={!hasNext || loading}
               >
@@ -254,7 +239,7 @@ export default function UsersPage() {
           <div className="max-h-[560px] overflow-auto">
             <table className="min-w-full text-left text-sm">
               <thead className="sticky top-0 bg-[color:var(--surface)]">
-                <tr className="border-b border-[color:var(--border)] text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+                <tr className="border-b border-[color:var(--border)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Name</th>
                   <th className="px-4 py-3">Role</th>
@@ -278,33 +263,25 @@ export default function UsersPage() {
                 ) : (
                   filteredUsers.map((user) => (
                     <tr key={user.id} className="border-b border-[color:var(--border)]">
-                      <td className="px-4 py-3 text-[color:var(--ink)]">
-                        {user.email ?? "(no email)"}
-                      </td>
-                      <td className="px-4 py-3 text-[color:var(--ink)]">
-                        {user.display_name ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-[color:var(--ink)]">
-                        {user.role ?? "unknown"}
-                      </td>
-                      <td className="px-4 py-3 text-[color:var(--ink-muted)]">
+                      <td className="px-4 py-3 text-[color:var(--ink)]">{user.email ?? "(no email)"}</td>
+                      <td className="px-4 py-3 text-[color:var(--ink)]">{user.display_name ?? "—"}</td>
+                      <td className="px-4 py-3 text-[color:var(--ink)]">{user.role ?? "unknown"}</td>
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                         {formatDateTime(user.created_at)}
                       </td>
-                      <td className="px-4 py-3 text-[color:var(--ink-muted)]">
-                        {user.last_sign_in_at
-                          ? formatDateTime(user.last_sign_in_at)
-                          : "—"}
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                        {user.last_sign_in_at ? formatDateTime(user.last_sign_in_at) : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <button
-                            className="rounded-full border border-[color:var(--border)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
+                            className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                             onClick={() => startEdit(user)}
                           >
                             Edit
                           </button>
                           <button
-                            className="rounded-full border border-rose-200 px-3 py-1 text-xs text-rose-700 transition hover:bg-rose-50"
+                            className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)] transition hover:bg-[color:var(--surface-soft)]"
                             onClick={() => handleDelete(user)}
                             disabled={saving}
                           >
@@ -323,7 +300,7 @@ export default function UsersPage() {
         <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                 {editingId ? "Edit User" : "Create User"}
               </p>
               <p className="text-sm font-semibold text-[color:var(--ink)]">
@@ -332,7 +309,7 @@ export default function UsersPage() {
             </div>
             {editingId ? (
               <button
-                className="text-xs text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink-muted)]"
+                className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
                 onClick={resetForm}
               >
                 Cancel
@@ -341,25 +318,23 @@ export default function UsersPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-4 text-sm">
-            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               Email
               <input
                 name="email"
-                className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.email}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, email: event.target.value }))
-                }
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
                 placeholder="name@example.com…"
                 autoComplete="email"
                 spellCheck={false}
               />
             </label>
-            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               Display name
               <input
                 name="displayName"
-                className="rounded-xl border border-[color:var(--border)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.display_name}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -371,7 +346,7 @@ export default function UsersPage() {
                 autoComplete="name"
               />
             </label>
-            <label className="flex flex-col gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
               Role
               <select
                 name="role"
@@ -395,15 +370,14 @@ export default function UsersPage() {
 
           <div className="mt-6 flex flex-col gap-2">
             <button
-              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               onClick={handleSave}
               disabled={saving}
             >
               {editingId ? "Update User" : "Create & Send Invite"}
             </button>
             <p className="text-xs text-[color:var(--ink-muted)]">
-              Invites use the Supabase email flow. Role changes do not edit
-              parent/student links.
+              Invites use the Supabase email flow. Role changes do not edit parent/student links.
             </p>
           </div>
         </div>

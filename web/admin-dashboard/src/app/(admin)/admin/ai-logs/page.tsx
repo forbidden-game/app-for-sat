@@ -496,7 +496,7 @@ export default function AiLogsPage() {
                               <div className="sm:min-w-[140px] text-[color:var(--ink-muted)] tabular-nums">
                                 {stamp ? formatDateTime(stamp) : "—"}
                               </div>
-                              <div className="min-w-0 flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
+                              <div className="min-w-0 flex-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2">
                                 <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
                                   {type}
                                 </div>

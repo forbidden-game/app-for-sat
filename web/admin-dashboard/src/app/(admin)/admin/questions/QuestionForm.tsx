@@ -14,46 +14,30 @@ import {
 
 type QuestionFormProps = {
   initialData?: Question;
-  onSubmit: (
-    input: QuestionInput,
-    options: OptionInput[],
-    tagIds: string[],
-  ) => Promise<void>;
+  onSubmit: (input: QuestionInput, options: OptionInput[], tagIds: string[]) => Promise<void>;
   onCancel: () => void;
   saving: boolean;
 };
 
-export function QuestionForm({
-  initialData,
-  onSubmit,
-  onCancel,
-  saving,
-}: QuestionFormProps) {
+export function QuestionForm({ initialData, onSubmit, onCancel, saving }: QuestionFormProps) {
   const supabase = getSupabaseClient();
   const isEdit = Boolean(initialData);
 
   const [subject, setSubject] = useState(initialData?.subject ?? "");
   const [module, setModule] = useState(initialData?.module ?? "");
   const [difficulty, setDifficulty] = useState(initialData?.difficulty ?? 3);
-  const [questionType, setQuestionType] = useState(
-    initialData?.question_type ?? "mcq",
-  );
+  const [questionType, setQuestionType] = useState(initialData?.question_type ?? "mcq");
   const [stem, setStem] = useState(initialData?.stem ?? "");
-  const [answerKey, setAnswerKey] = useState<Record<string, unknown>>(
-    initialData?.answer_key ?? { correct: "" },
-  );
+  const [answerKey, setAnswerKey] = useState<Record<string, unknown>>(initialData?.answer_key ?? { correct: "" });
   const [options, setOptions] = useState<OptionInput[]>(
-    initialData?.options?.map((o) => ({ label: o.label, content: o.content })) ??
-      [
-        { label: "A", content: "" },
-        { label: "B", content: "" },
-        { label: "C", content: "" },
-        { label: "D", content: "" },
-      ],
+    initialData?.options?.map((o) => ({ label: o.label, content: o.content })) ?? [
+      { label: "A", content: "" },
+      { label: "B", content: "" },
+      { label: "C", content: "" },
+      { label: "D", content: "" },
+    ],
   );
-  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
-    initialData?.tags?.map((t) => t.id) ?? [],
-  );
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(initialData?.tags?.map((t) => t.id) ?? []);
 
   const [subjects, setSubjects] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
@@ -88,9 +72,7 @@ export function QuestionForm({
   }, [supabase]);
 
   function handleOptionChange(index: number, field: "label" | "content", value: string) {
-    setOptions((prev) =>
-      prev.map((opt, i) => (i === index ? { ...opt, [field]: value } : opt)),
-    );
+    setOptions((prev) => prev.map((opt, i) => (i === index ? { ...opt, [field]: value } : opt)));
   }
 
   function addOption() {
@@ -103,9 +85,7 @@ export function QuestionForm({
   }
 
   function toggleTag(tagId: string) {
-    setSelectedTagIds((prev) =>
-      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
-    );
+    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -120,10 +100,7 @@ export function QuestionForm({
       answer_key: answerKey,
     };
 
-    const validOptions =
-      questionType === "mcq"
-        ? options.filter((o) => o.label.trim() && o.content.trim())
-        : [];
+    const validOptions = questionType === "mcq" ? options.filter((o) => o.label.trim() && o.content.trim()) : [];
 
     await onSubmit(input, validOptions, selectedTagIds);
   }
@@ -141,12 +118,12 @@ export function QuestionForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Subject
           <input
             list="subjects-list"
             name="subject"
-            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="e.g., math…"
@@ -160,12 +137,12 @@ export function QuestionForm({
           </datalist>
         </label>
 
-        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Module
           <input
             list="modules-list"
             name="module"
-            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={module}
             onChange={(e) => setModule(e.target.value)}
             placeholder="e.g., algebra…"
@@ -179,27 +156,27 @@ export function QuestionForm({
           </datalist>
         </label>
 
-        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Difficulty
           <select
             name="difficulty"
-            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={difficulty}
             onChange={(e) => setDifficulty(Number(e.target.value))}
           >
             {[1, 2, 3, 4, 5].map((d) => (
               <option key={d} value={d}>
-                {d} - {["Easy", "Easy-Med", "Medium", "Med-Hard", "Hard"][d - 1]}
+                {d} - {"Easy,Easy-Med,Medium,Med-Hard,Hard".split(",")[d - 1]}
               </option>
             ))}
           </select>
         </label>
 
-        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Question Type
           <select
             name="questionType"
-            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={questionType}
             onChange={(e) => setQuestionType(e.target.value)}
             disabled={loadingMeta}
@@ -213,11 +190,11 @@ export function QuestionForm({
         </label>
       </div>
 
-      <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
+      <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
         Question Stem
         <textarea
           name="stem"
-          className="min-h-[120px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+          className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
           value={stem}
           onChange={(e) => setStem(e.target.value)}
           placeholder="Enter the question text…"
@@ -226,23 +203,23 @@ export function QuestionForm({
         />
       </label>
 
-      {isMCQ && (
+      {isMCQ ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-[color:var(--ink)]">Options</span>
             <button
               type="button"
               onClick={addOption}
-              className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
             >
-              + Add Option
+              Add Option
             </button>
           </div>
           {options.map((opt, index) => (
             <div key={index} className="flex items-center gap-2">
               <input
                 name={`option-label-${index}`}
-                className="w-12 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-2 text-center text-sm font-medium text-[color:var(--ink)]"
+                className="w-12 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-2 text-center text-sm font-medium text-[color:var(--ink)]"
                 value={opt.label}
                 onChange={(e) => handleOptionChange(index, "label", e.target.value)}
                 placeholder="A…"
@@ -251,14 +228,14 @@ export function QuestionForm({
               />
               <input
                 name={`option-content-${index}`}
-                className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                className="flex-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={opt.content}
                 onChange={(e) => handleOptionChange(index, "content", e.target.value)}
                 placeholder="Option content…"
                 autoComplete="off"
                 aria-label={`Option ${index + 1} content`}
               />
-              <label className="flex items-center gap-1 text-sm text-[color:var(--ink-muted)]">
+              <label className="flex items-center gap-1 text-xs text-[color:var(--ink-muted)]">
                 <input
                   type="radio"
                   name="correct-answer"
@@ -268,27 +245,25 @@ export function QuestionForm({
                 />
                 Correct
               </label>
-              {options.length > 2 && (
+              {options.length > 2 ? (
                 <button
                   type="button"
                   onClick={() => removeOption(index)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-[color:var(--danger-strong)]"
                   aria-label={`Remove option ${index + 1}`}
                 >
                   ×
                 </button>
-              )}
+              ) : null}
             </div>
           ))}
         </div>
-      )}
-
-      {!isMCQ && (
-        <label className="grid gap-1 text-sm text-[color:var(--ink-muted)]">
+      ) : (
+        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
           Correct Answer
           <input
             name="answer"
-            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={String(answerKey.correct ?? "")}
             onChange={(e) => {
               const val = e.target.value;
@@ -311,18 +286,16 @@ export function QuestionForm({
           <div className="flex flex-col gap-3">
             {Object.entries(tagsByCategory).map(([category, tags]) => (
               <div key={category} className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium text-[color:var(--ink-muted)] capitalize w-16">
-                  {category}:
-                </span>
+                <span className="w-16 text-xs font-medium text-[color:var(--ink-muted)] capitalize">{category}:</span>
                 {tags.map((tag) => (
                   <button
                     key={tag.id}
                     type="button"
                     onClick={() => toggleTag(tag.id)}
-                    className={`rounded-full px-3 py-1 text-xs transition ${
+                    className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] transition ${
                       selectedTagIds.includes(tag.id)
-                        ? "bg-[color:var(--ink)] text-white"
-                        : "border border-[color:var(--border)] text-[color:var(--ink)] hover:bg-[color:var(--surface-soft)]"
+                        ? "bg-[color:var(--accent-strong)] text-white"
+                        : "border border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                     }`}
                   >
                     {tag.name}
@@ -334,18 +307,18 @@ export function QuestionForm({
         )}
       </div>
 
-      <div className="flex gap-3 pt-4 border-t border-[color:var(--border)]">
+      <div className="flex gap-3 border-t border-[color:var(--border)] pt-4">
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-[color:var(--accent)] px-6 py-2 text-sm font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+          className="rounded-full bg-[color:var(--accent)] px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
         >
           {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Question"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-sm text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]"
+          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Cancel
         </button>

@@ -3,12 +3,7 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import {
-  createQuestionAsset,
-  deleteQuestionAsset,
-  listQuestionAssets,
-  type QuestionAsset,
-} from "./actions";
+import { createQuestionAsset, deleteQuestionAsset, listQuestionAssets, type QuestionAsset } from "./actions";
 
 type AssetUploaderProps = {
   questionId: string;
@@ -56,21 +51,18 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
     setError(null);
 
     try {
-      const signResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sign-asset-upload`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            question_id: questionId,
-            file_name: file.name,
-            content_type: file.type,
-          }),
+      const signResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sign-asset-upload`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
-      );
+        body: JSON.stringify({
+          question_id: questionId,
+          file_name: file.name,
+          content_type: file.type,
+        }),
+      });
 
       if (!signResponse.ok) {
         const err = await signResponse.json();
@@ -89,13 +81,7 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
         throw new Error("Failed to upload file.");
       }
 
-      const asset = await createQuestionAsset(
-        session.access_token,
-        questionId,
-        public_url,
-        file.type,
-        storage_path,
-      );
+      const asset = await createQuestionAsset(session.access_token, questionId, public_url, file.type, storage_path);
 
       setAssets((prev) => [...prev, asset]);
     } catch (err) {
@@ -135,8 +121,8 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-[color:var(--ink)]">Images & Assets</span>
-        <label className="cursor-pointer rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)]">
-          {uploading ? "Uploading…" : "+ Add Image"}
+        <label className="cursor-pointer rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]">
+          {uploading ? "Uploading…" : "Add Image"}
           <input
             type="file"
             accept="image/*"
@@ -149,22 +135,20 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
         </label>
       </div>
 
-      {error && (
-        <p className="text-xs text-red-600" role="alert">
+      {error ? (
+        <p className="text-xs text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
-      )}
+      ) : null}
 
       {assets.length === 0 ? (
-        <p className="text-sm text-[color:var(--ink-muted)]">
-          No assets uploaded yet.
-        </p>
+        <p className="text-sm text-[color:var(--ink-muted)]">No assets uploaded yet.</p>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {assets.map((asset) => (
             <div
               key={asset.id}
-              className="group relative overflow-hidden rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)]"
+              className="group relative overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)]"
             >
               <Image
                 src={asset.asset_url}
@@ -176,17 +160,11 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
               <button
                 type="button"
                 onClick={() => handleDelete(asset.id)}
-                className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white opacity-0 transition group-hover:opacity-100"
+                className="absolute right-1 top-1 rounded-full bg-[color:var(--danger-strong)] p-1 text-white opacity-0 transition group-hover:opacity-100"
                 title="Delete"
                 aria-label="Delete asset"
               >
-                <svg
-                  className="h-3 w-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
+                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
