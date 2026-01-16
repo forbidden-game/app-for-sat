@@ -177,7 +177,7 @@ export default function AiConfigPage() {
 
   function applyPublishedConfig(updated: AiPromptConfig) {
     setConfigs((prev) => {
-      const next = prev.map((row) => {
+      const next = prev.map<AiPromptConfig>((row) => {
         if (row.kind !== updated.kind || row.status !== "published") return row;
         return {
           ...row,
