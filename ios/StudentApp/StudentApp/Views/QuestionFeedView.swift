@@ -21,6 +21,8 @@ struct QuestionFeedView: View {
     @State private var perfDirection = 1
     @State private var canPageUp = true
     @State private var canPageDown = true
+    @State private var optionPulseLabel: String?
+    @State private var optionPulseTask: Task<Void, Never>?
 
     var body: some View {
         let total = session.questions.count
@@ -30,16 +32,13 @@ struct QuestionFeedView: View {
                 .ignoresSafeArea()
 
             VerticalPagingView(
-                pageCount: total + 1,
+                pageCount: total,
                 currentPage: currentPageBinding,
                 canPageUp: $canPageUp,
-                canPageDown: $canPageDown
+                canPageDown: $canPageDown,
+                onMoveBeyondEnd: onShowOverview
             ) { index in
-                if index < total {
-                    questionPage(question: session.questions[index], index: index, total: total)
-                } else {
-                    overviewTriggerCard(total: total)
-                }
+                questionPage(question: session.questions[index], index: index, total: total)
             }
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
@@ -96,9 +95,14 @@ struct QuestionFeedView: View {
                         } else {
                             freeResponseField(questionId: question.id, questionIndex: index)
                         }
+
+                        if index == total - 1 {
+                            overviewTriggerFooter()
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, AppMetrics.pageBottomPadding)
+                    .id(question.id)
                 }
             }
             .padding(.horizontal, 20)
@@ -107,14 +111,12 @@ struct QuestionFeedView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
-    // MARK: - Overview Trigger Card
+    // MARK: - Overview Trigger Footer
 
-    private func overviewTriggerCard(total: Int) -> some View {
+    private func overviewTriggerFooter() -> some View {
         VStack(spacing: 20) {
-            Spacer()
-            
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 60))
+                .font(.system(size: 36))
                 .foregroundStyle(AppTheme.accent)
             
             Text("Review Your Answers")
@@ -124,10 +126,19 @@ struct QuestionFeedView: View {
             Text("Swipe up to see overview")
                 .font(.subheadline)
                 .foregroundStyle(AppTheme.textMuted)
-            
-            Spacer()
         }
         .frame(maxWidth: .infinity)
+        .padding(AppMetrics.cardPadding)
+        .appSurface(
+            fill: AppTheme.surfaceRaised,
+            stroke: AppTheme.divider,
+            cornerRadius: AppMetrics.cardCornerRadius,
+            shadowRadius: AppMetrics.cardShadowRadius,
+            shadowY: AppMetrics.cardShadowY
+        )
+        .onTapGesture {
+            onShowOverview()
+        }
     }
 
 
@@ -211,6 +222,8 @@ struct QuestionFeedView: View {
         let storedSelection = store[questionId]?.displayString
         let isSelected = isCurrentQuestion && storedSelection == option.label
         let isFeedback = isCurrentQuestion && state.inputState.showFeedback && isSelected
+        let isPulsing = optionPulseLabel == option.label
+        let scale = (isFeedback ? 0.98 : 1.0) * (isPulsing ? 0.97 : 1.0)
         let badgeFill = isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised
         let badgeStroke = isSelected ? AppTheme.accentStrong : AppTheme.dividerStrong
         let badgeText = isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary
@@ -220,10 +233,11 @@ struct QuestionFeedView: View {
         return Button {
             guard isCurrentQuestion, !state.inputState.showFeedback else { return }
             triggerSelectionHaptic()
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.75)) {
                 state.applySelection(.option(option.label))
+                recordAnswer(option.label, questionId: questionId)
             }
-            recordAnswer(option.label, questionId: questionId)
+            triggerOptionPulse(option.label)
             submitAnswer(questionId: questionId, answer: option.label)
             scheduleAutoAdvance(questionId: questionId)
         } label: {
@@ -262,7 +276,7 @@ struct QuestionFeedView: View {
                         .offset(x: 6)
                 }
             }
-            .scaleEffect(isFeedback ? 0.98 : 1.0)
+            .scaleEffect(scale)
         }
         .buttonStyle(.plain)
         .disabled(!isCurrentQuestion || state.inputState.showFeedback)
@@ -349,6 +363,22 @@ struct QuestionFeedView: View {
         store[questionId] = .string(value)
     }
 
+    private func triggerOptionPulse(_ label: String) {
+        optionPulseTask?.cancel()
+        withAnimation(.easeOut(duration: 0.08)) {
+            optionPulseLabel = label
+        }
+        optionPulseTask = Task {
+            try? await Task.sleep(nanoseconds: 160_000_000)
+            await MainActor.run {
+                guard optionPulseLabel == label else { return }
+                withAnimation(.easeInOut(duration: 0.12)) {
+                    optionPulseLabel = nil
+                }
+            }
+        }
+    }
+
     private func submitAnswer(questionId: String, answer: String) {
         guard let question = session.questions.first(where: { $0.id == questionId }) else { return }
         submission.submit(
@@ -404,6 +434,9 @@ struct QuestionFeedView: View {
     private func loadAnswer(for question: Question) {
         autoAdvanceTask?.cancel()
         autoAdvanceTask = nil
+        optionPulseTask?.cancel()
+        optionPulseTask = nil
+        optionPulseLabel = nil
         let isMultipleChoice = (question.options?.isEmpty == false)
         state.resetInput(for: question.id, from: store, isMultipleChoice: isMultipleChoice)
     }
@@ -459,11 +492,6 @@ struct QuestionFeedView: View {
             set: { newPage in
                 let total = session.questions.count
                 guard total > 0 else { return }
-                if newPage >= total {
-                    triggerHaptic()
-                    onShowOverview()
-                    return
-                }
                 guard newPage >= 0, newPage != state.currentIndex else { return }
                 triggerHaptic()
                 state.setFocus(false)
