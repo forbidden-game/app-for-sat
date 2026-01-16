@@ -6,20 +6,17 @@ struct SidePanelView: View {
     let onCoach: () -> Void
     let onReports: () -> Void
     let onSignOut: () -> Void
-    let onUiDemo: (() -> Void)?
 
     init(
         displayName: String,
         onCoach: @escaping () -> Void,
         onReports: @escaping () -> Void,
-        onSignOut: @escaping () -> Void,
-        onUiDemo: (() -> Void)? = nil
+        onSignOut: @escaping () -> Void
     ) {
         self.displayName = displayName
         self.onCoach = onCoach
         self.onReports = onReports
         self.onSignOut = onSignOut
-        self.onUiDemo = onUiDemo
     }
 
     var body: some View {
@@ -82,28 +79,6 @@ struct SidePanelView: View {
                 )
             }
             .buttonStyle(.plain)
-
-#if DEBUG
-            if let onUiDemo {
-                Button(action: onUiDemo) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "paintpalette.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                        Text("UI Demo")
-                            .font(.headline)
-                    }
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .padding(.vertical, AppMetrics.rowPaddingVertical)
-                    .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .appSurface(
-                        fill: AppTheme.surfaceRaised,
-                        stroke: AppTheme.divider
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-#endif
 
             Button(action: onSignOut) {
                 HStack(spacing: 12) {
