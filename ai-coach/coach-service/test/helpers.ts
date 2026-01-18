@@ -122,6 +122,10 @@ export function createSupabaseMock(
           state.filters.push({ column, value });
           return builder;
         },
+        lte: (column: string, value: unknown) => {
+          state.filters.push({ column, value });
+          return builder;
+        },
         order: () => builder,
         limit: () => builder,
         insert: (payload: unknown) => {

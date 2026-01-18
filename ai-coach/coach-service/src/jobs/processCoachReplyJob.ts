@@ -4,12 +4,27 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildCoachContext } from "../context/coachContext.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
-import { buildCoachReplyPrompt } from "../prompts/coachReplyPrompt.js";
+import { buildCoachReplyPrompt, type CoachReplyTargetMessage } from "../prompts/coachReplyPrompt.js";
 
 type CoachContent = {
   text?: string;
   status?: "streaming" | "done" | "error";
 };
+
+type CoachThreadMessageRow = {
+  id: string;
+  student_id: string;
+  role: "user" | "assistant" | "tool";
+  content: unknown;
+  created_at: string;
+  linked_attempt_id: string | null;
+};
+
+function extractText(content: unknown): string {
+  if (!content || typeof content !== "object") return "";
+  const maybeText = (content as { text?: unknown }).text;
+  return typeof maybeText === "string" ? maybeText : "";
+}
 
 export type CoachReplyLogSink = {
   recordPrompt?: (prompt: string) => void;
@@ -44,6 +59,29 @@ async function updateAssistantMessage(
   if (error) throw new Error(error.message);
 }
 
+async function fetchTargetUserMessage(
+  supabase: SupabaseClient,
+  studentId: string,
+  userMessageId: string,
+): Promise<CoachThreadMessageRow> {
+  const { data, error } = await supabase
+    .from("coach_thread_messages")
+    .select("id,student_id,role,content,created_at,linked_attempt_id")
+    .eq("id", userMessageId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("user_message_not_found");
+
+  const row = data as CoachThreadMessageRow;
+  if (row.student_id !== studentId) {
+    // The worker runs with service role; enforce ownership at the application layer.
+    throw new Error("user_message_forbidden");
+  }
+
+  return row;
+}
+
 export async function processCoachReplyJob(
   supabase: SupabaseClient,
   agent: Agent,
@@ -53,13 +91,27 @@ export async function processCoachReplyJob(
   if (!job.student_id) throw new Error("missing student_id");
   const studentId = job.student_id;
 
-  const payload = (job.payload ?? {}) as any;
-  const linkedAttemptId = typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
+  const payload = (job.payload ?? {}) as Record<string, unknown>;
+  const userMessageId = typeof payload.user_message_id === "string" ? payload.user_message_id : null;
+
+  let linkedAttemptId = typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
+  let messagesBeforeCreatedAt: string | null = null;
+  let target: CoachReplyTargetMessage = null;
+
+  if (userMessageId) {
+    const row = await fetchTargetUserMessage(supabase, studentId, userMessageId);
+    messagesBeforeCreatedAt = row.created_at;
+    if (row.linked_attempt_id) {
+      linkedAttemptId = row.linked_attempt_id;
+    }
+    target = { id: row.id, text: extractText(row.content) };
+  }
 
   const context = await buildCoachContext({
     supabase,
     studentId,
     linkedAttemptId,
+    messagesBeforeCreatedAt,
     includeMessages: true,
     includeReports: true,
     includeInsights: true,
@@ -95,7 +147,7 @@ export async function processCoachReplyJob(
   });
 
   try {
-    const prompt = buildCoachReplyPrompt(context);
+    const prompt = buildCoachReplyPrompt(context, target);
     log?.recordPrompt?.(prompt);
 
     await agent.prompt(prompt);

@@ -35,6 +35,7 @@ export type BuildCoachContextParams = {
   studentId?: string | null;
   attemptId?: string | null;
   linkedAttemptId?: string | null;
+  messagesBeforeCreatedAt?: string | null;
   includeMessages?: boolean;
   includeReports?: boolean;
   includeInsights?: boolean;
@@ -181,10 +182,16 @@ export async function buildCoachContext(params: BuildCoachContextParams): Promis
 
   let recentMessages: CoachMessage[] = [];
   if (params.includeMessages !== false) {
-    const { data, error } = await params.supabase
+    let query = params.supabase
       .from("coach_thread_messages")
       .select("id,student_id,role,content,created_at,linked_attempt_id")
-      .eq("student_id", resolvedStudentId)
+      .eq("student_id", resolvedStudentId);
+
+    if (params.messagesBeforeCreatedAt) {
+      query = query.lte("created_at", params.messagesBeforeCreatedAt);
+    }
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
       .limit(params.messageLimit ?? 30);
     if (error) {
