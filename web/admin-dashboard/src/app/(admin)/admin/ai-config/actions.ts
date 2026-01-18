@@ -23,13 +23,15 @@ export type AiPromptConfigInput = {
   kind: AiPromptKind;
   prompt_version: string;
   system_prompt: string;
-  model_provider: "minimax" | "openai" | "openrouter";
+  model_provider: AiProvider;
   model_id: string;
   notes?: string;
 };
 
+export type AiProvider = "minimax" | "openai" | "openrouter";
+
 export type AiProviderKeyStatus = {
-  provider: "openrouter";
+  provider: AiProvider;
   hasKey: boolean;
   last4: string | null;
   updatedAt: string | null;
@@ -144,7 +146,7 @@ export async function archiveAiPromptConfig(
 
 export async function getAiProviderKeyStatus(
   accessToken: string,
-  provider: AiProviderKeyStatus["provider"],
+  provider: AiProvider,
 ): Promise<AiProviderKeyStatus> {
   const { supabase } = await requireAdmin(accessToken);
 
@@ -169,7 +171,7 @@ export async function getAiProviderKeyStatus(
 
 export async function upsertAiProviderKey(
   accessToken: string,
-  provider: AiProviderKeyStatus["provider"],
+  provider: AiProvider,
   apiKey: string,
 ): Promise<AiProviderKeyStatus> {
   const context = await requireAdmin(accessToken);

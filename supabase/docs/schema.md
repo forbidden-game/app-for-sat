@@ -480,6 +480,7 @@
 **请求字段**
 - `text` string
 - `linked_attempt_id` string (uuid) | null (optional)
+- `reply_to_message_id` string (uuid) | null (optional)
 
 **响应字段**
 - `ok` boolean
@@ -529,6 +530,7 @@
 - `attempt_insights_student_procedure_step_idx` on `attempt_insights(student_id, procedure_id, error_step_index, created_at)`
 - `attempt_insights_student_created_at_idx` on `attempt_insights(student_id, created_at)`
 - `coach_thread_messages_student_created_at_idx` on `coach_thread_messages(student_id, created_at)`
+- `coach_thread_messages_reply_to_idx` on `coach_thread_messages(reply_to_message_id)`
 - `ai_jobs_attempt_insight_unique` on `ai_jobs(attempt_id)` where `kind = 'attempt_insight'`
 - `ai_jobs_status_run_after_idx` on `ai_jobs(status, run_after)`
 - `ai_jobs_kind_dedupe_key_unique` on `ai_jobs(kind, dedupe_key)` where `dedupe_key is not null`
@@ -604,6 +606,15 @@
 ### `public.coach_thread_messages`
 **用途**：一人一个“全科老师总线程”的对话消息存档（允许跨题）。
 
+**字段（摘要）**
+- `id` uuid, PK
+- `student_id` uuid
+- `role` text (`user` | `assistant` | `tool`)
+- `content` jsonb
+- `linked_attempt_id` uuid | null
+- `reply_to_message_id` uuid | null
+- `created_at` timestamptz
+
 ---
 
 ### `public.coach_memory_entries`
@@ -654,7 +665,7 @@
 **用途**：第三方模型 provider key（仅服务端读取）。
 
 **字段**（摘要）
-- `provider` text (`openrouter`)
+- `provider` text (`minimax` | `openai` | `openrouter`)
 - `api_key` text
 - `created_by` / `updated_by` uuid
 - `created_at` / `updated_at` timestamptz

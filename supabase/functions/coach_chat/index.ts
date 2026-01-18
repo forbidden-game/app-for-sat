@@ -8,6 +8,7 @@ export const config = {
 type CoachChatBody = {
   text: string;
   linked_attempt_id?: string | null;
+  reply_to_message_id?: string | null;
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -53,7 +54,48 @@ serve(async (req) => {
     return jsonResponse({ error: "invalid_payload" }, 400);
   }
 
-  const linkedAttemptId = body.linked_attempt_id ?? null;
+  let linkedAttemptId: string | null = null;
+  const linkedAttemptCandidate = typeof body.linked_attempt_id === "string" ? body.linked_attempt_id.trim() : "";
+  if (linkedAttemptCandidate) {
+    const { data: attemptRow, error: attemptError } = await supabase
+      .from("attempts")
+      .select("id")
+      .eq("id", linkedAttemptCandidate)
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    if (attemptError) {
+      return jsonResponse({ error: "linked_attempt_lookup_failed" }, 500);
+    }
+
+    if (!attemptRow) {
+      // Treat missing/foreign attempts as not found to avoid leaking IDs.
+      return jsonResponse({ error: "linked_attempt_not_found" }, 404);
+    }
+
+    linkedAttemptId = linkedAttemptCandidate;
+  }
+
+  let replyToMessageId: string | null = null;
+  const replyToMessageCandidate = typeof body.reply_to_message_id === "string" ? body.reply_to_message_id.trim() : "";
+  if (replyToMessageCandidate) {
+    const { data: replyRow, error: replyError } = await supabase
+      .from("coach_thread_messages")
+      .select("id")
+      .eq("id", replyToMessageCandidate)
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    if (replyError) {
+      return jsonResponse({ error: "reply_to_message_lookup_failed" }, 500);
+    }
+
+    if (!replyRow) {
+      return jsonResponse({ error: "reply_to_message_not_found" }, 404);
+    }
+
+    replyToMessageId = replyToMessageCandidate;
+  }
 
   const { data: userMessage, error: insertError } = await supabase
     .from("coach_thread_messages")
@@ -62,6 +104,7 @@ serve(async (req) => {
       role: "user",
       content: { text },
       linked_attempt_id: linkedAttemptId,
+      reply_to_message_id: replyToMessageId,
     })
     .select("id")
     .single();
@@ -74,6 +117,8 @@ serve(async (req) => {
     kind: "coach_reply",
     status: "queued",
     student_id: studentId,
+    // If the client retries after a timeout, this keeps enqueue idempotent.
+    dedupe_key: userMessage.id,
     payload: {
       student_id: studentId,
       user_message_id: userMessage.id,
@@ -82,7 +127,10 @@ serve(async (req) => {
   });
 
   if (jobError) {
-    return jsonResponse({ error: "job_insert_failed" }, 500);
+    // Unique constraint violation for (kind, dedupe_key) -> already enqueued.
+    if ((jobError as { code?: string }).code !== "23505") {
+      return jsonResponse({ error: "job_insert_failed" }, 500);
+    }
   }
 
   return jsonResponse({ ok: true, userMessageId: userMessage.id }, 200);

@@ -168,6 +168,44 @@ describe("processCoachReplyJob", () => {
     expect(agent.prompts[0]).toContain("linked");
   });
 
+  it("replies to user_message_id when provided", async () => {
+    const agent = new StubAgent();
+
+    const targetRow = {
+      id: "msg-target",
+      student_id: "s1",
+      role: "user",
+      content: { text: "hi target" },
+      created_at: "2025-01-02T00:00:00.000Z",
+      linked_attempt_id: null,
+    };
+
+    const { supabase } = createSupabaseMock({
+      from: {
+        student_snapshots: { select: [{ data: null, error: null }] },
+        student_reports: { select: [{ data: [], error: null }] },
+        attempt_insights: { select: [{ data: [], error: null }] },
+        coach_thread_messages: {
+          select: [
+            { data: targetRow, error: null },
+            { data: [targetRow], error: null },
+          ],
+          insert: [{ data: { id: "assistant-1" }, error: null }],
+          update: [{ data: null, error: null }, { data: null, error: null }],
+        },
+      },
+    });
+
+    await processCoachReplyJob(
+      supabase,
+      agent as any,
+      { id: "job", kind: "coach_reply", student_id: "s1", payload: { user_message_id: "msg-target" } } as any,
+    );
+
+    expect(agent.prompts[0]).toContain("msg-target");
+    expect(agent.prompts[0]).toContain("hi target");
+  });
+
   it("skips linked insight lookup when none", async () => {
     const agent = new StubAgent();
     const { supabase, calls } = createSupabaseMock({

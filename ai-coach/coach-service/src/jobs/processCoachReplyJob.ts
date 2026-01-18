@@ -4,12 +4,28 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildCoachContext } from "../context/coachContext.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
-import { buildCoachReplyPrompt } from "../prompts/coachReplyPrompt.js";
+import { buildCoachReplyPrompt, type CoachReplyTargetMessage, type CoachReplyToMessage } from "../prompts/coachReplyPrompt.js";
 
 type CoachContent = {
   text?: string;
   status?: "streaming" | "done" | "error";
 };
+
+type CoachThreadMessageRow = {
+  id: string;
+  student_id: string;
+  role: "user" | "assistant" | "tool";
+  content: unknown;
+  created_at: string;
+  linked_attempt_id: string | null;
+  reply_to_message_id: string | null;
+};
+
+function extractText(content: unknown): string {
+  if (!content || typeof content !== "object") return "";
+  const maybeText = (content as { text?: unknown }).text;
+  return typeof maybeText === "string" ? maybeText : "";
+}
 
 export type CoachReplyLogSink = {
   recordPrompt?: (prompt: string) => void;
@@ -44,6 +60,39 @@ async function updateAssistantMessage(
   if (error) throw new Error(error.message);
 }
 
+async function fetchThreadMessage(
+  supabase: SupabaseClient,
+  studentId: string,
+  messageId: string,
+): Promise<CoachThreadMessageRow | null> {
+  const { data, error } = await supabase
+    .from("coach_thread_messages")
+    .select("id,student_id,role,content,created_at,linked_attempt_id,reply_to_message_id")
+    .eq("id", messageId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+
+  const row = data as CoachThreadMessageRow;
+  if (row.student_id !== studentId) {
+    // The worker runs with service role; enforce ownership at the application layer.
+    throw new Error("user_message_forbidden");
+  }
+
+  return row;
+}
+
+async function fetchTargetUserMessage(
+  supabase: SupabaseClient,
+  studentId: string,
+  userMessageId: string,
+): Promise<CoachThreadMessageRow> {
+  const row = await fetchThreadMessage(supabase, studentId, userMessageId);
+  if (!row) throw new Error("user_message_not_found");
+  return row;
+}
+
 export async function processCoachReplyJob(
   supabase: SupabaseClient,
   agent: Agent,
@@ -53,13 +102,40 @@ export async function processCoachReplyJob(
   if (!job.student_id) throw new Error("missing student_id");
   const studentId = job.student_id;
 
-  const payload = (job.payload ?? {}) as any;
-  const linkedAttemptId = typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
+  const payload = (job.payload ?? {}) as Record<string, unknown>;
+  const userMessageId = typeof payload.user_message_id === "string" ? payload.user_message_id : null;
+
+  let linkedAttemptId = typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
+  let messagesBeforeCreatedAt: string | null = null;
+  let target: CoachReplyTargetMessage = null;
+
+  if (userMessageId) {
+    const row = await fetchTargetUserMessage(supabase, studentId, userMessageId);
+    messagesBeforeCreatedAt = row.created_at;
+    if (row.linked_attempt_id) {
+      linkedAttemptId = row.linked_attempt_id;
+    }
+
+    let replyTo: CoachReplyToMessage | null = null;
+    if (row.reply_to_message_id) {
+      const replyRow = await fetchThreadMessage(supabase, studentId, row.reply_to_message_id);
+      if (replyRow) {
+        replyTo = {
+          id: replyRow.id,
+          role: replyRow.role,
+          text: extractText(replyRow.content),
+        };
+      }
+    }
+
+    target = { id: row.id, text: extractText(row.content), reply_to: replyTo };
+  }
 
   const context = await buildCoachContext({
     supabase,
     studentId,
     linkedAttemptId,
+    messagesBeforeCreatedAt,
     includeMessages: true,
     includeReports: true,
     includeInsights: true,
@@ -95,7 +171,7 @@ export async function processCoachReplyJob(
   });
 
   try {
-    const prompt = buildCoachReplyPrompt(context);
+    const prompt = buildCoachReplyPrompt(context, target);
     log?.recordPrompt?.(prompt);
 
     await agent.prompt(prompt);
