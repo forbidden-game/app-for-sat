@@ -50,7 +50,7 @@ private final class HorizontalCollectionView: UICollectionView {
             let dx = abs(translation.x) > 0 ? translation.x : velocity.x
 
             // Only allow horizontal paging when the gesture is clearly horizontal.
-            if abs(dx) <= abs(dy) * 1.2 {
+            if abs(dx) <= abs(dy) * 1.05 {
                 return false
             }
         }
@@ -69,6 +69,7 @@ final class QuestionHorizontalPagingController: UIViewController {
     private var pageBuilder: (QuestionHorizontalPage) -> AnyView
     private var outerPan: UIPanGestureRecognizer?
     private var didAttachOuterPan = false
+    private var lastDragTranslation: CGPoint = .zero
 
     private var collectionView: HorizontalCollectionView!
 
@@ -128,6 +129,7 @@ final class QuestionHorizontalPagingController: UIViewController {
             collectionView.reloadData()
         }
         collectionView.alwaysBounceHorizontal = pages.count > 1
+        collectionView.isScrollEnabled = pages.count > 1
         attachOuterPanRequirementIfNeeded()
         applyIndexIfNeeded()
     }
@@ -152,6 +154,7 @@ private extension QuestionHorizontalPagingController {
         collectionView.alwaysBounceVertical = false
         collectionView.alwaysBounceHorizontal = pages.count > 1
         collectionView.contentInsetAdjustmentBehavior = .never
+        collectionView.isDirectionalLockEnabled = true
         collectionView.delaysContentTouches = false
         collectionView.canCancelContentTouches = true
         collectionView.decelerationRate = .fast
@@ -183,7 +186,7 @@ private extension QuestionHorizontalPagingController {
     func attachOuterPanRequirementIfNeeded() {
         guard !didAttachOuterPan else { return }
         guard let outerPan else { return }
-        collectionView.panGestureRecognizer.require(toFail: outerPan)
+        outerPan.require(toFail: collectionView.panGestureRecognizer)
         didAttachOuterPan = true
     }
 }
@@ -214,6 +217,7 @@ extension QuestionHorizontalPagingController: UICollectionViewDataSource {
 extension QuestionHorizontalPagingController: UICollectionViewDelegate, UIScrollViewDelegate {
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         if scrollView === collectionView {
+            lastDragTranslation = .zero
             onUserInteraction()
         }
     }
@@ -227,11 +231,33 @@ extension QuestionHorizontalPagingController: UICollectionViewDelegate, UIScroll
         let pageWidth = scrollView.bounds.width
         guard pageWidth > 0 else { return }
 
-        let maxIndex = max(pages.count - 1, 0)
-        let target = targetContentOffset.pointee.x / pageWidth
-        let page = Int(round(target))
-        let clamped = max(0, min(page, maxIndex))
-        targetContentOffset.pointee.x = CGFloat(clamped) * pageWidth
+        let translation = lastDragTranslation == .zero
+            ? collectionView.panGestureRecognizer.translation(in: collectionView)
+            : lastDragTranslation
+        let minTranslation = pageWidth * 0.06
+        let minVelocity: CGFloat = 0.2
+
+        var targetIndex = currentIndex
+        let meetsTranslation = abs(translation.x) > minTranslation
+        let meetsVelocity = abs(velocity.x) > minVelocity
+
+        if meetsTranslation || meetsVelocity {
+            let maxIndex = max(pages.count - 1, 0)
+            let direction = meetsTranslation ? translation.x : velocity.x
+            if direction > 0 {
+                targetIndex = max(currentIndex - 1, 0)
+            } else if direction < 0 {
+                targetIndex = min(currentIndex + 1, maxIndex)
+            }
+        }
+
+        targetContentOffset.pointee.x = CGFloat(targetIndex) * pageWidth
+    }
+
+    func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView === collectionView, scrollView.isDragging {
+            lastDragTranslation = collectionView.panGestureRecognizer.translation(in: collectionView)
+        }
     }
 
     func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {

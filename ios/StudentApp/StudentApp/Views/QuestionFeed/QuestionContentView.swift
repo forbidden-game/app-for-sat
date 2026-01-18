@@ -271,11 +271,13 @@ struct QuestionContentView: View {
                 layoutReady = true
                 if case .long(let pages) = result {
                     let pageCount = pages.count + 1
+                    state.setStemPageCount(pageCount, for: question.id)
                     let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
                     if clamped != state.stemPage(for: question.id) {
                         state.setStemPage(clamped, for: question.id)
                     }
                 } else {
+                    state.setStemPageCount(1, for: question.id)
                     state.setStemPage(0, for: question.id)
                 }
             }

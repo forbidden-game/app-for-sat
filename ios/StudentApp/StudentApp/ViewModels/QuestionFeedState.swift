@@ -9,6 +9,7 @@ final class QuestionFeedState: ObservableObject {
     @Published private(set) var autoAdvanceState: AutoAdvanceState
 
     private var stemPageByQuestionId: [String: Int] = [:]
+    private var stemPageCountByQuestionId: [String: Int] = [:]
     private var stemSwipeHintSeenQuestionIds: Set<String> = []
 
     init(initialIndex: Int = 0) {
@@ -86,7 +87,23 @@ final class QuestionFeedState: ObservableObject {
     }
 
     func setStemPage(_ page: Int, for questionId: String) {
-        stemPageByQuestionId[questionId] = max(0, page)
+        let clamped = max(0, page)
+        if stemPageByQuestionId[questionId] != clamped {
+            objectWillChange.send()
+            stemPageByQuestionId[questionId] = clamped
+        }
+    }
+
+    func stemPageCount(for questionId: String) -> Int {
+        stemPageCountByQuestionId[questionId] ?? 1
+    }
+
+    func setStemPageCount(_ count: Int, for questionId: String) {
+        let clamped = max(1, count)
+        if stemPageCountByQuestionId[questionId] != clamped {
+            objectWillChange.send()
+            stemPageCountByQuestionId[questionId] = clamped
+        }
     }
 
     func hasSeenStemSwipeHint(for questionId: String) -> Bool {
@@ -94,7 +111,10 @@ final class QuestionFeedState: ObservableObject {
     }
 
     func markSeenStemSwipeHint(for questionId: String) {
-        stemSwipeHintSeenQuestionIds.insert(questionId)
+        if !stemSwipeHintSeenQuestionIds.contains(questionId) {
+            objectWillChange.send()
+            stemSwipeHintSeenQuestionIds.insert(questionId)
+        }
     }
 }
 

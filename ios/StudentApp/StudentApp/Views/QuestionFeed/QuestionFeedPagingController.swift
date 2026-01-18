@@ -6,6 +6,7 @@ private protocol QuestionFeedGestureGate: AnyObject {
     var canPageUp: Bool { get }
     var canPageDown: Bool { get }
     var isInputFocused: Bool { get }
+    var horizontalPageCount: Int { get }
 }
 
 private final class QuestionFeedCollectionView: UICollectionView {
@@ -22,8 +23,11 @@ private final class QuestionFeedCollectionView: UICollectionView {
             let dy = abs(translation.y) > 0 ? translation.y : velocity.y
             let dx = abs(translation.x) > 0 ? translation.x : velocity.x
 
+            let hasHorizontalPages = (gestureGate?.horizontalPageCount ?? 1) > 1
+            let horizontalBias: CGFloat = hasHorizontalPages ? 1.2 : 1.4
+
             // Let vertical paging begin unless the gesture is clearly horizontal.
-            if abs(dx) > abs(dy) * 1.2 {
+            if abs(dx) > abs(dy) * horizontalBias {
                 return false
             }
 
@@ -148,6 +152,7 @@ private extension QuestionFeedPagingController {
         collectionView.alwaysBounceHorizontal = false
         collectionView.alwaysBounceVertical = session.questions.count > 1
         collectionView.contentInsetAdjustmentBehavior = .never
+        collectionView.isDirectionalLockEnabled = true
         collectionView.delaysContentTouches = false
         collectionView.canCancelContentTouches = true
         collectionView.decelerationRate = .fast
@@ -244,8 +249,8 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
             ? collectionView.panGestureRecognizer.translation(in: collectionView)
             : lastDragTranslation
 
-        let minTranslation = pageHeight * 0.08
-        let minVelocity: CGFloat = 0.25
+        let minTranslation = pageHeight * 0.06
+        let minVelocity: CGFloat = 0.2
 
         var targetIndex = currentPageIndex
         let meetsTranslation = abs(translation.y) > minTranslation
@@ -291,6 +296,11 @@ extension QuestionFeedPagingController: QuestionFeedGestureGate {
     var canPageUp: Bool { currentPageIndex > 0 }
     var canPageDown: Bool { currentPageIndex < session.questions.count }
     var isInputFocused: Bool { state.inputState.isFocused }
+    var horizontalPageCount: Int {
+        guard currentPageIndex < session.questions.count else { return 1 }
+        let questionId = session.questions[currentPageIndex].id
+        return state.stemPageCount(for: questionId)
+    }
 }
 
 // MARK: - Helpers
