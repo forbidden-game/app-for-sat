@@ -98,12 +98,15 @@ struct QuestionContentView: View {
 
             pagedStemCard(questionId: question.id, text: question.stem)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(maxHeight: .infinity, alignment: .top)
+                .frame(minHeight: 120, alignment: .top)
+                .layoutPriority(0)
 
             if let options = question.options, !options.isEmpty {
                 optionsGrid(options, questionId: question.id, questionIndex: index)
+                    .layoutPriority(1)
             } else {
                 freeResponseField(questionId: question.id, questionIndex: index)
+                    .layoutPriority(1)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -233,6 +236,7 @@ struct QuestionContentView: View {
 
                 MathTextView(text: option.content, style: .option)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
             }
