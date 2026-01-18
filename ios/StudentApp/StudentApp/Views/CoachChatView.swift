@@ -1,15 +1,9 @@
 import AVFoundation
 import SwiftUI
-import UIKit
 import StudentCore
 
 struct CoachChatView: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var pendingImage: UIImage?
-    @State private var showCameraPicker = false
-    @State private var showLibraryPicker = false
-    @State private var isRecording = false
-    @State private var recordingStartedAt = Date()
     @State private var audioPlayer: AVAudioPlayer?
     @State private var audioPlayerDelegate = AudioPlayerDelegate()
     @State private var playingMessageId: String?
@@ -17,7 +11,6 @@ struct CoachChatView: View {
     @State private var playbackTimer: Timer?
     @State private var isPinnedToBottom = true
     @State private var scrollViewHeight: CGFloat = 0
-    @State private var isSavingImage = false
 
     @StateObject private var vm: CoachChatViewModel
     private let linkedAttemptId: String?
@@ -27,7 +20,6 @@ struct CoachChatView: View {
         _vm = StateObject(
             wrappedValue: CoachChatViewModel(
                 studentId: studentId,
-                linkedAttemptId: linkedAttemptId,
                 initialDraftText: initialDraftText
             )
         )
@@ -51,14 +43,7 @@ struct CoachChatView: View {
                         ScrollView {
                             LazyVStack(spacing: 12) {
                                 if vm.messages.isEmpty {
-                                    CoachChatEmptyStateView(
-                                        prompts: Array(vm.promptCandidates.prefix(3)),
-                                        onPromptTap: { prompt in
-                                            Task { await vm.sendPrompt(prompt) }
-                                        },
-                                        onCameraTap: openCamera,
-                                        onMicTap: toggleRecording
-                                    )
+                                    CoachChatEmptyStateView()
                                     .padding(.top, 12)
                                 }
 
@@ -134,27 +119,21 @@ struct CoachChatView: View {
 
                 CoachChatComposerView(
                     draftText: $vm.draftText,
-                    promptText: vm.promptText,
-                    isSending: vm.isSending || isSavingImage,
-                    isRecording: isRecording,
-                    recordingStartedAt: recordingStartedAt,
-                    pendingImage: pendingImage,
+                    promptText: "发消息…",
+                    isSending: vm.isSending,
+                    isRecording: false,
+                    recordingStartedAt: Date(),
+                    pendingImage: nil,
                     errorMessage: vm.errorMessage,
                     onSend: sendMessage,
                     onCamera: openCamera,
                     onLibrary: openLibrary,
                     onToggleRecording: toggleRecording,
-                    onClearImage: { pendingImage = nil }
+                    onClearImage: {}
                 )
             }
             .padding(.top, 12)
             .padding(.bottom, 12)
-        }
-        .sheet(isPresented: $showCameraPicker) {
-            ImagePicker(image: $pendingImage, sourceType: .camera)
-        }
-        .sheet(isPresented: $showLibraryPicker) {
-            ImagePicker(image: $pendingImage, sourceType: .photoLibrary)
         }
         .task {
             await vm.load()
@@ -181,19 +160,15 @@ struct CoachChatView: View {
     }
 
     private func openCamera() {
-        if UIImagePickerController.isSourceTypeAvailable(.camera) {
-            showCameraPicker = true
-        } else {
-            showLibraryPicker = true
-        }
+        vm.errorMessage = "即将上线：拍题。"
     }
 
     private func openLibrary() {
-        showLibraryPicker = true
+        vm.errorMessage = "即将上线：相册选题。"
     }
 
     private func toggleRecording() {
-        vm.errorMessage = "语音发送功能暂未接通。"
+        vm.errorMessage = "即将上线：语音。"
     }
 
     private func togglePlayback(messageId: String, payload: CoachChatAudioPayload) {
@@ -267,20 +242,8 @@ struct CoachChatView: View {
     }
 
     private func sendMessage() {
-        Task { @MainActor in
-            let image = pendingImage
-            if let image {
-                isSavingImage = true
-                do {
-                    let payload = try CoachChatImageStore.saveCompressedImage(image)
-                    vm.addLocalImageMessage(payload: payload)
-                    pendingImage = nil
-                } catch {
-                    vm.errorMessage = "图片处理失败，请稍后重试。"
-                }
-                isSavingImage = false
-            }
-            await vm.send()
+        Task {
+            await vm.send(linkedAttemptId: linkedAttemptId)
         }
     }
 }
