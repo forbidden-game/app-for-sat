@@ -17,27 +17,17 @@ private final class QuestionFeedCollectionView: UICollectionView {
                 return super.gestureRecognizerShouldBegin(gestureRecognizer)
             }
 
-            if gestureGate?.isInputFocused == true {
-                return false
-            }
-
             let translation = pan.translation(in: self)
             let velocity = pan.velocity(in: self)
             let dy = abs(translation.y) > 0 ? translation.y : velocity.y
             let dx = abs(translation.x) > 0 ? translation.x : velocity.x
 
-            // Only start paging when the gesture is predominantly vertical.
-            if abs(dy) <= abs(dx) {
+            // Let vertical paging begin unless the gesture is clearly horizontal.
+            if abs(dx) > abs(dy) * 1.2 {
                 return false
             }
 
-            if dy > 0 {
-                return gestureGate?.canPageUp ?? false
-            }
-            if dy < 0 {
-                return gestureGate?.canPageDown ?? false
-            }
-            return false
+            return true
         }
         return super.gestureRecognizerShouldBegin(gestureRecognizer)
     }
@@ -235,6 +225,9 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
     func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
         if scrollView === collectionView {
             lastDragTranslation = .zero
+            if state.inputState.isFocused {
+                state.setFocus(false)
+            }
         }
     }
 
@@ -251,17 +244,19 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
             ? collectionView.panGestureRecognizer.translation(in: collectionView)
             : lastDragTranslation
 
-        let minTranslation = pageHeight * 0.12
-        let minVelocity: CGFloat = 0.35
+        let minTranslation = pageHeight * 0.08
+        let minVelocity: CGFloat = 0.25
 
         var targetIndex = currentPageIndex
-        let signalY = abs(translation.y) > 0 ? translation.y : velocity.y
+        let meetsTranslation = abs(translation.y) > minTranslation
+        let meetsVelocity = abs(velocity.y) > minVelocity
 
-        if abs(translation.y) > minTranslation || abs(velocity.y) > minVelocity {
+        if meetsTranslation || meetsVelocity {
             let maxIndex = session.questions.count
-            if signalY > 0 {
+            let direction = meetsTranslation ? translation.y : velocity.y
+            if direction > 0 {
                 targetIndex = max(currentPageIndex - 1, 0)
-            } else if signalY < 0 {
+            } else if direction < 0 {
                 targetIndex = min(currentPageIndex + 1, maxIndex)
             }
         }
