@@ -50,7 +50,7 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     @discardableResult
-    func send(linkedAttemptId: String?) async -> Bool {
+    func send(linkedAttemptId: String?, replyToMessageId: String?) async -> Bool {
         if isSending {
             return false
         }
@@ -63,7 +63,11 @@ final class CoachChatViewModel: ObservableObject {
         defer { isSending = false }
 
         do {
-            _ = try await service.sendMessage(text: text, linkedAttemptId: linkedAttemptId)
+            _ = try await service.sendMessage(
+                text: text,
+                linkedAttemptId: linkedAttemptId,
+                replyToMessageId: replyToMessageId
+            )
             draftText = ""
             return true
         } catch {

@@ -19,6 +19,7 @@ public final class SupabaseCoachService {
             let role: CoachThreadRole
             let content: CoachMessageContent
             let linked_attempt_id: UUID?
+            let reply_to_message_id: UUID?
             let created_at: Date
         }
 
@@ -28,7 +29,7 @@ public final class SupabaseCoachService {
 
         let rows: [Row] = try await client
             .from("coach_thread_messages")
-            .select("id, role, content, linked_attempt_id, created_at")
+            .select("id, role, content, linked_attempt_id, reply_to_message_id, created_at")
             .eq("student_id", value: studentUUID)
             // Fetch latest N, then reverse to chronological for chat UI.
             .order("created_at", ascending: false)
@@ -42,6 +43,7 @@ public final class SupabaseCoachService {
                 role: row.role,
                 content: row.content,
                 linkedAttemptId: row.linked_attempt_id?.uuidString,
+                replyToMessageId: row.reply_to_message_id?.uuidString,
                 createdAt: row.created_at
             )
         }
@@ -148,10 +150,15 @@ public final class SupabaseCoachService {
         }
     }
 
-    public func sendMessage(text: String, linkedAttemptId: String? = nil) async throws -> String {
+    public func sendMessage(
+        text: String,
+        linkedAttemptId: String? = nil,
+        replyToMessageId: String? = nil
+    ) async throws -> String {
         struct Payload: Encodable {
             let text: String
             let linked_attempt_id: String?
+            let reply_to_message_id: String?
         }
 
         struct FunctionResponse: Decodable {
@@ -173,7 +180,7 @@ public final class SupabaseCoachService {
                     "Authorization": "Bearer \(accessToken)",
                     "apikey": SupabaseConfig.anonKey,
                 ],
-                body: Payload(text: trimmed, linked_attempt_id: linkedAttemptId)
+                body: Payload(text: trimmed, linked_attempt_id: linkedAttemptId, reply_to_message_id: replyToMessageId)
             )
         )
 
@@ -213,6 +220,7 @@ public final class SupabaseCoachService {
                         let role: CoachThreadRole
                         let content: CoachMessageContent
                         let linked_attempt_id: UUID?
+                        let reply_to_message_id: UUID?
                         let created_at: String
                     }
                     let row = try action.decodeRecord(as: Row.self, decoder: decoder)
@@ -223,6 +231,7 @@ public final class SupabaseCoachService {
                                 role: row.role,
                                 content: row.content,
                                 linkedAttemptId: row.linked_attempt_id?.uuidString,
+                                replyToMessageId: row.reply_to_message_id?.uuidString,
                                 createdAt: SupabaseCoachService.parseISODate(row.created_at)
                             )
                         )
@@ -241,6 +250,7 @@ public final class SupabaseCoachService {
                         let role: CoachThreadRole
                         let content: CoachMessageContent
                         let linked_attempt_id: UUID?
+                        let reply_to_message_id: UUID?
                         let created_at: String
                     }
                     let row = try action.decodeRecord(as: Row.self, decoder: decoder)
@@ -251,6 +261,7 @@ public final class SupabaseCoachService {
                                 role: row.role,
                                 content: row.content,
                                 linkedAttemptId: row.linked_attempt_id?.uuidString,
+                                replyToMessageId: row.reply_to_message_id?.uuidString,
                                 createdAt: SupabaseCoachService.parseISODate(row.created_at)
                             )
                         )

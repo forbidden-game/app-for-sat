@@ -8,6 +8,7 @@ export const config = {
 type CoachChatBody = {
   text: string;
   linked_attempt_id?: string | null;
+  reply_to_message_id?: string | null;
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -75,6 +76,27 @@ serve(async (req) => {
     linkedAttemptId = linkedAttemptCandidate;
   }
 
+  let replyToMessageId: string | null = null;
+  const replyToMessageCandidate = typeof body.reply_to_message_id === "string" ? body.reply_to_message_id.trim() : "";
+  if (replyToMessageCandidate) {
+    const { data: replyRow, error: replyError } = await supabase
+      .from("coach_thread_messages")
+      .select("id")
+      .eq("id", replyToMessageCandidate)
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    if (replyError) {
+      return jsonResponse({ error: "reply_to_message_lookup_failed" }, 500);
+    }
+
+    if (!replyRow) {
+      return jsonResponse({ error: "reply_to_message_not_found" }, 404);
+    }
+
+    replyToMessageId = replyToMessageCandidate;
+  }
+
   const { data: userMessage, error: insertError } = await supabase
     .from("coach_thread_messages")
     .insert({
@@ -82,6 +104,7 @@ serve(async (req) => {
       role: "user",
       content: { text },
       linked_attempt_id: linkedAttemptId,
+      reply_to_message_id: replyToMessageId,
     })
     .select("id")
     .single();

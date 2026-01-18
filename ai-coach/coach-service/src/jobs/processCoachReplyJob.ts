@@ -18,6 +18,7 @@ type CoachThreadMessageRow = {
   content: unknown;
   created_at: string;
   linked_attempt_id: string | null;
+  reply_to_message_id: string | null;
 };
 
 function extractText(content: unknown): string {
@@ -59,19 +60,19 @@ async function updateAssistantMessage(
   if (error) throw new Error(error.message);
 }
 
-async function fetchTargetUserMessage(
+async function fetchThreadMessage(
   supabase: SupabaseClient,
   studentId: string,
-  userMessageId: string,
-): Promise<CoachThreadMessageRow> {
+  messageId: string,
+): Promise<CoachThreadMessageRow | null> {
   const { data, error } = await supabase
     .from("coach_thread_messages")
-    .select("id,student_id,role,content,created_at,linked_attempt_id")
-    .eq("id", userMessageId)
+    .select("id,student_id,role,content,created_at,linked_attempt_id,reply_to_message_id")
+    .eq("id", messageId)
     .maybeSingle();
 
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("user_message_not_found");
+  if (!data) return null;
 
   const row = data as CoachThreadMessageRow;
   if (row.student_id !== studentId) {
@@ -79,6 +80,16 @@ async function fetchTargetUserMessage(
     throw new Error("user_message_forbidden");
   }
 
+  return row;
+}
+
+async function fetchTargetUserMessage(
+  supabase: SupabaseClient,
+  studentId: string,
+  userMessageId: string,
+): Promise<CoachThreadMessageRow> {
+  const row = await fetchThreadMessage(supabase, studentId, userMessageId);
+  if (!row) throw new Error("user_message_not_found");
   return row;
 }
 
@@ -104,7 +115,20 @@ export async function processCoachReplyJob(
     if (row.linked_attempt_id) {
       linkedAttemptId = row.linked_attempt_id;
     }
-    target = { id: row.id, text: extractText(row.content) };
+
+    let replyTo: CoachReplyTargetMessage["reply_to"] | null = null;
+    if (row.reply_to_message_id) {
+      const replyRow = await fetchThreadMessage(supabase, studentId, row.reply_to_message_id);
+      if (replyRow) {
+        replyTo = {
+          id: replyRow.id,
+          role: replyRow.role,
+          text: extractText(replyRow.content),
+        };
+      }
+    }
+
+    target = { id: row.id, text: extractText(row.content), reply_to: replyTo };
   }
 
   const context = await buildCoachContext({

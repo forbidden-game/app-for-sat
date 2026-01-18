@@ -3,6 +3,11 @@ import type { CoachContextPacket } from "../context/coachContext.js";
 export type CoachReplyTargetMessage = {
   id: string;
   text: string;
+  reply_to?: {
+    id: string;
+    role: "user" | "assistant" | "tool";
+    text: string;
+  } | null;
 } | null;
 
 export function buildCoachReplyPrompt(ctx: CoachContextPacket, target?: CoachReplyTargetMessage): string {

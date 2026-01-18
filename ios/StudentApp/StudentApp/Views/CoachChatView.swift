@@ -18,6 +18,7 @@ struct CoachChatView: View {
 
     @State private var toast: ChatToast?
     @State private var linkedAttemptContextId: String?
+    @State private var replyToMessageId: String?
 
     @FocusState private var isInputFocused: Bool
 
@@ -62,26 +63,44 @@ struct CoachChatView: View {
                     CoachChatEmptyStateView()
                         .padding(.top, 12)
                 },
-                row: { message, index in
+                row: { message, index, scrollToMessage in
                     let previous = index > 0 ? vm.messages[index - 1] : nil
                     let next = index + 1 < vm.messages.count ? vm.messages[index + 1] : nil
+                    let replyMessage = message.replyToMessageId.flatMap { replyId in
+                        vm.messages.first(where: { $0.id == replyId })
+                    }
 
                     CoachChatMessageRow(
                         message: message,
                         previousMessage: previous,
                         nextMessage: next,
+                        replyMessage: replyMessage,
                         playingMessageId: playingMessageId,
                         playbackProgress: playbackProgress,
                         onPlayAudio: { messageId, payload in
                             togglePlayback(messageId: messageId, payload: payload)
+                        },
+                        onReply: { message in
+                            setReply(message: message)
+                        },
+                        onTapReply: { messageId in
+                            scrollToMessage(messageId)
                         }
                     )
                 },
                 banner: {
-                    if linkedAttemptContextId != nil {
-                        CoachChatContextBanner(onRemove: removeLinkedAttemptContext)
-                            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    VStack(spacing: 8) {
+                        if let replyMessage = replyContextMessage {
+                            CoachChatReplyBanner(message: replyMessage, onRemove: removeReplyContext)
+                                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+
+                        if linkedAttemptContextId != nil {
+                            CoachChatContextBanner(onRemove: removeLinkedAttemptContext)
+                                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
                     }
                 },
                 composer: {
@@ -162,6 +181,11 @@ struct CoachChatView: View {
         return "\(last.id)|\(status)|\(last.content.text.count)"
     }
 
+    private var replyContextMessage: CoachThreadMessage? {
+        guard let replyToMessageId else { return nil }
+        return vm.messages.first(where: { $0.id == replyToMessageId })
+    }
+
     private func openSubtitleEditor() {
         subtitleDraft = customSubtitle
         showSubtitleEditor = true
@@ -171,14 +195,33 @@ struct CoachChatView: View {
         // Capture @State on the main actor before entering an async Task.
         // Otherwise the value can be read off-main (argument evaluation happens before the @MainActor hop).
         let linkedAttemptId = linkedAttemptContextId
+        let replyTargetId = replyToMessageId
 
         Task { @MainActor in
-            let didSend = await vm.send(linkedAttemptId: linkedAttemptId)
+            let didSend = await vm.send(linkedAttemptId: linkedAttemptId, replyToMessageId: replyTargetId)
             if didSend, linkedAttemptId != nil {
                 withAnimation(.easeOut(duration: 0.18)) {
                     linkedAttemptContextId = nil
                 }
             }
+            if didSend, replyTargetId != nil {
+                withAnimation(.easeOut(duration: 0.18)) {
+                    replyToMessageId = nil
+                }
+            }
+        }
+    }
+
+    private func setReply(message: CoachThreadMessage) {
+        withAnimation(.easeOut(duration: 0.18)) {
+            replyToMessageId = message.id
+        }
+        isInputFocused = true
+    }
+
+    private func removeReplyContext() {
+        withAnimation(.easeOut(duration: 0.18)) {
+            replyToMessageId = nil
         }
     }
 
@@ -300,6 +343,54 @@ private struct ChatToastView: View {
                     .stroke(AppTheme.divider, lineWidth: 1)
             )
             .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 4)
+    }
+}
+
+private struct CoachChatReplyBanner: View {
+    let message: CoachThreadMessage
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "quote.bubble")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AppTheme.textSecondary)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("引用 \(message.replyAuthorLabel)")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+
+                Text(message.replyPreviewText)
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.textMuted)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .frame(width: 28, height: 28)
+                    .background(AppTheme.surface)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle().stroke(AppTheme.divider, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("取消引用")
+        }
+        .padding(12)
+        .background(AppTheme.surfaceRaised)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(AppTheme.dividerStrong, lineWidth: 1.2)
+        )
+        .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 4)
     }
 }
 
@@ -444,7 +535,7 @@ private struct ChatTemplateView<
     let messages: [Message]
     let scrollToBottomToken: AnyHashable
     @ViewBuilder let emptyState: () -> EmptyState
-    @ViewBuilder let row: (Message, Int) -> Row
+    @ViewBuilder let row: (Message, Int, @escaping (Message.ID) -> Void) -> Row
     @ViewBuilder let banner: () -> Banner
     @ViewBuilder let composer: () -> Composer
 
@@ -465,7 +556,9 @@ private struct ChatTemplateView<
                             }
 
                             ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
-                                row(message, index)
+                                row(message, index) { messageId in
+                                    scrollToMessage(scrollProxy, messageId: messageId)
+                                }
                             }
 
                             Color.clear
@@ -546,6 +639,13 @@ private struct ChatTemplateView<
         let transaction = Transaction(animation: animated ? .easeOut(duration: 0.2) : nil)
         withTransaction(transaction) {
             proxy.scrollTo("BOTTOM", anchor: .bottom)
+        }
+    }
+
+    private func scrollToMessage(_ proxy: ScrollViewProxy, messageId: Message.ID) {
+        let transaction = Transaction(animation: .easeOut(duration: 0.2))
+        withTransaction(transaction) {
+            proxy.scrollTo(messageId, anchor: .center)
         }
     }
 }
