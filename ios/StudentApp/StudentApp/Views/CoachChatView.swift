@@ -24,13 +24,21 @@ struct CoachChatView: View {
     @StateObject private var vm: CoachChatViewModel
 
     init(studentId: String, linkedAttemptId: String? = nil, initialDraftText: String? = nil) {
-        _linkedAttemptContextId = State(initialValue: linkedAttemptId)
+        _linkedAttemptContextId = State(initialValue: Self.normalizeLinkedAttemptId(linkedAttemptId))
         _vm = StateObject(
             wrappedValue: CoachChatViewModel(
                 studentId: studentId,
                 initialDraftText: initialDraftText
             )
         )
+    }
+
+    private static func normalizeLinkedAttemptId(_ id: String?) -> String? {
+        let trimmed = id?.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let trimmed, !trimmed.isEmpty else { return nil }
+        // Defensive: avoid sending invalid IDs that the edge function will ignore.
+        guard UUID(uuidString: trimmed) != nil else { return nil }
+        return trimmed
     }
 
     var body: some View {
@@ -160,8 +168,12 @@ struct CoachChatView: View {
     }
 
     private func sendMessage() {
-        Task {
-            await vm.send(linkedAttemptId: linkedAttemptContextId)
+        // Capture @State on the main actor before entering an async Task.
+        // Otherwise the value can be read off-main (argument evaluation happens before the @MainActor hop).
+        let linkedAttemptId = linkedAttemptContextId
+
+        Task { @MainActor in
+            _ = await vm.send(linkedAttemptId: linkedAttemptId)
         }
     }
 
