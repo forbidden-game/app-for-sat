@@ -14,11 +14,11 @@ public final class SupabasePracticeService {
         self.tokenProvider = SupabaseAuthTokenProvider(client: client)
     }
 
-    private static let iso8601Formatter: ISO8601DateFormatter = {
+    private static func iso8601String(from date: Date) -> String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+        return formatter.string(from: date)
+    }
 
     public func fetchQuestionBanks() async throws -> [QuestionBank] {
         struct BankRow: Decodable {
@@ -235,8 +235,8 @@ public final class SupabasePracticeService {
         }
 
         let params = Params(
-            p_start: start.map { Self.iso8601Formatter.string(from: $0) },
-            p_end: end.map { Self.iso8601Formatter.string(from: $0) },
+            p_start: start.map { Self.iso8601String(from: $0) },
+            p_end: end.map { Self.iso8601String(from: $0) },
             p_bank_id: bankId,
             p_limit: limit,
             p_offset: offset
