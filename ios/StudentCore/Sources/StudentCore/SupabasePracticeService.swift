@@ -14,6 +14,12 @@ public final class SupabasePracticeService {
         self.tokenProvider = SupabaseAuthTokenProvider(client: client)
     }
 
+    private static let iso8601Formatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
     public func fetchQuestionBanks() async throws -> [QuestionBank] {
         struct BankRow: Decodable {
             let id: UUID
@@ -211,6 +217,37 @@ public final class SupabasePracticeService {
             .value
 
         return result
+    }
+
+    public func fetchSessionHistory(
+        start: Date? = nil,
+        end: Date? = nil,
+        bankId: String? = nil,
+        limit: Int = 50,
+        offset: Int = 0
+    ) async throws -> [SessionHistoryItem] {
+        struct Params: Encodable {
+            let p_start: String?
+            let p_end: String?
+            let p_bank_id: String?
+            let p_limit: Int
+            let p_offset: Int
+        }
+
+        let params = Params(
+            p_start: start.map { Self.iso8601Formatter.string(from: $0) },
+            p_end: end.map { Self.iso8601Formatter.string(from: $0) },
+            p_bank_id: bankId,
+            p_limit: limit,
+            p_offset: offset
+        )
+
+        let items: [SessionHistoryItem] = try await client
+            .rpc("get_session_history", params: params)
+            .execute()
+            .value
+
+        return items
     }
 
     private func encodedAnswer(for question: Question, answer: String?) -> FunctionAnswerValue? {
