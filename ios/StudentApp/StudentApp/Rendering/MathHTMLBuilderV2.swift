@@ -140,10 +140,8 @@ enum MathHTMLBuilderV2 {
                 color: \(textColorHex);
                 -webkit-text-size-adjust: 100%;
                 -webkit-font-smoothing: antialiased;
-                opacity: 0;
                 transform: scale(1);
               }
-              body.ready { opacity: 1; }
               .content {
                 height: 100%;
                 white-space: pre-wrap;
@@ -153,9 +151,8 @@ enum MathHTMLBuilderV2 {
                 column-width: 100vw;
                 column-gap: 0;
                 column-fill: auto;
-                visibility: hidden;
+                visibility: visible;
               }
-              .content.ready { visibility: visible; }
               img {
                 max-width: 100%;
                 height: auto;
@@ -186,11 +183,6 @@ enum MathHTMLBuilderV2 {
           <body data-scale=\"\(displayScale)\">
             <div class=\"content\">\(bodyText)</div>
             <script>
-              function markReady() {
-                var content = document.querySelector(\".content\");
-                if (content) { content.classList.add(\"ready\"); }
-                document.body.classList.add(\"ready\");
-              }
               document.addEventListener(\"DOMContentLoaded\", function() {
                 if (typeof renderMathInElement === \"function\") {
                   renderMathInElement(document.body, {
@@ -203,11 +195,8 @@ enum MathHTMLBuilderV2 {
                     throwOnError: false
                   });
                 }
-                markReady();
               });
-              window.addEventListener(\"load\", function() {
-                markReady();
-              });
+
             </script>
           </body>
         </html>

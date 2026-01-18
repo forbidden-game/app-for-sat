@@ -113,6 +113,11 @@ private struct PagedMathWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.processPool = MathWebViewProcessPool.shared
+        if #available(iOS 14.0, *) {
+            config.defaultWebpagePreferences.allowsContentJavaScript = true
+        } else {
+            config.preferences.javaScriptEnabled = true
+        }
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.isOpaque = false
