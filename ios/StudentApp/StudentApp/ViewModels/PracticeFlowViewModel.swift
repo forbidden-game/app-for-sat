@@ -123,7 +123,7 @@ final class PracticeFlowViewModel: ObservableObject {
             defer { self.insightPrefetchTasks[attemptId] = nil }
             for _ in 0..<12 {
                 if Task.isCancelled { return }
-                if let insight = try? await self.fetchAttemptInsight(attemptId: attemptId), insight != nil {
+                if let _ = try? await self.fetchAttemptInsight(attemptId: attemptId) {
                     return
                 }
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
