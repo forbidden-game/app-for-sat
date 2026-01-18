@@ -30,12 +30,13 @@ public final class SupabaseCoachService {
             .from("coach_thread_messages")
             .select("id, role, content, linked_attempt_id, created_at")
             .eq("student_id", value: studentUUID)
-            .order("created_at", ascending: true)
+            // Fetch latest N, then reverse to chronological for chat UI.
+            .order("created_at", ascending: false)
             .limit(limit)
             .execute()
             .value
 
-        return rows.map { row in
+        return rows.reversed().map { row in
             CoachThreadMessage(
                 id: row.id.uuidString,
                 role: row.role,
