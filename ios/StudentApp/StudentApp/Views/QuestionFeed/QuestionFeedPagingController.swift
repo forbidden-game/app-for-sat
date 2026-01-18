@@ -258,7 +258,18 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
 
         if meetsTranslation || meetsVelocity {
             let maxIndex = session.questions.count
-            let direction = meetsTranslation ? translation.y : velocity.y
+            let translationSign = translation.y.sign
+            let velocitySign = velocity.y.sign
+            let direction: CGFloat
+
+            if meetsVelocity && meetsTranslation && translationSign != velocitySign {
+                direction = velocity.y
+            } else if meetsVelocity {
+                direction = velocity.y
+            } else {
+                direction = translation.y
+            }
+
             if direction > 0 {
                 targetIndex = max(currentPageIndex - 1, 0)
             } else if direction < 0 {
