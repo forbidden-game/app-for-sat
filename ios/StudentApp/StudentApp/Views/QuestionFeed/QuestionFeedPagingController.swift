@@ -224,7 +224,7 @@ extension QuestionFeedPagingController: UICollectionViewDataSource {
             onSubmissionError: onSubmissionError
         )
 
-        cell.configure(config)
+        cell.configure(config, outerPan: collectionView.panGestureRecognizer)
         return cell
     }
 }

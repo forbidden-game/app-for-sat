@@ -1,10 +1,12 @@
 import SwiftUI
+import UIKit
 import WebKit
 import StudentCore
 
 struct StemPagedCardView: View {
     let questionId: String
     let text: String
+    let outerPan: UIPanGestureRecognizer?
     @ObservedObject var state: QuestionFeedState
 
     @State private var pageCount: Int = 1
@@ -16,6 +18,7 @@ struct StemPagedCardView: View {
             text: text,
             style: .questionStem,
             textColor: AppTheme.textPrimary,
+            outerPan: outerPan,
             pageCount: $pageCount,
             pageIndex: $pageIndex,
             onUserInteraction: {
@@ -95,6 +98,7 @@ private struct PagedMathWebView: UIViewRepresentable {
     let text: String
     let style: MathTextStyle
     let textColor: Color
+    let outerPan: UIPanGestureRecognizer?
     @Binding var pageCount: Int
     @Binding var pageIndex: Int
     let onUserInteraction: () -> Void
@@ -122,7 +126,6 @@ private struct PagedMathWebView: UIViewRepresentable {
         webView.scrollView.decelerationRate = .fast
         webView.scrollView.isDirectionalLockEnabled = true
         webView.scrollView.delegate = context.coordinator
-        webView.scrollView.panGestureRecognizer.delegate = context.coordinator
         webView.navigationDelegate = context.coordinator
 
         context.coordinator.webView = webView
@@ -140,6 +143,7 @@ private struct PagedMathWebView: UIViewRepresentable {
         ].joined(separator: "|")
 
         context.coordinator.updateLayoutIfNeeded(for: webView)
+        context.coordinator.attachOuterPanRequirementIfNeeded(outerPan, to: webView)
 
         if context.coordinator.lastKey != requestKey {
             context.coordinator.lastKey = requestKey
@@ -165,11 +169,10 @@ private struct PagedMathWebView: UIViewRepresentable {
 
     static func dismantleUIView(_ webView: WKWebView, coordinator: Coordinator) {
         webView.scrollView.delegate = nil
-        webView.scrollView.panGestureRecognizer.delegate = nil
         webView.navigationDelegate = nil
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate, UIScrollViewDelegate, UIGestureRecognizerDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, UIScrollViewDelegate {
         private let pageCount: Binding<Int>
         private let pageIndex: Binding<Int>
         private let onUserInteraction: () -> Void
@@ -180,6 +183,7 @@ private struct PagedMathWebView: UIViewRepresentable {
         var lastAppliedPageIndex: Int?
         private var lastViewportSize: CGSize = .zero
         private var didReportUserInteraction = false
+        private var didAttachOuterPanRequirement = false
 
         init(pageCount: Binding<Int>, pageIndex: Binding<Int>, onUserInteraction: @escaping () -> Void) {
             self.pageCount = pageCount
@@ -201,6 +205,13 @@ private struct PagedMathWebView: UIViewRepresentable {
             }
         }
 
+        func attachOuterPanRequirementIfNeeded(_ outerPan: UIPanGestureRecognizer?, to webView: WKWebView) {
+            guard !didAttachOuterPanRequirement else { return }
+            guard let outerPan else { return }
+            webView.scrollView.panGestureRecognizer.require(toFail: outerPan)
+            didAttachOuterPanRequirement = true
+        }
+
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             // Content size may change after KaTeX and/or images load.
             scheduleMetricUpdates()
@@ -218,22 +229,6 @@ private struct PagedMathWebView: UIViewRepresentable {
             decisionHandler(.allow)
         }
 
-        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
-            guard let webView, gestureRecognizer == webView.scrollView.panGestureRecognizer else {
-                return true
-            }
-            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else {
-                return true
-            }
-
-            let translation = pan.translation(in: webView)
-            let velocity = pan.velocity(in: webView)
-            let dx = abs(translation.x) > 0 ? translation.x : velocity.x
-            let dy = abs(translation.y) > 0 ? translation.y : velocity.y
-
-            // Only handle horizontal pans here. Vertical pans should bubble up to the outer feed.
-            return abs(dx) > abs(dy)
-        }
 
         func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
             if !didReportUserInteraction {

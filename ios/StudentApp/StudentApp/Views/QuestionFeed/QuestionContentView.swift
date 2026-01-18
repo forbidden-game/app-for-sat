@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import StudentCore
 
 struct QuestionContentView: View {
@@ -13,6 +14,7 @@ struct QuestionContentView: View {
     let onBack: () -> Void
     let onShowOverview: () -> Void
     let onSubmissionError: (Error) -> Void
+    let outerPan: UIPanGestureRecognizer?
 
     @FocusState private var isInputFocused: Bool
     @State private var autoAdvanceTask: Task<Void, Never>?
@@ -108,7 +110,7 @@ struct QuestionContentView: View {
     }
 
     private func pagedStemCard(questionId: String, text: String) -> some View {
-        StemPagedCardView(questionId: questionId, text: text, state: state)
+        StemPagedCardView(questionId: questionId, text: text, outerPan: outerPan, state: state)
             .padding(AppMetrics.cardPadding)
             .appSurface(
                 fill: AppTheme.surface,

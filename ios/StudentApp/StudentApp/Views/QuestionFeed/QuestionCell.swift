@@ -39,7 +39,7 @@ final class QuestionCell: UICollectionViewCell {
         hostingController?.rootView = AnyView(EmptyView())
     }
 
-    func configure(_ config: QuestionCellConfiguration) {
+    func configure(_ config: QuestionCellConfiguration, outerPan: UIPanGestureRecognizer?) {
         index = config.index
 
         let rootView: AnyView
@@ -58,7 +58,8 @@ final class QuestionCell: UICollectionViewCell {
                     headerTitle: config.headerTitle,
                     onBack: config.onBack,
                     onShowOverview: config.onShowOverview,
-                    onSubmissionError: config.onSubmissionError
+                    onSubmissionError: config.onSubmissionError,
+                    outerPan: outerPan
                 )
                 .id(question.id)
             )
