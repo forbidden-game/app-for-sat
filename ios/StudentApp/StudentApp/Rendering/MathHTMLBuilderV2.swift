@@ -43,6 +43,12 @@ enum MathHTMLBuilderV2 {
                 visibility: hidden;
               }
               .content.ready { visibility: visible; }
+              img {
+                max-width: 100%;
+                height: auto;
+                display: block;
+                margin: 8px auto;
+              }
               .center {
                 text-align: center;
                 margin: 6px 0;
