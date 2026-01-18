@@ -271,9 +271,9 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
             }
 
             if direction > 0 {
-                targetIndex = max(currentPageIndex - 1, 0)
-            } else if direction < 0 {
                 targetIndex = min(currentPageIndex + 1, maxIndex)
+            } else if direction < 0 {
+                targetIndex = max(currentPageIndex - 1, 0)
             }
         }
 
