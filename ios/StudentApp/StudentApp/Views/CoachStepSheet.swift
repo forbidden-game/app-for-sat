@@ -14,7 +14,7 @@ struct CoachStepSheet: View {
     }
 
     @Binding var coachAttempt: CoachAttemptContext?
-    @ObservedObject var flowModel: PracticeFlowViewModel
+    @ObservedObject var flowModel: any AttemptInsightProviding
 
     let studentId: String
     let attemptId: String

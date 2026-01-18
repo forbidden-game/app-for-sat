@@ -4,7 +4,7 @@ import StudentCore
 struct QuestionDetailView: View {
     let question: QuestionResult
     let studentId: String
-    @ObservedObject var flowModel: PracticeFlowViewModel
+    @ObservedObject var flowModel: any AttemptInsightProviding
     let onBack: () -> Void
 
     @State private var coachAttempt: CoachAttemptContext?
