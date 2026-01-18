@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildCoachContext } from "../context/coachContext.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
-import { buildCoachReplyPrompt, type CoachReplyTargetMessage } from "../prompts/coachReplyPrompt.js";
+import { buildCoachReplyPrompt, type CoachReplyTargetMessage, type CoachReplyToMessage } from "../prompts/coachReplyPrompt.js";
 
 type CoachContent = {
   text?: string;
@@ -116,7 +116,7 @@ export async function processCoachReplyJob(
       linkedAttemptId = row.linked_attempt_id;
     }
 
-    let replyTo: CoachReplyTargetMessage["reply_to"] | null = null;
+    let replyTo: CoachReplyToMessage | null = null;
     if (row.reply_to_message_id) {
       const replyRow = await fetchThreadMessage(supabase, studentId, row.reply_to_message_id);
       if (replyRow) {
