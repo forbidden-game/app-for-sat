@@ -173,7 +173,12 @@ struct CoachChatView: View {
         let linkedAttemptId = linkedAttemptContextId
 
         Task { @MainActor in
-            _ = await vm.send(linkedAttemptId: linkedAttemptId)
+            let didSend = await vm.send(linkedAttemptId: linkedAttemptId)
+            if didSend, linkedAttemptId != nil {
+                withAnimation(.easeOut(duration: 0.18)) {
+                    linkedAttemptContextId = nil
+                }
+            }
         }
     }
 
