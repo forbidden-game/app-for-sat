@@ -1,7 +1,7 @@
 import SwiftUI
 import StudentCore
 
-struct CoachStepSheet: View {
+struct CoachStepSheet<FlowModel: AttemptInsightProviding>: View {
     enum Phase {
         case selectStep
         case loadingInsight
@@ -14,7 +14,7 @@ struct CoachStepSheet: View {
     }
 
     @Binding var coachAttempt: CoachAttemptContext?
-    @ObservedObject var flowModel: any AttemptInsightProviding
+    @ObservedObject var flowModel: FlowModel
 
     let studentId: String
     let attemptId: String

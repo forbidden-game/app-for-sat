@@ -1,10 +1,10 @@
 import SwiftUI
 import StudentCore
 
-struct QuestionDetailView: View {
+struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     let question: QuestionResult
     let studentId: String
-    @ObservedObject var flowModel: any AttemptInsightProviding
+    @ObservedObject var flowModel: FlowModel
     let onBack: () -> Void
 
     @State private var coachAttempt: CoachAttemptContext?
