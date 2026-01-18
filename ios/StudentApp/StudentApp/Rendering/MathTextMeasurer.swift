@@ -2,17 +2,20 @@ import Foundation
 import SwiftUI
 import UIKit
 import WebKit
-import StudentCore
 
 @MainActor
 final class MathTextMeasurer {
     static let shared = MathTextMeasurer()
 
-    private let parser = MathMarkupParser()
     private let renderer = MathWebRenderer(timeoutSeconds: 3.0)
     private let pool = MathWebViewPool(capacity: 1)
     private var webView: WKWebView?
     private var cache: [String: CGFloat] = [:]
+
+    private static let planner: MathRenderPlanner = {
+        let native = AppConfig.swiftMathEnabled ? SwiftMathRenderer() : nil
+        return MathRenderPlanner(nativeRenderer: native)
+    }()
 
     private init() {}
 
@@ -38,31 +41,21 @@ final class MathTextMeasurer {
             return cached
         }
 
-        let doc = parser.parse(text)
-        let requiresWeb = doc.requiresMathRendering || containsImageMarkup(in: doc)
+        let plan = Self.planner.plan(for: request)
 
         let height: CGFloat
-        if requiresWeb {
-            let html = MathHTMLBuilderV2.html(
-                for: doc,
-                style: style,
-                colorScheme: colorScheme,
-                displayScale: displayScale,
-                textColorHex: textColorHex
-            )
-            let payload = MathHTMLPayload(
-                html: html,
-                accessibilityText: doc.plainText,
-                estimatedHeight: 1
-            )
+        switch plan {
+        case .plainText(let attributed):
+            height = measurePlainText(String(attributed.characters), style: style, width: width)
+        case .nativeLabel(let payload):
+            height = measurePlainText(payload.plainText, style: style, width: width)
+        case .webHTML(let payload):
             let webView = ensureWebView(width: width)
             do {
                 height = try await renderer.render(payload, into: webView)
             } catch {
-                height = measurePlainText(doc.plainText, style: style, width: width)
+                height = measurePlainText(payload.accessibilityText, style: style, width: width)
             }
-        } else {
-            height = measurePlainText(doc.plainText, style: style, width: width)
         }
 
         let finalHeight = max(1, ceil(height))
@@ -123,13 +116,4 @@ final class MathTextMeasurer {
         }
     }
 
-    private func containsImageMarkup(in doc: MathMarkupDocument) -> Bool {
-        for segment in doc.segments {
-            guard case .text(let text) = segment else { continue }
-            if text.contains("![") && text.contains("](") {
-                return true
-            }
-        }
-        return false
-    }
 }
