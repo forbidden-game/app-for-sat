@@ -4,6 +4,12 @@ import StudentCore
 
 protocol QuestionCellDelegate: AnyObject {
     func questionCell(_ cell: QuestionCell, didUpdateBoundary state: ScrollBoundaryState)
+    func questionCell(_ cell: QuestionCell, didRequestPage direction: QuestionCellPageDirection)
+}
+
+enum QuestionCellPageDirection {
+    case up
+    case down
 }
 
 struct QuestionCellConfiguration {
@@ -22,12 +28,40 @@ struct QuestionCellConfiguration {
     let onSubmissionError: (Error) -> Void
 }
 
+private final class BoundaryScrollView: UIScrollView {
+    var boundaryState: ScrollBoundaryState = .neutral
+
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer == panGestureRecognizer {
+            guard let pan = gestureRecognizer as? UIPanGestureRecognizer else {
+                return super.gestureRecognizerShouldBegin(gestureRecognizer)
+            }
+            let translation = pan.translation(in: self)
+            let velocity = pan.velocity(in: self)
+            let dy = abs(translation.y) > 0 ? translation.y : velocity.y
+            let dx = abs(translation.x) > 0 ? translation.x : velocity.x
+            if abs(dy) <= abs(dx) {
+                return false
+            }
+            if boundaryState.isScrollable {
+                if dy > 0, boundaryState.atTop {
+                    return false
+                }
+                if dy < 0, boundaryState.atBottom {
+                    return false
+                }
+            }
+        }
+        return super.gestureRecognizerShouldBegin(gestureRecognizer)
+    }
+}
+
 final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
     static let reuseIdentifier = "QuestionCell"
 
     weak var delegate: QuestionCellDelegate?
 
-    private let scrollView = UIScrollView()
+    private let scrollView = BoundaryScrollView()
     private var hostingController: UIHostingController<AnyView>?
     private var lastResetQuestionId: String = ""
     private var boundaryState: ScrollBoundaryState = .neutral
@@ -35,6 +69,10 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
     private var questionId: String = ""
     private weak var outerPanGesture: UIPanGestureRecognizer?
     private var didAttachOuterRequirement = false
+    private var pendingScrollToTop = false
+    private var contentSizeObservation: NSKeyValueObservation?
+    private var lastDragTranslation: CGPoint = .zero
+    private var pendingPageRequest: QuestionCellPageDirection?
 
     private(set) var index: Int = 0
 
@@ -54,6 +92,10 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
         isActive = false
         lastResetQuestionId = ""
         boundaryState = .neutral
+        pendingScrollToTop = false
+        didAttachOuterRequirement = false
+        lastDragTranslation = .zero
+        pendingPageRequest = nil
         scrollToTop(animated: false)
     }
 
@@ -99,10 +141,16 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
         updateBoundary(forceNotify: true)
     }
 
+    func boundarySnapshot() -> ScrollBoundaryState {
+        updateBoundary(forceNotify: true)
+        return boundaryState
+    }
+
     func setActive(_ active: Bool, forceReset: Bool = false) {
         let shouldReset = forceReset || active != isActive
         isActive = active
         if active && shouldReset {
+            pendingScrollToTop = true
             resetIfNeeded(for: questionId)
             updateBoundary(forceNotify: true)
         }
@@ -110,11 +158,68 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
 
     override func layoutSubviews() {
         super.layoutSubviews()
+        if pendingScrollToTop, isActive {
+            scrollToTop(animated: false)
+            updateBoundary(forceNotify: true)
+            if boundaryState.atTop {
+                pendingScrollToTop = false
+            }
+        }
         updateBoundary(forceNotify: false)
     }
 
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
+        if scrollView.isDragging {
+            lastDragTranslation = scrollView.panGestureRecognizer.translation(in: scrollView)
+        }
         updateBoundary(forceNotify: false)
+    }
+
+    func scrollViewWillBeginDragging(_ scrollView: UIScrollView) {
+        lastDragTranslation = .zero
+        pendingPageRequest = nil
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        let translation = lastDragTranslation == .zero
+            ? scrollView.panGestureRecognizer.translation(in: scrollView)
+            : lastDragTranslation
+        let direction: QuestionCellPageDirection?
+        if translation.y > 0 {
+            direction = .up
+        } else if translation.y < 0 {
+            direction = .down
+        } else {
+            direction = nil
+        }
+        if let direction {
+            let boundary = boundarySnapshot()
+            let canRequest = (direction == .up && boundary.atTop)
+                || (direction == .down && boundary.atBottom)
+            if canRequest, isActive {
+                if decelerate {
+                    pendingPageRequest = direction
+                } else {
+                    delegate?.questionCell(self, didRequestPage: direction)
+                }
+            }
+        }
+        if !decelerate {
+            updateBoundary(forceNotify: true)
+        }
+    }
+
+    func scrollViewDidEndDecelerating(_ scrollView: UIScrollView) {
+        updateBoundary(forceNotify: true)
+        if let direction = pendingPageRequest, isActive {
+            let boundary = boundarySnapshot()
+            let canRequest = (direction == .up && boundary.atTop)
+                || (direction == .down && boundary.atBottom)
+            if canRequest {
+                delegate?.questionCell(self, didRequestPage: direction)
+            }
+        }
+        pendingPageRequest = nil
     }
 
     private func setupViews() {
@@ -128,6 +233,9 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
         scrollView.alwaysBounceVertical = false
         scrollView.contentInsetAdjustmentBehavior = .never
         scrollView.delegate = self
+        contentSizeObservation = scrollView.observe(\.contentSize, options: [.new]) { [weak self] _, _ in
+            self?.updateBoundary(forceNotify: true)
+        }
 
         contentView.addSubview(scrollView)
 
@@ -173,9 +281,10 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
         let newState = computeBoundaryState()
         if newState == boundaryState && !forceNotify { return }
         boundaryState = newState
+        scrollView.boundaryState = newState
         scrollView.isScrollEnabled = newState.isScrollable
         scrollView.alwaysBounceVertical = newState.isScrollable
-        applyOuterRequirementIfNeeded(isScrollable: newState.isScrollable)
+        attachOuterRequirementIfNeeded(for: newState)
         if isActive {
             delegate?.questionCell(self, didUpdateBoundary: newState)
         }
@@ -195,8 +304,9 @@ final class QuestionCell: UICollectionViewCell, UIScrollViewDelegate {
         )
     }
 
-    private func applyOuterRequirementIfNeeded(isScrollable: Bool) {
-        guard isScrollable, !didAttachOuterRequirement else { return }
+    private func attachOuterRequirementIfNeeded(for state: ScrollBoundaryState) {
+        guard state.isScrollable else { return }
+        guard !didAttachOuterRequirement else { return }
         guard let outerPanGesture else { return }
         outerPanGesture.require(toFail: scrollView.panGestureRecognizer)
         didAttachOuterRequirement = true
