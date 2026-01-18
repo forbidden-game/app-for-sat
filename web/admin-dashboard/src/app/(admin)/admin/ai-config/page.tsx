@@ -81,9 +81,12 @@ export default function AiConfigPage() {
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [keyStatus, setKeyStatus] = useState<AiProviderKeyStatus | null>(null);
   const [keyLoading, setKeyLoading] = useState(true);
-  const [keySaving, setKeySaving] = useState(false);
-  const [keyError, setKeyError] = useState<string | null>(null);
-  const [keyInput, setKeyInput] = useState("");
+  const [keyInputs, setKeyInputs] = useState<Record<AiPromptKind, string>>({
+    attempt_insight: "",
+    coach_reply: "",
+    progress_report: "",
+  });
+  const [keyErrors, setKeyErrors] = useState<Partial<Record<AiPromptKind, string | null>>>({});
   const [forms, setForms] = useState<Record<AiPromptKind, AiPromptConfigInput>>({
     attempt_insight: { ...DEFAULT_PROMPTS.attempt_insight },
     coach_reply: { ...DEFAULT_PROMPTS.coach_reply },
@@ -113,7 +116,7 @@ export default function AiConfigPage() {
         setConfigs(data);
         setError(null);
         setKeyStatus(providerStatus);
-        setKeyError(null);
+        setKeyErrors({});
         const publishedByKind: Partial<Record<AiPromptKind, AiPromptConfig>> = {};
         for (const row of data) {
           if (row.status === "published" && !publishedByKind[row.kind]) {
@@ -156,6 +159,12 @@ export default function AiConfigPage() {
     return grouped;
   }, [configs]);
 
+  const keyStatusLabel = keyLoading
+    ? "Loading…"
+    : keyStatus?.hasKey
+      ? `Stored · last4 ${keyStatus.last4 ?? "—"}`
+      : "Not set";
+
   function updateForm(kind: AiPromptKind, next: Partial<AiPromptConfigInput>) {
     setForms((prev) => ({
       ...prev,
@@ -166,6 +175,24 @@ export default function AiConfigPage() {
     }));
   }
 
+  function updateKeyInput(kind: AiPromptKind, value: string) {
+    setKeyInputs((prev) => ({ ...prev, [kind]: value }));
+    setKeyErrors((prev) => ({ ...prev, [kind]: null }));
+  }
+
+  function resetKeyInput(kind: AiPromptKind) {
+    setKeyInputs((prev) => ({ ...prev, [kind]: "" }));
+    setKeyErrors((prev) => ({ ...prev, [kind]: null }));
+  }
+
+  function isModelChanged(kind: AiPromptKind) {
+    const published = configsByKind[kind].find((row) => row.status === "published");
+    if (!published) return true;
+    return (
+      published.model_provider !== forms[kind].model_provider || published.model_id !== forms[kind].model_id
+    );
+  }
+
   function handleProviderChange(kind: AiPromptKind, provider: "minimax" | "openai" | "openrouter") {
     const defaultModel =
       provider === "openai" ? "gpt-5.2" : provider === "openrouter" ? "anthropic/claude-haiku-4.5" : "MiniMax-M2.1";
@@ -173,6 +200,7 @@ export default function AiConfigPage() {
       model_provider: provider,
       model_id: defaultModel,
     });
+    resetKeyInput(kind);
   }
 
   function applyPublishedConfig(updated: AiPromptConfig) {
@@ -201,8 +229,34 @@ export default function AiConfigPage() {
 
     setSavingKind(kind);
     setError(null);
+    setKeyErrors((prev) => ({ ...prev, [kind]: null }));
 
     try {
+      const requiresKey = forms[kind].model_provider === "openrouter" && isModelChanged(kind);
+      const keyValue = keyInputs[kind]?.trim() ?? "";
+
+      if (requiresKey && !keyValue) {
+        setKeyErrors((prev) => ({
+          ...prev,
+          [kind]: "OpenRouter API key is required when changing to an OpenRouter model.",
+        }));
+        return;
+      }
+
+      if (keyValue) {
+        try {
+          const status = await upsertAiProviderKey(session.access_token, "openrouter", keyValue);
+          setKeyStatus(status);
+          setKeyInputs((prev) => ({ ...prev, [kind]: "" }));
+        } catch (err) {
+          setKeyErrors((prev) => ({
+            ...prev,
+            [kind]: err instanceof Error ? err.message : "Failed to update OpenRouter key.",
+          }));
+          return;
+        }
+      }
+
       const updated = await publishAiPromptConfig(session.access_token, forms[kind]);
       applyPublishedConfig(updated);
     } catch (err) {
@@ -228,26 +282,6 @@ export default function AiConfigPage() {
       setError(err instanceof Error ? err.message : "Failed to archive config.");
     } finally {
       setArchivingId(null);
-    }
-  }
-
-  async function handleSaveKey() {
-    if (!supabase) return;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
-    if (!session) return;
-
-    setKeySaving(true);
-    setKeyError(null);
-
-    try {
-      const status = await upsertAiProviderKey(session.access_token, "openrouter", keyInput);
-      setKeyStatus(status);
-      setKeyInput("");
-    } catch (err) {
-      setKeyError(err instanceof Error ? err.message : "Failed to update key.");
-    } finally {
-      setKeySaving(false);
     }
   }
 
@@ -290,7 +324,7 @@ export default function AiConfigPage() {
           <div>
             <h2 className="text-balance text-lg font-semibold text-[color:var(--ink)]">Providers & Routing</h2>
             <p className="text-sm text-[color:var(--ink-muted)]">
-              Manage provider keys and pick a model per job type (each task can route independently).
+              Pick a model per job type. OpenRouter keys are required each time you switch a job to OpenRouter.
             </p>
           </div>
           <Link
@@ -301,64 +335,21 @@ export default function AiConfigPage() {
           </Link>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">OpenRouter</p>
-                <h3 className="text-balance text-base font-semibold text-[color:var(--ink)]">Provider Key</h3>
-                <p className="text-xs text-[color:var(--ink-muted)]">Required when any task uses OpenRouter.</p>
-              </div>
-              <div className="text-xs text-[color:var(--ink-muted)]">
-                {keyLoading ? "Loading…" : keyStatus?.hasKey ? `Stored · last4 ${keyStatus.last4 ?? "—"}` : "Not set"}
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-              <label
-                className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-                htmlFor="openrouter-key"
-              >
-                OpenRouter API key
-                <input
-                  id="openrouter-key"
-                  name="openrouter-key"
-                  type="password"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="sk-or-…"
-                  autoComplete="off"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={handleSaveKey}
-                disabled={keySaving || keyInput.trim().length === 0}
-                className="mt-6 h-10 rounded-full bg-[color:var(--accent)] px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-              >
-                {keySaving ? "Saving…" : "Save API Key"}
-              </button>
-            </div>
-            {keyError ? (
-              <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
-                {keyError}
-              </p>
-            ) : null}
-            {keyStatus?.updatedAt ? (
-              <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
-            ) : null}
-            <p className="mt-4 text-xs text-[color:var(--ink-muted)]">
-              Defaults: OpenAI gpt-5.2 · OpenRouter anthropic/claude-haiku-4.5
-            </p>
-          </div>
+        <div className="mt-6 grid gap-6">
+          {(Object.keys(KIND_META) as AiPromptKind[]).map((kind) => {
+            const history = configsByKind[kind];
+            const published = history.find((row) => row.status === "published");
+            const keyValue = keyInputs[kind] ?? "";
+            const needsKey = forms[kind].model_provider === "openrouter";
+            const modelChanged =
+              !published ||
+              published.model_provider !== forms[kind].model_provider ||
+              published.model_id !== forms[kind].model_id;
+            const keyRequired = needsKey && modelChanged;
+            const keyMissing = keyRequired && keyValue.trim().length === 0;
 
-          <div className="grid gap-6">
-            {(Object.keys(KIND_META) as AiPromptKind[]).map((kind) => {
-              const history = configsByKind[kind];
-              const published = history.find((row) => row.status === "published");
-
-              return (
-                <section
+            return (
+              <section
                   key={kind}
                   className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6"
                 >
@@ -381,7 +372,7 @@ export default function AiConfigPage() {
                     <button
                       type="button"
                       onClick={() => handlePublish(kind)}
-                      disabled={savingKind === kind}
+                      disabled={savingKind === kind || keyMissing}
                       className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
                     >
                       {savingKind === kind ? "Publishing…" : "Publish New Version"}
@@ -434,12 +425,57 @@ export default function AiConfigPage() {
                           name={`${kind}-model`}
                           className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                           value={forms[kind].model_id}
-                          onChange={(e) => updateForm(kind, { model_id: e.target.value })}
+                          onChange={(e) => {
+                            updateForm(kind, { model_id: e.target.value });
+                            if (forms[kind].model_provider === "openrouter") {
+                              resetKeyInput(kind);
+                            }
+                          }}
                           placeholder="gpt-5.2…"
                           autoComplete="off"
                         />
                       </label>
                     </div>
+
+                    {needsKey ? (
+                      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                              OpenRouter API Key
+                            </p>
+                            <p className="text-xs text-[color:var(--ink-muted)]">
+                              {keyRequired ? "Required to publish this model change." : "Enter a key when you change the model."}
+                            </p>
+                          </div>
+                          <div className="text-xs text-[color:var(--ink-muted)]">{keyStatusLabel}</div>
+                        </div>
+                        <label
+                          className="mt-3 grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                          htmlFor={`${kind}-openrouter-key`}
+                        >
+                          OpenRouter API key
+                          <input
+                            id={`${kind}-openrouter-key`}
+                            name={`${kind}-openrouter-key`}
+                            type="password"
+                            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                            value={keyValue}
+                            onChange={(e) => updateKeyInput(kind, e.target.value)}
+                            placeholder="sk-or-…"
+                            autoComplete="off"
+                          />
+                        </label>
+                        {keyErrors[kind] ? (
+                          <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
+                            {keyErrors[kind]}
+                          </p>
+                        ) : null}
+                        {keyStatus?.updatedAt ? (
+                          <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
+                        ) : null}
+                      </div>
+                    ) : null}
 
                     <label
                       className="grid gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
@@ -502,7 +538,6 @@ export default function AiConfigPage() {
                 </section>
               );
             })}
-          </div>
         </div>
       </section>
     </main>
