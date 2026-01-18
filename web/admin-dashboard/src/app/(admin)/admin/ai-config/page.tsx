@@ -30,6 +30,18 @@ const KIND_META: Record<AiPromptKind, { label: string; description: string }> = 
   },
 };
 
+const MODEL_DEFAULTS: Record<AiPromptConfigInput["model_provider"], string> = {
+  minimax: "MiniMax-M2.1",
+  openai: "gpt-5.2",
+  openrouter: "anthropic/claude-haiku-4.5",
+};
+
+const MODEL_SUGGESTIONS: Record<AiPromptConfigInput["model_provider"], string[]> = {
+  minimax: [MODEL_DEFAULTS.minimax],
+  openai: [MODEL_DEFAULTS.openai],
+  openrouter: [MODEL_DEFAULTS.openrouter, "deepseek/deepseek-r1-0528:free"],
+};
+
 const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
   attempt_insight: {
     kind: "attempt_insight",
@@ -37,7 +49,7 @@ const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
     system_prompt:
       "You are a strict, concise SAT tutor. Prefer short, step-by-step guidance and ask questions instead of long explanations.",
     model_provider: "minimax",
-    model_id: "MiniMax-M2.1",
+    model_id: MODEL_DEFAULTS.minimax,
   },
   coach_reply: {
     kind: "coach_reply",
@@ -45,14 +57,14 @@ const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
     system_prompt:
       "你是一位严格、精要的 SAT 全科老师。默认用中文，先给最小可执行下一步，再问一个澄清问题。避免长篇大论。",
     model_provider: "minimax",
-    model_id: "MiniMax-M2.1",
+    model_id: MODEL_DEFAULTS.minimax,
   },
   progress_report: {
     kind: "progress_report",
     prompt_version: "ai-coach-report-v1",
     system_prompt: "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
     model_provider: "minimax",
-    model_id: "MiniMax-M2.1",
+    model_id: MODEL_DEFAULTS.minimax,
   },
 };
 
@@ -194,8 +206,7 @@ export default function AiConfigPage() {
   }
 
   function handleProviderChange(kind: AiPromptKind, provider: "minimax" | "openai" | "openrouter") {
-    const defaultModel =
-      provider === "openai" ? "gpt-5.2" : provider === "openrouter" ? "anthropic/claude-haiku-4.5" : "MiniMax-M2.1";
+    const defaultModel = MODEL_DEFAULTS[provider];
     updateForm(kind, {
       model_provider: provider,
       model_id: defaultModel,
@@ -347,6 +358,8 @@ export default function AiConfigPage() {
               published.model_id !== forms[kind].model_id;
             const keyRequired = needsKey && modelChanged;
             const keyMissing = keyRequired && keyValue.trim().length === 0;
+            const modelSuggestions = MODEL_SUGGESTIONS[forms[kind].model_provider];
+            const modelListId = modelSuggestions.length > 0 ? `${kind}-model-list` : undefined;
 
             return (
               <section
@@ -425,6 +438,7 @@ export default function AiConfigPage() {
                           name={`${kind}-model`}
                           className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                           value={forms[kind].model_id}
+                          list={modelListId}
                           onChange={(e) => {
                             updateForm(kind, { model_id: e.target.value });
                             if (forms[kind].model_provider === "openrouter") {
@@ -434,6 +448,13 @@ export default function AiConfigPage() {
                           placeholder="gpt-5.2…"
                           autoComplete="off"
                         />
+                        {modelListId ? (
+                          <datalist id={modelListId}>
+                            {modelSuggestions.map((modelId) => (
+                              <option key={modelId} value={modelId} />
+                            ))}
+                          </datalist>
+                        ) : null}
                       </label>
                     </div>
 
