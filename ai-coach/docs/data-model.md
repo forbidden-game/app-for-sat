@@ -98,11 +98,11 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `created_at`, `updated_at`
 
 ## 6) `public.ai_provider_keys`
-Provider key（服务端读取，MVP 仅 OpenRouter）。
+Provider key（服务端读取）。
 
 字段建议：
 - `id` uuid PK
-- `provider` text（`openrouter`）
+- `provider` text（`minimax` | `openai` | `openrouter`）
 - `api_key` text
 - `created_by` / `updated_by` uuid
 - `created_at` / `updated_at` timestamptz

@@ -654,7 +654,7 @@
 **用途**：第三方模型 provider key（仅服务端读取）。
 
 **字段**（摘要）
-- `provider` text (`openrouter`)
+- `provider` text (`minimax` | `openai` | `openrouter`)
 - `api_key` text
 - `created_by` / `updated_by` uuid
 - `created_at` / `updated_at` timestamptz

@@ -179,9 +179,8 @@ export async function processProgressReportJob(
   let costUsd: number | null = null;
   try {
     const apiKey =
-      model.provider === "minimax"
-        ? config.minimaxApiKey
-        : (await getProviderApiKey(supabase, model.provider)) ?? getEnvApiKey(model.provider);
+      (await getProviderApiKey(supabase, model.provider)) ??
+      (model.provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(model.provider));
     const response = await completeSimple(
       model,
       {
