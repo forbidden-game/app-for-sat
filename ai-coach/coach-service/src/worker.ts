@@ -137,9 +137,10 @@ async function resolveProviderKey(
   config: CoachConfig,
   provider: string,
 ): Promise<string | undefined> {
-  if (provider === "minimax") return config.minimaxApiKey;
   const fromDb = await getProviderApiKey(supabase, provider);
-  return fromDb ?? getEnvApiKey(provider);
+  if (fromDb) return fromDb;
+  if (provider === "minimax") return config.minimaxApiKey;
+  return getEnvApiKey(provider);
 }
 
 async function markJobDone(supabase: SupabaseClient, jobId: string): Promise<void> {

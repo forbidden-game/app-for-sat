@@ -12,6 +12,7 @@ import {
   type AiPromptConfig,
   type AiPromptConfigInput,
   type AiPromptKind,
+  type AiProvider,
   type AiProviderKeyStatus,
 } from "./actions";
 
@@ -30,6 +31,26 @@ const KIND_META: Record<AiPromptKind, { label: string; description: string }> = 
   },
 };
 
+const MODEL_DEFAULTS: Record<AiPromptConfigInput["model_provider"], string> = {
+  minimax: "MiniMax-M2.1",
+  openai: "gpt-5.2",
+  openrouter: "anthropic/claude-haiku-4.5",
+};
+
+const MODEL_SUGGESTIONS: Record<AiPromptConfigInput["model_provider"], string[]> = {
+  minimax: [MODEL_DEFAULTS.minimax],
+  openai: [MODEL_DEFAULTS.openai],
+  openrouter: [MODEL_DEFAULTS.openrouter, "deepseek/deepseek-r1-0528:free"],
+};
+
+const PROVIDER_LABELS: Record<AiProvider, string> = {
+  minimax: "MiniMax",
+  openai: "OpenAI",
+  openrouter: "OpenRouter",
+};
+
+const PROVIDERS: AiProvider[] = ["minimax", "openai", "openrouter"];
+
 const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
   attempt_insight: {
     kind: "attempt_insight",
@@ -37,7 +58,7 @@ const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
     system_prompt:
       "You are a strict, concise SAT tutor. Prefer short, step-by-step guidance and ask questions instead of long explanations.",
     model_provider: "minimax",
-    model_id: "MiniMax-M2.1",
+    model_id: MODEL_DEFAULTS.minimax,
   },
   coach_reply: {
     kind: "coach_reply",
@@ -45,14 +66,14 @@ const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
     system_prompt:
       "你是一位严格、精要的 SAT 全科老师。默认用中文，先给最小可执行下一步，再问一个澄清问题。避免长篇大论。",
     model_provider: "minimax",
-    model_id: "MiniMax-M2.1",
+    model_id: MODEL_DEFAULTS.minimax,
   },
   progress_report: {
     kind: "progress_report",
     prompt_version: "ai-coach-report-v1",
     system_prompt: "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
     model_provider: "minimax",
-    model_id: "MiniMax-M2.1",
+    model_id: MODEL_DEFAULTS.minimax,
   },
 };
 
@@ -79,11 +100,14 @@ export default function AiConfigPage() {
   const [error, setError] = useState<string | null>(null);
   const [savingKind, setSavingKind] = useState<AiPromptKind | null>(null);
   const [archivingId, setArchivingId] = useState<string | null>(null);
-  const [keyStatus, setKeyStatus] = useState<AiProviderKeyStatus | null>(null);
+  const [keyStatuses, setKeyStatuses] = useState<Partial<Record<AiProvider, AiProviderKeyStatus>>>({});
   const [keyLoading, setKeyLoading] = useState(true);
-  const [keySaving, setKeySaving] = useState(false);
-  const [keyError, setKeyError] = useState<string | null>(null);
-  const [keyInput, setKeyInput] = useState("");
+  const [keyInputs, setKeyInputs] = useState<Record<AiPromptKind, string>>({
+    attempt_insight: "",
+    coach_reply: "",
+    progress_report: "",
+  });
+  const [keyErrors, setKeyErrors] = useState<Partial<Record<AiPromptKind, string | null>>>({});
   const [forms, setForms] = useState<Record<AiPromptKind, AiPromptConfigInput>>({
     attempt_insight: { ...DEFAULT_PROMPTS.attempt_insight },
     coach_reply: { ...DEFAULT_PROMPTS.coach_reply },
@@ -105,15 +129,20 @@ export default function AiConfigPage() {
       }
 
       try {
-        const [data, providerStatus] = await Promise.all([
+        const [data, providerStatuses] = await Promise.all([
           listAiPromptConfigs(session.access_token),
-          getAiProviderKeyStatus(session.access_token, "openrouter"),
+          Promise.all(PROVIDERS.map((provider) => getAiProviderKeyStatus(session.access_token, provider))),
         ]);
         if (!active) return;
         setConfigs(data);
         setError(null);
-        setKeyStatus(providerStatus);
-        setKeyError(null);
+        setKeyStatuses(
+          providerStatuses.reduce<Partial<Record<AiProvider, AiProviderKeyStatus>>>((acc, status) => {
+            acc[status.provider] = status;
+            return acc;
+          }, {}),
+        );
+        setKeyErrors({});
         const publishedByKind: Partial<Record<AiPromptKind, AiPromptConfig>> = {};
         for (const row of data) {
           if (row.status === "published" && !publishedByKind[row.kind]) {
@@ -166,13 +195,23 @@ export default function AiConfigPage() {
     }));
   }
 
+  function updateKeyInput(kind: AiPromptKind, value: string) {
+    setKeyInputs((prev) => ({ ...prev, [kind]: value }));
+    setKeyErrors((prev) => ({ ...prev, [kind]: null }));
+  }
+
+  function resetKeyInput(kind: AiPromptKind) {
+    setKeyInputs((prev) => ({ ...prev, [kind]: "" }));
+    setKeyErrors((prev) => ({ ...prev, [kind]: null }));
+  }
+
   function handleProviderChange(kind: AiPromptKind, provider: "minimax" | "openai" | "openrouter") {
-    const defaultModel =
-      provider === "openai" ? "gpt-5.2" : provider === "openrouter" ? "anthropic/claude-haiku-4.5" : "MiniMax-M2.1";
+    const defaultModel = MODEL_DEFAULTS[provider];
     updateForm(kind, {
       model_provider: provider,
       model_id: defaultModel,
     });
+    resetKeyInput(kind);
   }
 
   function applyPublishedConfig(updated: AiPromptConfig) {
@@ -201,8 +240,26 @@ export default function AiConfigPage() {
 
     setSavingKind(kind);
     setError(null);
+    setKeyErrors((prev) => ({ ...prev, [kind]: null }));
 
     try {
+      const provider = forms[kind].model_provider;
+      const keyValue = keyInputs[kind]?.trim() ?? "";
+
+      if (keyValue) {
+        try {
+          const status = await upsertAiProviderKey(session.access_token, provider, keyValue);
+          setKeyStatuses((prev) => ({ ...prev, [provider]: status }));
+          setKeyInputs((prev) => ({ ...prev, [kind]: "" }));
+        } catch (err) {
+          setKeyErrors((prev) => ({
+            ...prev,
+            [kind]: err instanceof Error ? err.message : `Failed to update ${PROVIDER_LABELS[provider]} key.`,
+          }));
+          return;
+        }
+      }
+
       const updated = await publishAiPromptConfig(session.access_token, forms[kind]);
       applyPublishedConfig(updated);
     } catch (err) {
@@ -228,26 +285,6 @@ export default function AiConfigPage() {
       setError(err instanceof Error ? err.message : "Failed to archive config.");
     } finally {
       setArchivingId(null);
-    }
-  }
-
-  async function handleSaveKey() {
-    if (!supabase) return;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
-    if (!session) return;
-
-    setKeySaving(true);
-    setKeyError(null);
-
-    try {
-      const status = await upsertAiProviderKey(session.access_token, "openrouter", keyInput);
-      setKeyStatus(status);
-      setKeyInput("");
-    } catch (err) {
-      setKeyError(err instanceof Error ? err.message : "Failed to update key.");
-    } finally {
-      setKeySaving(false);
     }
   }
 
@@ -290,7 +327,7 @@ export default function AiConfigPage() {
           <div>
             <h2 className="text-balance text-lg font-semibold text-[color:var(--ink)]">Providers & Routing</h2>
             <p className="text-sm text-[color:var(--ink-muted)]">
-              Manage provider keys and pick a model per job type (each task can route independently).
+              Pick a model per job type. Provider keys are optional and override stored or env defaults when supplied.
             </p>
           </div>
           <Link
@@ -301,64 +338,25 @@ export default function AiConfigPage() {
           </Link>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-          <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-5">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">OpenRouter</p>
-                <h3 className="text-balance text-base font-semibold text-[color:var(--ink)]">Provider Key</h3>
-                <p className="text-xs text-[color:var(--ink-muted)]">Required when any task uses OpenRouter.</p>
-              </div>
-              <div className="text-xs text-[color:var(--ink-muted)]">
-                {keyLoading ? "Loading…" : keyStatus?.hasKey ? `Stored · last4 ${keyStatus.last4 ?? "—"}` : "Not set"}
-              </div>
-            </div>
-            <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-              <label
-                className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
-                htmlFor="openrouter-key"
-              >
-                OpenRouter API key
-                <input
-                  id="openrouter-key"
-                  name="openrouter-key"
-                  type="password"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                  value={keyInput}
-                  onChange={(e) => setKeyInput(e.target.value)}
-                  placeholder="sk-or-…"
-                  autoComplete="off"
-                />
-              </label>
-              <button
-                type="button"
-                onClick={handleSaveKey}
-                disabled={keySaving || keyInput.trim().length === 0}
-                className="mt-6 h-10 rounded-full bg-[color:var(--accent)] px-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-              >
-                {keySaving ? "Saving…" : "Save API Key"}
-              </button>
-            </div>
-            {keyError ? (
-              <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
-                {keyError}
-              </p>
-            ) : null}
-            {keyStatus?.updatedAt ? (
-              <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
-            ) : null}
-            <p className="mt-4 text-xs text-[color:var(--ink-muted)]">
-              Defaults: OpenAI gpt-5.2 · OpenRouter anthropic/claude-haiku-4.5
-            </p>
-          </div>
+        <div className="mt-6 grid gap-6">
+          {(Object.keys(KIND_META) as AiPromptKind[]).map((kind) => {
+            const history = configsByKind[kind];
+            const published = history.find((row) => row.status === "published");
+            const provider = forms[kind].model_provider;
+            const keyValue = keyInputs[kind] ?? "";
+            const keyStatus = keyStatuses[provider];
+            const keyStatusLabel = keyLoading
+              ? "Loading…"
+              : keyStatus?.hasKey
+                ? `Stored · last4 ${keyStatus.last4 ?? "—"}`
+                : "Not set";
+            const keyHint = "Optional. Leave blank to keep the stored key.";
+            const providerLabel = PROVIDER_LABELS[provider];
+            const modelSuggestions = MODEL_SUGGESTIONS[provider];
+            const modelListId = modelSuggestions.length > 0 ? `${kind}-model-list` : undefined;
 
-          <div className="grid gap-6">
-            {(Object.keys(KIND_META) as AiPromptKind[]).map((kind) => {
-              const history = configsByKind[kind];
-              const published = history.find((row) => row.status === "published");
-
-              return (
-                <section
+            return (
+              <section
                   key={kind}
                   className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6"
                 >
@@ -434,11 +432,84 @@ export default function AiConfigPage() {
                           name={`${kind}-model`}
                           className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                           value={forms[kind].model_id}
-                          onChange={(e) => updateForm(kind, { model_id: e.target.value })}
+                          list={modelListId}
+                          onChange={(e) => {
+                            updateForm(kind, { model_id: e.target.value });
+                            if (forms[kind].model_provider === "openrouter") {
+                              resetKeyInput(kind);
+                            }
+                          }}
                           placeholder="gpt-5.2…"
                           autoComplete="off"
                         />
+                        {modelListId ? (
+                          <datalist id={modelListId}>
+                            {modelSuggestions.map((modelId) => (
+                              <option key={modelId} value={modelId} />
+                            ))}
+                          </datalist>
+                        ) : null}
+                        {modelSuggestions.length > 1 ? (
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-muted)]">
+                            <span className="text-[10px] uppercase tracking-[0.2em]">Suggested</span>
+                            {modelSuggestions.map((modelId) => (
+                              <button
+                                key={modelId}
+                                type="button"
+                                onClick={() => {
+                                  updateForm(kind, { model_id: modelId });
+                                  if (forms[kind].model_provider === "openrouter") {
+                                    resetKeyInput(kind);
+                                  }
+                                }}
+                                className={`rounded-full border px-3 py-1 font-mono text-[10px] transition ${
+                                  forms[kind].model_id === modelId
+                                    ? "border-[color:var(--accent)] text-[color:var(--ink)]"
+                                    : "border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                                }`}
+                              >
+                                {modelId}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
                       </label>
+                    </div>
+
+                    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                            {providerLabel} API Key
+                          </p>
+                          <p className="text-xs text-[color:var(--ink-muted)]">{keyHint}</p>
+                        </div>
+                        <div className="text-xs text-[color:var(--ink-muted)]">{keyStatusLabel}</div>
+                      </div>
+                      <label
+                        className="mt-3 grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                        htmlFor={`${kind}-${provider}-key`}
+                      >
+                        {providerLabel} API key
+                        <input
+                          id={`${kind}-${provider}-key`}
+                          name={`${kind}-${provider}-key`}
+                          type="password"
+                          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                          value={keyValue}
+                          onChange={(e) => updateKeyInput(kind, e.target.value)}
+                          placeholder="sk-…"
+                          autoComplete="off"
+                        />
+                      </label>
+                      {keyErrors[kind] ? (
+                        <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
+                          {keyErrors[kind]}
+                        </p>
+                      ) : null}
+                      {keyStatus?.updatedAt ? (
+                        <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
+                      ) : null}
                     </div>
 
                     <label
@@ -502,7 +573,6 @@ export default function AiConfigPage() {
                 </section>
               );
             })}
-          </div>
         </div>
       </section>
     </main>
