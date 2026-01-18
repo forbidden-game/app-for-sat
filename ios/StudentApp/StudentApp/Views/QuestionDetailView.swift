@@ -14,6 +14,13 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     private let correctColor = AppTheme.statusSuccess
     private let incorrectColor = AppTheme.statusDanger
 
+    private var resolvedIsCorrect: Bool {
+        guard let userAnswer = question.userAnswer else {
+            return question.isCorrect
+        }
+        return userAnswer == question.correctAnswer
+    }
+
     var body: some View {
         ZStack {
             AppTheme.backgroundGradient
@@ -89,19 +96,19 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
 
     private var resultBadge: some View {
         HStack(spacing: 4) {
-            Image(systemName: question.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+            Image(systemName: resolvedIsCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .font(.system(size: 14, weight: .semibold))
-            Text(question.isCorrect ? "Correct" : "Incorrect")
+            Text(resolvedIsCorrect ? "Correct" : "Incorrect")
                 .font(.subheadline.weight(.semibold))
         }
-        .foregroundStyle(question.isCorrect ? correctColor : incorrectColor)
+        .foregroundStyle(resolvedIsCorrect ? correctColor : incorrectColor)
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
         .background(AppTheme.surface)
         .clipShape(Capsule())
         .overlay(
             Capsule()
-                .stroke(question.isCorrect ? correctColor.opacity(0.45) : incorrectColor.opacity(0.45), lineWidth: 1)
+                .stroke(resolvedIsCorrect ? correctColor.opacity(0.45) : incorrectColor.opacity(0.45), lineWidth: 1)
         )
     }
 
@@ -130,7 +137,7 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
         let isUserAnswer = question.userAnswer?.displayString == option.label
         let isCorrectAnswer = question.correctAnswer.displayString == option.label
         let showCorrect = isCorrectAnswer
-        let showIncorrect = isUserAnswer && !question.isCorrect
+        let showIncorrect = isUserAnswer && !resolvedIsCorrect
 
         return HStack(spacing: 12) {
             Text(option.label)
@@ -203,9 +210,9 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
                     if let userAnswer = question.userAnswer {
                         Text(userAnswer.displayString)
                             .font(.headline)
-                            .foregroundStyle(question.isCorrect ? correctColor : incorrectColor)
-                        Image(systemName: question.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(question.isCorrect ? correctColor : incorrectColor)
+                            .foregroundStyle(resolvedIsCorrect ? correctColor : incorrectColor)
+                        Image(systemName: resolvedIsCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundStyle(resolvedIsCorrect ? correctColor : incorrectColor)
                     } else {
                         Text("No answer")
                             .font(.headline)
@@ -296,7 +303,7 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     private func handleCoachTap() {
         let resolvedAttemptId = question.attemptId ?? flowModel.attemptId(for: question.questionId)
 
-        if question.isCorrect {
+        if resolvedIsCorrect {
             coachChatAttemptId = resolvedAttemptId
             showCoachChat = true
             return
