@@ -88,13 +88,119 @@ enum MathHTMLBuilderV2 {
                 if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.rendered) {
                   window.webkit.messageHandlers.rendered.postMessage("ready");
                 }
-                postHeight();
-                setTimeout(postHeight, 60);
-                setTimeout(postHeight, 200);
+                var hasImages = document.images && document.images.length > 0;
+                if (!hasImages) {
+                  postHeight();
+                  setTimeout(postHeight, 60);
+                  setTimeout(postHeight, 200);
+                }
               });
               window.addEventListener("load", function() {
                 postHeight();
                 setTimeout(postHeight, 120);
+              });
+            </script>
+          </body>
+        </html>
+        """
+    }
+
+    static func pagedHTML(
+        for doc: MathMarkupDocument,
+        style: MathTextStyle,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat,
+        textColorHex: String
+    ) -> String {
+        let bodyText = buildBody(from: doc)
+        let assetBlock = MathAssetLoaderV2.assetBlockHTML
+        return """
+        <!doctype html>
+        <html>
+          <head>
+            <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, maximum-scale=1\">
+            \(assetBlock)
+            <style>
+              :root { color-scheme: light dark; }
+              html, body { height: 100%; overflow: hidden; }
+              body {
+                margin: 0;
+                padding: 0;
+                background: transparent;
+                font-family: -apple-system, \"SF Pro Text\", \"SF Pro Display\", \"New York\", serif;
+                font-size: \(style.fontSize)px;
+                font-weight: \(style.fontWeightValue);
+                line-height: \(style.lineHeight);
+                color: \(textColorHex);
+                -webkit-text-size-adjust: 100%;
+                -webkit-font-smoothing: antialiased;
+                opacity: 0;
+                transform: scale(1);
+              }
+              body.ready { opacity: 1; }
+              .content {
+                height: 100%;
+                white-space: pre-wrap;
+                word-break: break-word;
+                overflow-wrap: anywhere;
+                text-align: \(style.textAlign);
+                column-width: 100vw;
+                column-gap: 0;
+                column-fill: auto;
+                visibility: hidden;
+              }
+              .content.ready { visibility: visible; }
+              img {
+                max-width: 100%;
+                height: auto;
+                max-height: 100%;
+                object-fit: contain;
+                display: block;
+                margin: 8px auto;
+              }
+              .center {
+                text-align: center;
+                margin: 6px 0;
+              }
+              .katex { font-size: 1em; }
+              .katex-display { margin: 0.35em 0; }
+              a { color: inherit; text-decoration: underline; }
+              code {
+                font-family: ui-monospace, \"SF Mono\", SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+                font-size: 0.95em;
+                background: rgba(0, 0, 0, 0.08);
+                padding: 1px 4px;
+                border-radius: 4px;
+              }
+              @media (prefers-color-scheme: dark) {
+                code { background: rgba(255, 255, 255, 0.12); }
+              }
+            </style>
+          </head>
+          <body data-scale=\"\(displayScale)\">
+            <div class=\"content\">\(bodyText)</div>
+            <script>
+              function markReady() {
+                var content = document.querySelector(\".content\");
+                if (content) { content.classList.add(\"ready\"); }
+                document.body.classList.add(\"ready\");
+              }
+              document.addEventListener(\"DOMContentLoaded\", function() {
+                if (typeof renderMathInElement === \"function\") {
+                  renderMathInElement(document.body, {
+                    delimiters: [
+                      {left: \"$$\", right: \"$$\", display: true},
+                      {left: \\\"\\\\[\\\", right: \\\"\\\\]\\\", display: true},
+                      {left: \"$\", right: \"$\", display: false},
+                      {left: \\\"\\\\(\\\", right: \\\"\\\\)\\\", display: false}
+                    ],
+                    throwOnError: false
+                  });
+                }
+                markReady();
+              });
+              window.addEventListener(\"load\", function() {
+                markReady();
               });
             </script>
           </body>
@@ -193,6 +299,28 @@ enum MathHTMLBuilderV2 {
                     output.append("</code>")
                     index = text.index(after: closing)
                     continue
+                }
+            }
+            if char == "!", text[index...].hasPrefix("![") {
+                let altStart = text.index(index, offsetBy: 2)
+                if let closingBracket = text[altStart...].firstIndex(of: "]") {
+                    let nextIndex = text.index(after: closingBracket)
+                    if nextIndex < text.endIndex,
+                       text[nextIndex] == "(",
+                       let closingParen = text[nextIndex...].firstIndex(of: ")") {
+                        let alt = String(text[altStart..<closingBracket])
+                        let rawURL = String(text[text.index(after: nextIndex)..<closingParen])
+                        let url = rawURL.split(whereSeparator: { $0.isWhitespace }).first.map(String.init) ?? ""
+                        if !url.isEmpty {
+                            output.append("<img src=\"")
+                            output.append(escapeHTML(url))
+                            output.append("\" alt=\"")
+                            output.append(escapeHTML(alt))
+                            output.append("\" loading=\"lazy\" />")
+                            index = text.index(after: closingParen)
+                            continue
+                        }
+                    }
                 }
             }
             if char == "[" {
