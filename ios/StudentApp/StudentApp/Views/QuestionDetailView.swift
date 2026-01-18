@@ -14,19 +14,6 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     private let correctColor = AppTheme.statusSuccess
     private let incorrectColor = AppTheme.statusDanger
 
-    private var resolvedIsCorrect: Bool {
-        let user = normalizeAnswer(question.userAnswer?.displayString)
-        guard !user.isEmpty else {
-            return question.isCorrect
-        }
-        let correct = normalizeAnswer(question.correctAnswer.displayString)
-        return user == correct
-    }
-
-    private func normalizeAnswer(_ value: String?) -> String {
-        value?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
-    }
-
     var body: some View {
         ZStack {
             AppTheme.backgroundGradient
@@ -102,19 +89,19 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
 
     private var resultBadge: some View {
         HStack(spacing: 4) {
-            Image(systemName: resolvedIsCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+            Image(systemName: question.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
                 .font(.system(size: 14, weight: .semibold))
-            Text(resolvedIsCorrect ? "Correct" : "Incorrect")
+            Text(question.isCorrect ? "Correct" : "Incorrect")
                 .font(.subheadline.weight(.semibold))
         }
-        .foregroundStyle(resolvedIsCorrect ? correctColor : incorrectColor)
+        .foregroundStyle(question.isCorrect ? correctColor : incorrectColor)
         .padding(.vertical, 6)
         .padding(.horizontal, 10)
         .background(AppTheme.surface)
         .clipShape(Capsule())
         .overlay(
             Capsule()
-                .stroke(resolvedIsCorrect ? correctColor.opacity(0.45) : incorrectColor.opacity(0.45), lineWidth: 1)
+                .stroke(question.isCorrect ? correctColor.opacity(0.45) : incorrectColor.opacity(0.45), lineWidth: 1)
         )
     }
 
@@ -140,13 +127,10 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     }
 
     private func optionRow(_ option: QuestionOption) -> some View {
-        let normalizedUser = normalizeAnswer(question.userAnswer?.displayString)
-        let normalizedCorrect = normalizeAnswer(question.correctAnswer.displayString)
-        let normalizedLabel = normalizeAnswer(option.label)
-        let isUserAnswer = !normalizedUser.isEmpty && normalizedUser == normalizedLabel
-        let isCorrectAnswer = normalizedCorrect == normalizedLabel
+        let isUserAnswer = question.userAnswer?.displayString == option.label
+        let isCorrectAnswer = question.correctAnswer.displayString == option.label
         let showCorrect = isCorrectAnswer
-        let showIncorrect = isUserAnswer && !resolvedIsCorrect
+        let showIncorrect = isUserAnswer && !question.isCorrect
 
         return HStack(spacing: 12) {
             Text(option.label)
@@ -219,9 +203,9 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
                     if let userAnswer = question.userAnswer {
                         Text(userAnswer.displayString)
                             .font(.headline)
-                            .foregroundStyle(resolvedIsCorrect ? correctColor : incorrectColor)
-                        Image(systemName: resolvedIsCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(resolvedIsCorrect ? correctColor : incorrectColor)
+                            .foregroundStyle(question.isCorrect ? correctColor : incorrectColor)
+                        Image(systemName: question.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundStyle(question.isCorrect ? correctColor : incorrectColor)
                     } else {
                         Text("No answer")
                             .font(.headline)
@@ -312,7 +296,7 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     private func handleCoachTap() {
         let resolvedAttemptId = question.attemptId ?? flowModel.attemptId(for: question.questionId)
 
-        if resolvedIsCorrect {
+        if question.isCorrect {
             coachChatAttemptId = resolvedAttemptId
             showCoachChat = true
             return
