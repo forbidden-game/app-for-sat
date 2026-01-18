@@ -8,6 +8,9 @@ final class QuestionFeedState: ObservableObject {
     @Published private(set) var inputState: QuestionInputState
     @Published private(set) var autoAdvanceState: AutoAdvanceState
 
+    private var stemPageByQuestionId: [String: Int] = [:]
+    private var stemSwipeHintSeenQuestionIds: Set<String> = []
+
     init(initialIndex: Int = 0) {
         currentIndex = initialIndex
         inputState = QuestionInputState()
@@ -76,6 +79,22 @@ final class QuestionFeedState: ObservableObject {
 
     func clearAutoAdvance() {
         autoAdvanceState = AutoAdvanceState()
+    }
+
+    func stemPage(for questionId: String) -> Int {
+        stemPageByQuestionId[questionId] ?? 0
+    }
+
+    func setStemPage(_ page: Int, for questionId: String) {
+        stemPageByQuestionId[questionId] = max(0, page)
+    }
+
+    func hasSeenStemSwipeHint(for questionId: String) -> Bool {
+        stemSwipeHintSeenQuestionIds.contains(questionId)
+    }
+
+    func markSeenStemSwipeHint(for questionId: String) {
+        stemSwipeHintSeenQuestionIds.insert(questionId)
     }
 }
 

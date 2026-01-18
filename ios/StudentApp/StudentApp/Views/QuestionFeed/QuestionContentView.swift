@@ -22,24 +22,16 @@ struct QuestionContentView: View {
     var body: some View {
         let progress = total > 0 ? Double(index + 1) / Double(total) : 0
 
-        VStack(spacing: AppMetrics.sectionSpacing) {
-            header(progress: progress, index: index + 1, total: total, question: question)
+        ViewThatFits(in: .vertical) {
+            stackedLayout(progress: progress)
+                .fixedSize(horizontal: false, vertical: true)
 
-            VStack(spacing: AppMetrics.sectionSpacing) {
-                questionCard(text: question.stem)
-
-                if let options = question.options, !options.isEmpty {
-                    optionsGrid(options, questionId: question.id, questionIndex: index)
-                } else {
-                    freeResponseField(questionId: question.id, questionIndex: index)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, AppMetrics.pageBottomPadding)
+            pagedLayout(progress: progress)
         }
-        .frame(maxWidth: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.horizontal, 20)
         .padding(.top, 12)
+        .padding(.bottom, AppMetrics.pageBottomPadding)
         .onAppear {
             syncLocalFreeResponse(force: true)
         }
@@ -78,6 +70,53 @@ struct QuestionContentView: View {
 
     private var isCurrentQuestion: Bool {
         index == state.currentIndex
+    }
+
+    private func stackedLayout(progress: Double) -> some View {
+        VStack(spacing: AppMetrics.sectionSpacing) {
+            header(progress: progress, index: index + 1, total: total, question: question)
+
+            VStack(spacing: AppMetrics.sectionSpacing) {
+                questionCard(text: question.stem)
+
+                if let options = question.options, !options.isEmpty {
+                    optionsGrid(options, questionId: question.id, questionIndex: index)
+                } else {
+                    freeResponseField(questionId: question.id, questionIndex: index)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .top)
+    }
+
+    private func pagedLayout(progress: Double) -> some View {
+        VStack(spacing: AppMetrics.sectionSpacing) {
+            header(progress: progress, index: index + 1, total: total, question: question)
+
+            pagedStemCard(questionId: question.id, text: question.stem)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxHeight: .infinity, alignment: .top)
+
+            if let options = question.options, !options.isEmpty {
+                optionsGrid(options, questionId: question.id, questionIndex: index)
+            } else {
+                freeResponseField(questionId: question.id, questionIndex: index)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private func pagedStemCard(questionId: String, text: String) -> some View {
+        StemPagedCardView(questionId: questionId, text: text, state: state)
+            .padding(AppMetrics.cardPadding)
+            .appSurface(
+                fill: AppTheme.surface,
+                stroke: AppTheme.divider,
+                cornerRadius: AppMetrics.cardCornerRadius,
+                shadowRadius: AppMetrics.cardShadowRadius,
+                shadowY: AppMetrics.cardShadowY
+            )
     }
 
     // MARK: - Header
