@@ -455,6 +455,30 @@ export default function AiConfigPage() {
                             ))}
                           </datalist>
                         ) : null}
+                        {modelSuggestions.length > 1 ? (
+                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-muted)]">
+                            <span className="text-[10px] uppercase tracking-[0.2em]">Suggested</span>
+                            {modelSuggestions.map((modelId) => (
+                              <button
+                                key={modelId}
+                                type="button"
+                                onClick={() => {
+                                  updateForm(kind, { model_id: modelId });
+                                  if (forms[kind].model_provider === "openrouter") {
+                                    resetKeyInput(kind);
+                                  }
+                                }}
+                                className={`rounded-full border px-3 py-1 font-mono text-[10px] transition ${
+                                  forms[kind].model_id === modelId
+                                    ? "border-[color:var(--accent)] text-[color:var(--ink)]"
+                                    : "border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                                }`}
+                              >
+                                {modelId}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
                       </label>
                     </div>
 
