@@ -1,71 +1,74 @@
 import SwiftUI
 
 struct CoachChatHeaderView: View {
-    let statusText: String
-    let isStreaming: Bool
-    let hasLinkedAttempt: Bool
+    let title: String
+    let subtitle: String
+    let overrideSubtitle: String?
     let onBack: () -> Void
+    let onEditSubtitle: () -> Void
 
     var body: some View {
-        HStack {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .frame(width: 36, height: 36)
-                    .background(AppTheme.surface)
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(AppTheme.divider, lineWidth: 1)
-                    )
-            }
-            .buttonStyle(.plain)
+        HStack(spacing: 12) {
+            backButton
 
-            Spacer()
+            HStack(spacing: 10) {
+                CoachAvatarView(size: 34)
 
-            VStack(spacing: 4) {
-                HStack(spacing: 8) {
-                    CoachAvatarView(size: 32)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("王校长")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(AppTheme.textPrimary)
-                        Text("AI辅导老师")
-                            .font(.caption)
-                            .foregroundStyle(AppTheme.textSecondary)
-                    }
-                }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppTheme.textPrimary)
 
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(isStreaming ? AppTheme.accentStrong : AppTheme.statusSuccess)
-                        .frame(width: 6, height: 6)
-                    Text(statusText)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(AppTheme.textMuted)
-
-                    if hasLinkedAttempt {
-                        Text("本题追问")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(AppTheme.textPrimary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(AppTheme.surfaceRaised)
-                            .clipShape(Capsule())
-                            .overlay(
-                                Capsule()
-                                    .stroke(AppTheme.divider, lineWidth: 1)
-                            )
-                    }
+                    subtitleView
                 }
             }
+            .contentShape(Rectangle())
+            .onTapGesture {
+                onEditSubtitle()
+            }
+            .contextMenu {
+                Button("编辑副标题", action: onEditSubtitle)
+            }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             Color.clear
                 .frame(width: 36, height: 36)
         }
         .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+    }
+
+    private var backButton: some View {
+        Button(action: onBack) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AppTheme.textPrimary)
+                .frame(width: 36, height: 36)
+                .background(AppTheme.surface)
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(AppTheme.divider, lineWidth: 1)
+                )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var subtitleView: some View {
+        let override = overrideSubtitle?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let showOverride = !override.isEmpty
+
+        return ZStack(alignment: .leading) {
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(AppTheme.textSecondary)
+                .opacity(showOverride ? 0 : 1)
+
+            Text(override)
+                .font(.caption)
+                .foregroundStyle(AppTheme.textMuted)
+                .opacity(showOverride ? 1 : 0)
+        }
+        .animation(.easeInOut(duration: 0.18), value: showOverride)
     }
 }

@@ -6,6 +6,10 @@ import StudentCore
 struct CoachChatView: View {
     @Environment(\.dismiss) private var dismiss
 
+    @AppStorage("coach_chat_custom_subtitle") private var customSubtitle: String = "AI辅导老师"
+    @State private var showSubtitleEditor = false
+    @State private var subtitleDraft: String = ""
+
     @State private var audioPlayer: AVAudioPlayer?
     @State private var audioPlayerDelegate = AudioPlayerDelegate()
     @State private var playingMessageId: String?
@@ -37,10 +41,11 @@ struct CoachChatView: View {
             ChatTemplateView(
                 header: {
                     CoachChatHeaderView(
-                        statusText: assistantStatusText,
-                        isStreaming: isAssistantStreaming,
-                        hasLinkedAttempt: false,
-                        onBack: { dismiss() }
+                        title: "王校长",
+                        subtitle: baseSubtitle,
+                        overrideSubtitle: headerOverrideSubtitle,
+                        onBack: { dismiss() },
+                        onEditSubtitle: openSubtitleEditor
                     )
                 },
                 messages: vm.messages,
@@ -91,6 +96,9 @@ struct CoachChatView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+        .sheet(isPresented: $showSubtitleEditor) {
+            CoachChatSubtitleEditorSheet(subtitle: $customSubtitle, draft: $subtitleDraft)
+        }
         .task {
             await vm.load()
         }
@@ -100,8 +108,35 @@ struct CoachChatView: View {
         }
     }
 
-    private var assistantStatusText: String {
-        isAssistantStreaming ? "思考中" : "在线"
+    private var baseSubtitle: String {
+        let trimmed = customSubtitle.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "AI辅导老师" : trimmed
+    }
+
+    private var headerOverrideSubtitle: String? {
+        if isInputFocused {
+            let preview = typingPreviewText
+            if !preview.isEmpty {
+                return preview
+            }
+        }
+
+        if isAssistantStreaming {
+            return "思考中…"
+        }
+
+        return nil
+    }
+
+    private var typingPreviewText: String {
+        let trimmed = vm.draftText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "" }
+        let normalized = trimmed.replacingOccurrences(of: "\n", with: " ")
+        let maxChars = 18
+        if normalized.count <= maxChars {
+            return normalized
+        }
+        return String(normalized.prefix(maxChars)) + "…"
     }
 
     private var isAssistantStreaming: Bool {
@@ -112,6 +147,11 @@ struct CoachChatView: View {
         guard let last = vm.messages.last else { return "empty" }
         let status = last.content.status ?? ""
         return "\(last.id)|\(status)|\(last.content.text.count)"
+    }
+
+    private func openSubtitleEditor() {
+        subtitleDraft = customSubtitle
+        showSubtitleEditor = true
     }
 
     private func sendMessage() {
@@ -284,6 +324,89 @@ private struct CoachChatContextBanner: View {
                 .stroke(AppTheme.dividerStrong, lineWidth: 1.2)
         )
         .shadow(color: AppTheme.shadowSoft, radius: 10, x: 0, y: 4)
+    }
+}
+
+private struct CoachChatSubtitleEditorSheet: View {
+    @Binding var subtitle: String
+    @Binding var draft: String
+
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                AppTheme.backgroundGradient
+                    .ignoresSafeArea()
+
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("这行会显示在标题下方。输入时会临时显示你正在输入的内容。")
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.textMuted)
+
+                    TextField("副标题", text: $draft)
+                        .textInputAutocapitalization(.never)
+                        .padding(.vertical, 11)
+                        .padding(.horizontal, 12)
+                        .background(AppTheme.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(AppTheme.dividerStrong, lineWidth: 1.2)
+                        )
+                        .onChange(of: draft) { _, newValue in
+                            let maxChars = 24
+                            if newValue.count > maxChars {
+                                draft = String(newValue.prefix(maxChars))
+                            }
+                        }
+
+                    Button {
+                        draft = ""
+                    } label: {
+                        Text("恢复默认")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(AppTheme.textPrimary)
+                            .padding(.vertical, 10)
+                            .frame(maxWidth: .infinity)
+                            .background(AppTheme.surfaceRaised)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(AppTheme.divider, lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                .padding(.top, 16)
+            }
+            .navigationTitle("副标题")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("完成") {
+                        subtitle = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+                        dismiss()
+                    }
+                }
+            }
+            .onAppear {
+                // Defensive: if sheet is opened via system gesture, keep draft in sync.
+                if draft.isEmpty {
+                    draft = subtitle
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }
 
