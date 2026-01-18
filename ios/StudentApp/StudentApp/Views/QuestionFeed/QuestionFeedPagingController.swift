@@ -25,16 +25,17 @@ private final class QuestionFeedCollectionView: UICollectionView {
                 return false
             }
             gestureGate?.refreshBoundary()
-            if (gestureGate?.canPageUp == true) && (gestureGate?.canPageDown == true) {
-                return true
-            }
+
             let translation = pan.translation(in: self)
             let velocity = pan.velocity(in: self)
             let dy = abs(translation.y) > 0 ? translation.y : velocity.y
             let dx = abs(translation.x) > 0 ? translation.x : velocity.x
+
+            // Only start paging when the gesture is predominantly vertical.
             if abs(dy) <= abs(dx) {
                 return false
             }
+
             if dy > 0 {
                 return gestureGate?.canPageUp ?? false
             }
