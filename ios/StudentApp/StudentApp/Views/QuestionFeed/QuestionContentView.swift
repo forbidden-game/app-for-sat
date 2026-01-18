@@ -16,19 +16,42 @@ struct QuestionContentView: View {
     let onSubmissionError: (Error) -> Void
     let outerPan: UIPanGestureRecognizer?
 
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.displayScale) private var displayScale
+
     @FocusState private var isInputFocused: Bool
     @State private var autoAdvanceTask: Task<Void, Never>?
     @State private var localFreeResponse: String = ""
     @State private var lastQuestionId: String = ""
+    @State private var layout: QuestionBodyLayout = .short
+    @State private var layoutReady = false
+    @State private var layoutTask: Task<Void, Never>?
+    @State private var layoutSignature: LayoutSignature?
+    @State private var lastLayoutSize: CGSize = .zero
 
     var body: some View {
         let progress = total > 0 ? Double(index + 1) / Double(total) : 0
 
-        ViewThatFits(in: .vertical) {
-            stackedLayout(progress: progress)
-                .fixedSize(horizontal: false, vertical: true)
+        VStack(spacing: AppMetrics.sectionSpacing) {
+            header(progress: progress, index: index + 1, total: total, question: question)
 
-            pagedLayout(progress: progress)
+            GeometryReader { proxy in
+                let size = proxy.size
+                ZStack(alignment: .top) {
+                    if layoutReady {
+                        bodyLayout()
+                    } else {
+                        ProgressView()
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .onAppear {
+                    updateLayoutIfNeeded(size: size)
+                }
+                .onChange(of: size) { _, newSize in
+                    updateLayoutIfNeeded(size: newSize)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.horizontal, 20)
@@ -38,7 +61,14 @@ struct QuestionContentView: View {
             syncLocalFreeResponse(force: true)
         }
         .onChange(of: question.id) { _, _ in
+            resetLayout()
             syncLocalFreeResponse(force: true)
+        }
+        .onChange(of: colorScheme) { _, _ in
+            resetLayout()
+        }
+        .onChange(of: displayScale) { _, _ in
+            resetLayout()
         }
         .onChange(of: state.inputState.freeResponse) { _, _ in
             if isCurrentQuestion {
@@ -55,6 +85,8 @@ struct QuestionContentView: View {
         .onDisappear {
             autoAdvanceTask?.cancel()
             autoAdvanceTask = nil
+            layoutTask?.cancel()
+            layoutTask = nil
         }
         .onChange(of: state.inputState.isFocused) { _, newValue in
             guard isCurrentQuestion else { return }
@@ -74,46 +106,65 @@ struct QuestionContentView: View {
         index == state.currentIndex
     }
 
-    private func stackedLayout(progress: Double) -> some View {
+    private func bodyLayout() -> some View {
+        switch layout {
+        case .short:
+            return AnyView(shortBodyLayout())
+        case .long(let stemPages):
+            return AnyView(longBodyLayout(stemPages: stemPages))
+        }
+    }
+
+    private func shortBodyLayout() -> some View {
         VStack(spacing: AppMetrics.sectionSpacing) {
-            header(progress: progress, index: index + 1, total: total, question: question)
+            questionCard(text: question.stem)
+            answerContent(questionId: question.id, questionIndex: index)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
-            VStack(spacing: AppMetrics.sectionSpacing) {
-                questionCard(text: question.stem)
+    private func longBodyLayout(stemPages: [String]) -> some View {
+        let pages = stemPages.map { QuestionHorizontalPage.stem($0) } + [.answer]
+        let pageCount = pages.count
+        let currentIndex = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
 
-                if let options = question.options, !options.isEmpty {
-                    optionsGrid(options, questionId: question.id, questionIndex: index)
-                } else {
-                    freeResponseField(questionId: question.id, questionIndex: index)
+        return ZStack(alignment: .bottomTrailing) {
+            QuestionHorizontalPagerView(
+                pages: pages,
+                currentIndex: currentIndex,
+                outerPan: outerPan,
+                onPageChange: { newIndex in
+                    state.setStemPage(newIndex, for: question.id)
+                },
+                onUserInteraction: {
+                    state.markSeenStemSwipeHint(for: question.id)
+                },
+                pageBuilder: { page in
+                    switch page {
+                    case .stem(let text):
+                        return AnyView(stemPageView(text: text))
+                    case .answer:
+                        return AnyView(answerPageView(questionId: question.id, questionIndex: index))
+                    }
                 }
+            )
+
+            if pageCount > 1 {
+                pageIndicator(current: currentIndex + 1, total: pageCount)
             }
+        }
+        .overlay(alignment: .bottomLeading) {
+            if shouldShowSwipeHint(pageCount: pageCount) {
+                swipeHint
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: state.hasSeenStemSwipeHint(for: question.id))
+    }
+
+    private func stemPageView(text: String) -> some View {
+        MathTextView(text: text, style: .questionStem)
             .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .frame(maxWidth: .infinity, alignment: .top)
-    }
-
-    private func pagedLayout(progress: Double) -> some View {
-        VStack(spacing: AppMetrics.sectionSpacing) {
-            header(progress: progress, index: index + 1, total: total, question: question)
-
-            pagedStemCard(questionId: question.id, text: question.stem)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(minHeight: 120, alignment: .top)
-                .layoutPriority(0)
-
-            if let options = question.options, !options.isEmpty {
-                optionsGrid(options, questionId: question.id, questionIndex: index)
-                    .layoutPriority(1)
-            } else {
-                freeResponseField(questionId: question.id, questionIndex: index)
-                    .layoutPriority(1)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-    }
-
-    private func pagedStemCard(questionId: String, text: String) -> some View {
-        StemPagedCardView(questionId: questionId, text: text, outerPan: outerPan, state: state)
             .padding(AppMetrics.cardPadding)
             .appSurface(
                 fill: AppTheme.surface,
@@ -122,6 +173,113 @@ struct QuestionContentView: View {
                 shadowRadius: AppMetrics.cardShadowRadius,
                 shadowY: AppMetrics.cardShadowY
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .allowsHitTesting(false)
+    }
+
+    private func answerPageView(questionId: String, questionIndex: Int) -> some View {
+        VStack(spacing: AppMetrics.sectionSpacing) {
+            answerContent(questionId: questionId, questionIndex: questionIndex)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+    }
+
+    private func answerContent(questionId: String, questionIndex: Int) -> some View {
+        Group {
+            if let options = question.options, !options.isEmpty {
+                optionsGrid(options, questionId: questionId, questionIndex: questionIndex)
+            } else {
+                freeResponseField(questionId: questionId, questionIndex: questionIndex)
+            }
+        }
+    }
+
+    private func shouldShowSwipeHint(pageCount: Int) -> Bool {
+        pageCount > 1 && !state.hasSeenStemSwipeHint(for: question.id)
+    }
+
+    private func pageIndicator(current: Int, total: Int) -> some View {
+        Text("\(current)/\(total)")
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(AppTheme.textOnAccent)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(AppTheme.accentStrong.opacity(0.9))
+            .clipShape(Capsule())
+            .padding(8)
+    }
+
+    private var swipeHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "arrow.left.and.right")
+                .font(.caption.weight(.semibold))
+            Text("Swipe left/right")
+                .font(.caption.weight(.semibold))
+        }
+        .foregroundStyle(AppTheme.textMuted)
+        .padding(.vertical, 6)
+        .padding(.horizontal, 10)
+        .background(AppTheme.surface.opacity(0.9))
+        .clipShape(Capsule())
+        .overlay(
+            Capsule().stroke(AppTheme.divider, lineWidth: 1)
+        )
+        .padding(8)
+    }
+
+    private func clampPageIndex(_ index: Int, pageCount: Int) -> Int {
+        guard pageCount > 0 else { return 0 }
+        return max(0, min(index, pageCount - 1))
+    }
+
+    private func resetLayout() {
+        layoutTask?.cancel()
+        layoutTask = nil
+        layoutReady = false
+        layoutSignature = nil
+        if lastLayoutSize != .zero {
+            updateLayoutIfNeeded(size: lastLayoutSize)
+        }
+    }
+
+    private func updateLayoutIfNeeded(size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        let signature = LayoutSignature(
+            questionId: question.id,
+            widthBucket: Int(size.width.rounded(.up)),
+            heightBucket: Int(size.height.rounded(.up)),
+            scheme: colorScheme == .dark ? "dark" : "light",
+            scaleBucket: String(format: "%.2f", displayScale)
+        )
+        guard signature != layoutSignature else { return }
+        layoutSignature = signature
+        lastLayoutSize = size
+        layoutReady = false
+
+        layoutTask?.cancel()
+        layoutTask = Task {
+            let result = await QuestionLayoutEngine.shared.layout(
+                question: question,
+                size: size,
+                colorScheme: colorScheme,
+                displayScale: displayScale,
+                textColor: AppTheme.textPrimary
+            )
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                layout = result
+                layoutReady = true
+                if case .long(let pages) = result {
+                    let pageCount = pages.count + 1
+                    let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
+                    if clamped != state.stemPage(for: question.id) {
+                        state.setStemPage(clamped, for: question.id)
+                    }
+                } else {
+                    state.setStemPage(0, for: question.id)
+                }
+            }
+        }
     }
 
     // MARK: - Header
@@ -444,6 +602,14 @@ struct QuestionContentView: View {
             localFreeResponse = storedValue
         }
     }
+}
+
+private struct LayoutSignature: Equatable {
+    let questionId: String
+    let widthBucket: Int
+    let heightBucket: Int
+    let scheme: String
+    let scaleBucket: String
 }
 
 struct QuestionOverviewView: View {
