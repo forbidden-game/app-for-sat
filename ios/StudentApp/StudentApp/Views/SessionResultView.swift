@@ -8,9 +8,13 @@ struct SessionResultView: View {
 
     @State private var appeared = false
 
+    private var correctCount: Int {
+        result.questions.filter { resolvedIsCorrect(for: $0) }.count
+    }
+
     private var percentage: Double {
         guard result.totalQuestions > 0 else { return 0 }
-        return Double(result.correctCount) / Double(result.totalQuestions) * 100
+        return Double(correctCount) / Double(result.totalQuestions) * 100
     }
 
     var body: some View {
@@ -55,7 +59,7 @@ struct SessionResultView: View {
                     .animation(.easeOut(duration: 0.8).delay(0.2), value: appeared)
 
                 VStack(spacing: 4) {
-                    Text("\(result.correctCount)/\(result.totalQuestions)")
+                    Text("\(correctCount)/\(result.totalQuestions)")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundStyle(AppTheme.textPrimary)
 
@@ -121,9 +125,9 @@ struct SessionResultView: View {
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image(systemName: questionResult.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                Image(systemName: resolvedIsCorrect(for: questionResult) ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .font(.system(size: 22))
-                    .foregroundStyle(questionResult.isCorrect ? AppTheme.statusSuccess : AppTheme.statusDanger)
+                    .foregroundStyle(resolvedIsCorrect(for: questionResult) ? AppTheme.statusSuccess : AppTheme.statusDanger)
             }
             .padding(.vertical, AppMetrics.rowPaddingVertical)
             .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
@@ -155,5 +159,18 @@ struct SessionResultView: View {
         .buttonStyle(.plain)
         .opacity(appeared ? 1 : 0)
         .animation(.easeOut(duration: 0.4).delay(0.7), value: appeared)
+    }
+
+    private func resolvedIsCorrect(for question: QuestionResult) -> Bool {
+        let user = normalizeAnswer(question.userAnswer?.displayString)
+        guard !user.isEmpty else {
+            return question.isCorrect
+        }
+        let correct = normalizeAnswer(question.correctAnswer.displayString)
+        return user == correct
+    }
+
+    private func normalizeAnswer(_ value: String?) -> String {
+        value?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
     }
 }

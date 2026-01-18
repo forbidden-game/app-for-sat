@@ -15,10 +15,16 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     private let incorrectColor = AppTheme.statusDanger
 
     private var resolvedIsCorrect: Bool {
-        guard let userAnswer = question.userAnswer else {
+        let user = normalizeAnswer(question.userAnswer?.displayString)
+        guard !user.isEmpty else {
             return question.isCorrect
         }
-        return userAnswer == question.correctAnswer
+        let correct = normalizeAnswer(question.correctAnswer.displayString)
+        return user == correct
+    }
+
+    private func normalizeAnswer(_ value: String?) -> String {
+        value?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() ?? ""
     }
 
     var body: some View {
@@ -134,8 +140,11 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     }
 
     private func optionRow(_ option: QuestionOption) -> some View {
-        let isUserAnswer = question.userAnswer?.displayString == option.label
-        let isCorrectAnswer = question.correctAnswer.displayString == option.label
+        let normalizedUser = normalizeAnswer(question.userAnswer?.displayString)
+        let normalizedCorrect = normalizeAnswer(question.correctAnswer.displayString)
+        let normalizedLabel = normalizeAnswer(option.label)
+        let isUserAnswer = !normalizedUser.isEmpty && normalizedUser == normalizedLabel
+        let isCorrectAnswer = normalizedCorrect == normalizedLabel
         let showCorrect = isCorrectAnswer
         let showIncorrect = isUserAnswer && !resolvedIsCorrect
 
