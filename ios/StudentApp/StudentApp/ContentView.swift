@@ -46,6 +46,7 @@ private struct MainContainerView: View {
     @ObservedObject var vm: AppViewModel
     @State private var showPanel = false
     @State private var showCoach = false
+    @State private var showHistory = false
     @State private var showReports = false
 
     var body: some View {
@@ -80,6 +81,9 @@ private struct MainContainerView: View {
             SidePanelView(displayName: displayName, onCoach: {
                 showCoach = true
                 showPanel = false
+            }, onHistory: {
+                showHistory = true
+                showPanel = false
             }, onReports: {
                 showReports = true
                 showPanel = false
@@ -90,6 +94,11 @@ private struct MainContainerView: View {
         .sheet(isPresented: $showCoach) {
             if let studentId = vm.user?.id {
                 CoachChatView(studentId: studentId)
+            }
+        }
+        .sheet(isPresented: $showHistory) {
+            if let studentId = vm.user?.id {
+                PracticeHistoryView(banks: vm.banks, studentId: studentId)
             }
         }
         .sheet(isPresented: $showReports) {

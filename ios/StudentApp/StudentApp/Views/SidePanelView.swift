@@ -4,17 +4,20 @@ import SwiftUI
 struct SidePanelView: View {
     let displayName: String
     let onCoach: () -> Void
+    let onHistory: () -> Void
     let onReports: () -> Void
     let onSignOut: () -> Void
 
     init(
         displayName: String,
         onCoach: @escaping () -> Void,
+        onHistory: @escaping () -> Void,
         onReports: @escaping () -> Void,
         onSignOut: @escaping () -> Void
     ) {
         self.displayName = displayName
         self.onCoach = onCoach
+        self.onHistory = onHistory
         self.onReports = onReports
         self.onSignOut = onSignOut
     }
@@ -49,6 +52,24 @@ struct SidePanelView: View {
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 16, weight: .semibold))
                     Text("王校长")
+                        .font(.headline)
+                }
+                .foregroundStyle(AppTheme.textPrimary)
+                .padding(.vertical, AppMetrics.rowPaddingVertical)
+                .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .appSurface(
+                    fill: AppTheme.surfaceRaised,
+                    stroke: AppTheme.divider
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button(action: onHistory) {
+                HStack(spacing: 12) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                    Text("做题记录")
                         .font(.headline)
                 }
                 .foregroundStyle(AppTheme.textPrimary)
