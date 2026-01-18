@@ -53,7 +53,27 @@ serve(async (req) => {
     return jsonResponse({ error: "invalid_payload" }, 400);
   }
 
-  const linkedAttemptId = body.linked_attempt_id ?? null;
+  let linkedAttemptId: string | null = null;
+  const linkedAttemptCandidate = typeof body.linked_attempt_id === "string" ? body.linked_attempt_id.trim() : "";
+  if (linkedAttemptCandidate) {
+    const { data: attemptRow, error: attemptError } = await supabase
+      .from("attempts")
+      .select("id")
+      .eq("id", linkedAttemptCandidate)
+      .eq("student_id", studentId)
+      .maybeSingle();
+
+    if (attemptError) {
+      return jsonResponse({ error: "linked_attempt_lookup_failed" }, 500);
+    }
+
+    if (!attemptRow) {
+      // Treat missing/foreign attempts as not found to avoid leaking IDs.
+      return jsonResponse({ error: "linked_attempt_not_found" }, 404);
+    }
+
+    linkedAttemptId = linkedAttemptCandidate;
+  }
 
   const { data: userMessage, error: insertError } = await supabase
     .from("coach_thread_messages")
@@ -74,6 +94,8 @@ serve(async (req) => {
     kind: "coach_reply",
     status: "queued",
     student_id: studentId,
+    // If the client retries after a timeout, this keeps enqueue idempotent.
+    dedupe_key: userMessage.id,
     payload: {
       student_id: studentId,
       user_message_id: userMessage.id,
@@ -82,7 +104,10 @@ serve(async (req) => {
   });
 
   if (jobError) {
-    return jsonResponse({ error: "job_insert_failed" }, 500);
+    // Unique constraint violation for (kind, dedupe_key) -> already enqueued.
+    if ((jobError as { code?: string }).code !== "23505") {
+      return jsonResponse({ error: "job_insert_failed" }, 500);
+    }
   }
 
   return jsonResponse({ ok: true, userMessageId: userMessage.id }, 200);
