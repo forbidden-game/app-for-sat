@@ -249,8 +249,8 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
             ? collectionView.panGestureRecognizer.translation(in: collectionView)
             : lastDragTranslation
 
-        let minTranslation = pageHeight * 0.06
-        let minVelocity: CGFloat = 0.2
+        let minTranslation = pageHeight * 0.1
+        let minVelocity: CGFloat = 0.3
 
         var targetIndex = currentPageIndex
         let meetsTranslation = abs(translation.y) > minTranslation
