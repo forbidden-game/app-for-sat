@@ -72,8 +72,8 @@ struct QuestionContentView: View {
         switch layout {
         case .short:
             return AnyView(shortBodyLayout())
-        case .long(let stemPages):
-            return AnyView(longBodyLayout(stemPages: stemPages))
+        case .long(let stemPages, let answerPages):
+            return AnyView(longBodyLayout(stemPages: stemPages, answerPages: answerPages))
         }
     }
 
@@ -82,6 +82,7 @@ struct QuestionContentView: View {
             questionCard(text: question.stem)
             QuestionAnswerContentView(
                 question: question,
+                answerPage: nil,
                 questionIndex: index,
                 total: total,
                 state: state,
@@ -95,8 +96,8 @@ struct QuestionContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func longBodyLayout(stemPages: [String]) -> some View {
-        let pages = stemPages.map { QuestionHorizontalPage.stem($0) } + [.answer]
+    private func longBodyLayout(stemPages: [String], answerPages: [QuestionAnswerPage]) -> some View {
+        let pages = stemPages.map { QuestionHorizontalPage.stem($0) } + answerPages.map { .answer($0) }
         let pageCount = pages.count
         let currentIndex = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
 
@@ -115,8 +116,8 @@ struct QuestionContentView: View {
                     switch page {
                     case .stem(let text):
                         return AnyView(stemPageView(text: text))
-                    case .answer:
-                        return AnyView(answerPageView(questionId: question.id, questionIndex: index))
+                    case .answer(let answerPage):
+                        return AnyView(answerPageView(answerPage: answerPage, questionId: question.id, questionIndex: index))
                     }
                 }
             )
@@ -149,9 +150,14 @@ struct QuestionContentView: View {
             .allowsHitTesting(false)
     }
 
-    private func answerPageView(questionId: String, questionIndex: Int) -> some View {
+    private func answerPageView(
+        answerPage: QuestionAnswerPage,
+        questionId: String,
+        questionIndex: Int
+    ) -> some View {
         QuestionAnswerContentView(
             question: question,
+            answerPage: answerPage,
             questionIndex: questionIndex,
             total: total,
             state: state,
@@ -239,8 +245,8 @@ struct QuestionContentView: View {
             await MainActor.run {
                 layout = result
                 layoutReady = true
-                if case .long(let pages) = result {
-                    let pageCount = pages.count + 1
+                if case .long(let stemPages, let answerPages) = result {
+                    let pageCount = stemPages.count + answerPages.count
                     state.setStemPageCount(pageCount, for: question.id)
                     let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
                     if clamped != state.stemPage(for: question.id) {

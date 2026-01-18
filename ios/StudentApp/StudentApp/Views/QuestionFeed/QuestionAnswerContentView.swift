@@ -4,6 +4,7 @@ import StudentCore
 
 struct QuestionAnswerContentView: View {
     let question: Question
+    let answerPage: QuestionAnswerPage?
     let questionIndex: Int
     let total: Int
     @ObservedObject var state: QuestionFeedState
@@ -20,7 +21,14 @@ struct QuestionAnswerContentView: View {
 
     var body: some View {
         Group {
-            if let options = question.options, !options.isEmpty {
+            if let answerPage {
+                switch answerPage {
+                case .options(let options):
+                    optionsGrid(options, questionId: question.id, questionIndex: questionIndex)
+                case .freeResponse:
+                    freeResponseField(questionId: question.id, questionIndex: questionIndex)
+                }
+            } else if let options = question.options, !options.isEmpty {
                 optionsGrid(options, questionId: question.id, questionIndex: questionIndex)
             } else {
                 freeResponseField(questionId: question.id, questionIndex: questionIndex)

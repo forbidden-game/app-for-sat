@@ -3,7 +3,7 @@ import UIKit
 
 enum QuestionHorizontalPage: Equatable {
     case stem(String)
-    case answer
+    case answer(QuestionAnswerPage)
 }
 
 struct QuestionHorizontalPagerView: UIViewControllerRepresentable {

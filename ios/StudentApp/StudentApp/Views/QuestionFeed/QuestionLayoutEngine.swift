@@ -2,9 +2,14 @@ import SwiftUI
 import UIKit
 import StudentCore
 
+enum QuestionAnswerPage: Equatable {
+    case options([QuestionOption])
+    case freeResponse
+}
+
 enum QuestionBodyLayout: Equatable {
     case short
-    case long(stemPages: [String])
+    case long(stemPages: [String], answerPages: [QuestionAnswerPage])
 }
 
 @MainActor
@@ -70,7 +75,15 @@ final class QuestionLayoutEngine {
             displayScale: displayScale,
             textColorHex: textColorHex
         )
-        let layout: QuestionBodyLayout = .long(stemPages: stemPages)
+        let answerPages = await paginateAnswerPages(
+            question: question,
+            width: width,
+            height: height,
+            colorScheme: colorScheme,
+            displayScale: displayScale,
+            textColorHex: textColorHex
+        )
+        let layout: QuestionBodyLayout = .long(stemPages: stemPages, answerPages: answerPages)
         cache[key] = layout
         return layout
     }
@@ -99,7 +112,7 @@ final class QuestionLayoutEngine {
                 total += rowHeight
             }
             if options.count > 1 {
-                total += CGFloat(options.count - 1) * 10
+                total += CGFloat(options.count - 1) * AppMetrics.rowSpacing
             }
             return total
         }
@@ -107,6 +120,81 @@ final class QuestionLayoutEngine {
         let font = UIFont.preferredFont(forTextStyle: .body)
         let contentHeight = max(22, font.lineHeight)
         return contentHeight + AppMetrics.fieldPaddingVertical * 2
+    }
+
+    private func paginateAnswerPages(
+        question: Question,
+        width: CGFloat,
+        height: CGFloat,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat,
+        textColorHex: String
+    ) async -> [QuestionAnswerPage] {
+        if let options = question.options, !options.isEmpty {
+            let optionPages = await paginateOptions(
+                options,
+                width: width,
+                height: height,
+                colorScheme: colorScheme,
+                displayScale: displayScale,
+                textColorHex: textColorHex
+            )
+            if optionPages.isEmpty {
+                return [.options(options)]
+            }
+            return optionPages.map { .options($0) }
+        }
+
+        return [.freeResponse]
+    }
+
+    private func paginateOptions(
+        _ options: [QuestionOption],
+        width: CGFloat,
+        height: CGFloat,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat,
+        textColorHex: String
+    ) async -> [[QuestionOption]] {
+        let textWidth = max(1, width - AppMetrics.rowPaddingHorizontal * 2 - AppMetrics.badgeSize - 12)
+        var measured: [(QuestionOption, CGFloat)] = []
+        for option in options {
+            let optionHeight = await MathTextMeasurer.shared.measure(
+                text: option.content,
+                style: .option,
+                width: textWidth,
+                colorScheme: colorScheme,
+                displayScale: displayScale,
+                textColorHex: textColorHex
+            )
+            let contentHeight = max(AppMetrics.badgeSize, optionHeight)
+            let rowHeight = contentHeight + AppMetrics.rowPaddingVertical * 2
+            measured.append((option, rowHeight))
+        }
+
+        let availableHeight = max(1, height)
+        let spacing = AppMetrics.rowSpacing
+        var pages: [[QuestionOption]] = []
+        var current: [QuestionOption] = []
+        var currentHeight: CGFloat = 0
+
+        for (option, rowHeight) in measured {
+            let nextHeight = current.isEmpty ? rowHeight : (currentHeight + spacing + rowHeight)
+            if !current.isEmpty && nextHeight > availableHeight {
+                pages.append(current)
+                current = [option]
+                currentHeight = rowHeight
+            } else {
+                current.append(option)
+                currentHeight = nextHeight
+            }
+        }
+
+        if !current.isEmpty {
+            pages.append(current)
+        }
+
+        return pages
     }
 
     private func paginateStem(
