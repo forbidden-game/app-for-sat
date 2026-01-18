@@ -54,9 +54,14 @@ struct CoachChatView: View {
                     CoachChatEmptyStateView()
                         .padding(.top, 12)
                 },
-                row: { message in
-                    CoachChatMessageBubble(
+                row: { message, index in
+                    let previous = index > 0 ? vm.messages[index - 1] : nil
+                    let next = index + 1 < vm.messages.count ? vm.messages[index + 1] : nil
+
+                    CoachChatMessageRow(
                         message: message,
+                        previousMessage: previous,
+                        nextMessage: next,
                         playingMessageId: playingMessageId,
                         playbackProgress: playbackProgress,
                         onPlayAudio: { messageId, payload in
@@ -422,12 +427,13 @@ private struct ChatTemplateView<
     let messages: [Message]
     let scrollToBottomToken: AnyHashable
     @ViewBuilder let emptyState: () -> EmptyState
-    @ViewBuilder let row: (Message) -> Row
+    @ViewBuilder let row: (Message, Int) -> Row
     @ViewBuilder let banner: () -> Banner
     @ViewBuilder let composer: () -> Composer
 
     @State private var isPinnedToBottom = true
     @State private var scrollViewHeight: CGFloat = 0
+    @State private var lastMessageCount = 0
 
     var body: some View {
         VStack(spacing: 12) {
@@ -436,13 +442,13 @@ private struct ChatTemplateView<
             GeometryReader { proxy in
                 ScrollViewReader { scrollProxy in
                     ScrollView {
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: 0) {
                             if messages.isEmpty {
                                 emptyState()
                             }
 
-                            ForEach(messages) { message in
-                                row(message)
+                            ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                                row(message, index)
                             }
 
                             Color.clear
@@ -465,12 +471,20 @@ private struct ChatTemplateView<
                     .coordinateSpace(name: "chatScroll")
                     .onAppear {
                         scrollViewHeight = proxy.size.height
+                        lastMessageCount = messages.count
                     }
                     .onChange(of: proxy.size.height) { _, newValue in
                         scrollViewHeight = newValue
                     }
+                    .onChange(of: messages.count) { _, newCount in
+                        let wasEmpty = lastMessageCount == 0
+                        lastMessageCount = newCount
+                        guard isPinnedToBottom else { return }
+                        scrollToBottom(scrollProxy, animated: !wasEmpty)
+                    }
                     .onChange(of: scrollToBottomToken) { _, _ in
                         guard isPinnedToBottom else { return }
+                        // Streaming updates should feel steady (no bounce animation).
                         scrollToBottom(scrollProxy, animated: false)
                     }
                     .onPreferenceChange(BottomAnchorPreferenceKey.self) { bottomY in

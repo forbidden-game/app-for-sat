@@ -1,11 +1,109 @@
 import SwiftUI
 import StudentCore
 
-struct CoachChatMessageBubble: View {
+struct CoachChatMessageRow: View {
     let message: CoachThreadMessage
+    let previousMessage: CoachThreadMessage?
+    let nextMessage: CoachThreadMessage?
+
     let playingMessageId: String?
     let playbackProgress: Double
     let onPlayAudio: (String, CoachChatAudioPayload) -> Void
+
+    var body: some View {
+        VStack(spacing: 6) {
+            if showsTimestampSeparator {
+                ChatTimestampPill(date: message.createdAt)
+                    .frame(maxWidth: .infinity)
+            }
+
+            CoachChatMessageBubble(
+                message: message,
+                showAssistantAvatar: showAssistantAvatar,
+                playingMessageId: playingMessageId,
+                playbackProgress: playbackProgress,
+                onPlayAudio: onPlayAudio
+            )
+        }
+        .padding(.top, rowTopPadding)
+    }
+
+    private var showsTimestampSeparator: Bool {
+        guard let previousMessage else { return true }
+        return message.createdAt.timeIntervalSince(previousMessage.createdAt) > timestampGapThreshold
+    }
+
+    private var showAssistantAvatar: Bool {
+        guard message.role == .assistant else { return false }
+        guard let nextMessage else { return true }
+
+        if nextMessage.role != .assistant {
+            return true
+        }
+
+        return nextMessage.createdAt.timeIntervalSince(message.createdAt) > groupGapThreshold
+    }
+
+    private var rowTopPadding: CGFloat {
+        guard let previousMessage else { return 12 }
+
+        let gap = message.createdAt.timeIntervalSince(previousMessage.createdAt)
+
+        if gap > timestampGapThreshold {
+            return 12
+        }
+
+        if previousMessage.role == message.role, gap < groupGapThreshold {
+            return 4
+        }
+
+        return 10
+    }
+
+    private let timestampGapThreshold: TimeInterval = 5 * 60
+    private let groupGapThreshold: TimeInterval = 90
+}
+
+private struct ChatTimestampPill: View {
+    let date: Date
+
+    var body: some View {
+        Text(Self.format(date: date))
+            .font(.caption2.weight(.medium))
+            .foregroundStyle(AppTheme.textMuted)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(AppTheme.surface)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(AppTheme.divider, lineWidth: 1)
+            )
+    }
+
+    private static func format(date: Date) -> String {
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.locale = .current
+
+        if calendar.isDateInToday(date) {
+            formatter.dateFormat = "HH:mm"
+            return formatter.string(from: date)
+        }
+
+        formatter.dateFormat = "M/d HH:mm"
+        return formatter.string(from: date)
+    }
+}
+
+struct CoachChatMessageBubble: View {
+    let message: CoachThreadMessage
+    let showAssistantAvatar: Bool
+
+    let playingMessageId: String?
+    let playbackProgress: Double
+    let onPlayAudio: (String, CoachChatAudioPayload) -> Void
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isUser: Bool {
@@ -15,72 +113,76 @@ struct CoachChatMessageBubble: View {
     var body: some View {
         let audioPayload = CoachChatAudioPayload.parse(from: message.content.text)
         let imagePayload = CoachChatImagePayload.parse(from: message.content.text)
+
         let foreground = isUser ? AppTheme.textOnAccent : AppTheme.textPrimary
         let bubbleBackground = isUser ? AppTheme.accentStrong : AppTheme.surfaceRaised
-        let bubbleStroke = isUser ? AppTheme.accentStrong : AppTheme.dividerStrong
+        let bubbleStroke = isUser ? Color.clear : AppTheme.divider
 
-        return HStack(alignment: .top, spacing: 10) {
-            if isUser { Spacer(minLength: 40) }
+        return HStack(alignment: .bottom, spacing: 8) {
+            if isUser {
+                Spacer(minLength: 52)
+            } else {
+                avatarSlot
+            }
+
+            VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+                if let audioPayload {
+                    AudioMessageBubble(
+                        payload: audioPayload,
+                        isUser: isUser,
+                        foreground: foreground,
+                        isPlaying: playingMessageId == message.id,
+                        progress: playingMessageId == message.id ? playbackProgress : 0,
+                        onPlay: { onPlayAudio(message.id, audioPayload) }
+                    )
+                } else if let imagePayload {
+                    CoachChatImageBubble(
+                        payload: imagePayload,
+                        isUser: isUser,
+                        foreground: foreground
+                    )
+                } else {
+                    MathTextView(
+                        text: message.content.text,
+                        style: .chatBubble(isUser: isUser),
+                        textColor: foreground
+                    )
+                    .fixedSize(horizontal: false, vertical: true)
+                }
+
+                if message.role == .assistant, message.content.status == "streaming" {
+                    CoachChatTypingIndicator(reduceMotion: reduceMotion)
+                }
+            }
+            .padding(12)
+            .background(bubbleBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(bubbleStroke, lineWidth: 1)
+            )
+            .shadow(color: isUser ? Color.clear : AppTheme.shadowSoft, radius: 5, x: 0, y: 2)
 
             if !isUser {
-                CoachAvatarView(size: 26)
-                    .padding(.top, 2)
+                Spacer(minLength: 52)
             }
-
-            VStack(alignment: isUser ? .trailing : .leading, spacing: 4) {
-                VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
-                    if let audioPayload {
-                        AudioMessageBubble(
-                            payload: audioPayload,
-                            isUser: isUser,
-                            foreground: foreground,
-                            isPlaying: playingMessageId == message.id,
-                            progress: playingMessageId == message.id ? playbackProgress : 0,
-                            onPlay: { onPlayAudio(message.id, audioPayload) }
-                        )
-                    } else if let imagePayload {
-                        CoachChatImageBubble(
-                            payload: imagePayload,
-                            isUser: isUser,
-                            foreground: foreground
-                        )
-                    } else {
-                        MathTextView(
-                            text: message.content.text,
-                            style: .chatBubble(isUser: isUser),
-                            textColor: foreground
-                        )
-                        .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    if message.role == .assistant, message.content.status == "streaming" {
-                        CoachChatTypingIndicator(reduceMotion: reduceMotion)
-                    }
-                }
-                .padding(12)
-                .background(bubbleBackground)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(bubbleStroke, lineWidth: 1.1)
-                )
-                .shadow(color: isUser ? Color.clear : AppTheme.shadowSoft, radius: 6, x: 0, y: 2)
-
-                Text(Self.timeFormatter.string(from: message.createdAt))
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(isUser ? AppTheme.textOnAccent.opacity(0.7) : AppTheme.textMuted)
-            }
-
-            if !isUser { Spacer(minLength: 40) }
         }
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
     }
 
-    private static let timeFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter
-    }()
+    private var avatarSlot: some View {
+        let size: CGFloat = 26
+
+        return Group {
+            if showAssistantAvatar {
+                CoachAvatarView(size: size)
+            } else {
+                Color.clear
+                    .frame(width: size, height: size)
+            }
+        }
+        .padding(.bottom, 2)
+    }
 }
 
 struct CoachChatTypingIndicator: View {
