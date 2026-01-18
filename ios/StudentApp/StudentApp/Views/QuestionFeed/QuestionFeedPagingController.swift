@@ -6,8 +6,6 @@ private protocol QuestionFeedGestureGate: AnyObject {
     var canPageUp: Bool { get }
     var canPageDown: Bool { get }
     var isInputFocused: Bool { get }
-    var isContentScrollable: Bool { get }
-    func refreshBoundary()
 }
 
 private final class QuestionFeedCollectionView: UICollectionView {
@@ -18,13 +16,10 @@ private final class QuestionFeedCollectionView: UICollectionView {
             guard let pan = gestureRecognizer as? UIPanGestureRecognizer else {
                 return super.gestureRecognizerShouldBegin(gestureRecognizer)
             }
+
             if gestureGate?.isInputFocused == true {
                 return false
             }
-            if gestureGate?.isContentScrollable == true {
-                return false
-            }
-            gestureGate?.refreshBoundary()
 
             let translation = pan.translation(in: self)
             let velocity = pan.velocity(in: self)
@@ -61,7 +56,6 @@ final class QuestionFeedPagingController: UIViewController {
 
     private var collectionView: QuestionFeedCollectionView!
     private var currentPageIndex: Int
-    private var currentBoundary: ScrollBoundaryState = .neutral
     private var lastAppliedStateIndex: Int?
     private var lastFinalizedPageIndex: Int?
     private var isProgrammaticScroll = false
@@ -230,8 +224,7 @@ extension QuestionFeedPagingController: UICollectionViewDataSource {
             onSubmissionError: onSubmissionError
         )
 
-        cell.delegate = self
-        cell.configure(config, outerPan: collectionView.panGestureRecognizer)
+        cell.configure(config)
         return cell
     }
 }
@@ -257,14 +250,20 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
         let translation = lastDragTranslation == .zero
             ? collectionView.panGestureRecognizer.translation(in: collectionView)
             : lastDragTranslation
-        let maxIndex = session.questions.count
 
-        let boundary = currentCellBoundarySnapshot() ?? currentBoundary
+        let minTranslation = pageHeight * 0.12
+        let minVelocity: CGFloat = 0.35
+
         var targetIndex = currentPageIndex
-        if translation.y > 0, boundary.atTop {
-            targetIndex = max(currentPageIndex - 1, 0)
-        } else if translation.y < 0, boundary.atBottom {
-            targetIndex = min(currentPageIndex + 1, maxIndex)
+        let signalY = abs(translation.y) > 0 ? translation.y : velocity.y
+
+        if abs(translation.y) > minTranslation || abs(velocity.y) > minVelocity {
+            let maxIndex = session.questions.count
+            if signalY > 0 {
+                targetIndex = max(currentPageIndex - 1, 0)
+            } else if signalY < 0 {
+                targetIndex = min(currentPageIndex + 1, maxIndex)
+            }
         }
 
         targetContentOffset.pointee = CGPoint(x: 0, y: CGFloat(targetIndex) * pageHeight)
@@ -294,34 +293,9 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
 // MARK: - Gesture Gate
 
 extension QuestionFeedPagingController: QuestionFeedGestureGate {
-    var canPageUp: Bool { currentBoundary.atTop }
-    var canPageDown: Bool { currentBoundary.atBottom }
+    var canPageUp: Bool { currentPageIndex > 0 }
+    var canPageDown: Bool { currentPageIndex < session.questions.count }
     var isInputFocused: Bool { state.inputState.isFocused }
-    var isContentScrollable: Bool { currentBoundary.isScrollable }
-    func refreshBoundary() { refreshBoundaryForCurrentCell() }
-}
-
-// MARK: - Cell Boundary
-
-extension QuestionFeedPagingController: QuestionCellDelegate {
-    func questionCell(_ cell: QuestionCell, didUpdateBoundary state: ScrollBoundaryState) {
-        guard cell.index == currentPageIndex else { return }
-        currentBoundary = state
-    }
-
-    func questionCell(_ cell: QuestionCell, didRequestPage direction: QuestionCellPageDirection) {
-        guard cell.index == currentPageIndex else { return }
-        let maxIndex = session.questions.count
-        let targetIndex: Int
-        switch direction {
-        case .up:
-            targetIndex = max(currentPageIndex - 1, 0)
-        case .down:
-            targetIndex = min(currentPageIndex + 1, maxIndex)
-        }
-        guard targetIndex != currentPageIndex else { return }
-        scrollToPage(targetIndex, animated: true, programmatic: false)
-    }
 }
 
 // MARK: - Helpers
@@ -378,7 +352,6 @@ private extension QuestionFeedPagingController {
             lastFinalizedPageIndex = pageIndex
         }
 
-        refreshBoundaryForCurrentCell()
         isProgrammaticScroll = false
     }
 
@@ -392,18 +365,6 @@ private extension QuestionFeedPagingController {
             guard let questionCell = cell as? QuestionCell else { continue }
             questionCell.setActive(questionCell.index == currentPageIndex)
         }
-    }
-
-    func refreshBoundaryForCurrentCell() {
-        let indexPath = IndexPath(item: currentPageIndex, section: 0)
-        guard let cell = collectionView.cellForItem(at: indexPath) as? QuestionCell else { return }
-        cell.refreshBoundary()
-    }
-
-    func currentCellBoundarySnapshot() -> ScrollBoundaryState? {
-        let indexPath = IndexPath(item: currentPageIndex, section: 0)
-        guard let cell = collectionView.cellForItem(at: indexPath) as? QuestionCell else { return nil }
-        return cell.boundarySnapshot()
     }
 
     func loadAnswer(for question: Question) {
