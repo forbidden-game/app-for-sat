@@ -171,8 +171,7 @@ struct CoachChatMessageBubble: View {
                         text: message.content.text,
                         style: .chatBubble(isUser: isUser),
                         textColor: foreground,
-                        maxWidth: bubbleMaxWidth,
-                        alignment: isUser ? .trailing : .leading
+                        maxWidth: bubbleMaxWidth
                     )
                 }
 
@@ -280,7 +279,6 @@ private struct CoachChatBubbleText: View {
     let style: MathTextStyle
     let textColor: Color
     let maxWidth: CGFloat
-    let alignment: Alignment
 
     var body: some View {
         MathTextView(
@@ -289,22 +287,43 @@ private struct CoachChatBubbleText: View {
             textColor: textColor,
             expandsHorizontally: false
         )
-        .frame(width: bubbleWidth, alignment: alignment)
+        .frame(width: bubbleWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
     }
 
     private var bubbleWidth: CGFloat {
-        let width = max(lineWidth, 0)
-        return min(width, maxWidth)
+        min(textLayoutWidth, maxWidth)
     }
 
-    private var lineWidth: CGFloat {
+    private var textLayoutWidth: CGFloat {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return 0 }
+
         let font = UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
-        let lines = text.components(separatedBy: .newlines)
-        let widths = lines.map { line -> CGFloat in
-            (line as NSString).size(withAttributes: [.font: font]).width
-        }
-        return ceil(widths.max() ?? 0)
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.alignment = .left
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .paragraphStyle: paragraphStyle
+        ]
+        let attributed = NSAttributedString(string: trimmed, attributes: attributes)
+
+        let textStorage = NSTextStorage(attributedString: attributed)
+        let layoutManager = NSLayoutManager()
+        let textContainer = NSTextContainer(
+            size: CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
+        )
+        textContainer.lineFragmentPadding = 0
+        textContainer.lineBreakMode = .byWordWrapping
+
+        layoutManager.addTextContainer(textContainer)
+        textStorage.addLayoutManager(layoutManager)
+        layoutManager.glyphRange(for: textContainer)
+
+        let rect = layoutManager.usedRect(for: textContainer)
+        return ceil(rect.width)
     }
 
     private var uiFontWeight: UIFont.Weight {
