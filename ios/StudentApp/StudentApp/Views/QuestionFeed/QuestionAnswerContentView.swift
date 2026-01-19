@@ -186,7 +186,7 @@ struct QuestionAnswerContentView: View {
             set: { newValue in
                 guard isCurrentQuestion else { return }
                 localFreeResponse = newValue
-                state.updateFreeResponse(newValue)
+                state.updateFreeResponse(newValue, questionId: question.id)
             }
         )
     }
