@@ -126,7 +126,8 @@ final class MathRenderPlanner: MathRenderPlanning {
         }
 
         let doc = parser.parse(request.text)
-        if !doc.requiresMathRendering {
+        let requiresWeb = doc.requiresMathRendering || containsImageMarkup(in: doc)
+        if !requiresWeb {
             let rendered = InlineMarkdownRenderer.render(doc.plainText)
             let plan = MathRenderPlan.plainText(rendered)
             cache.store(plan, forKey: cacheKey)
@@ -235,6 +236,17 @@ final class MathRenderPlanner: MathRenderPlanning {
         }
         guard parts.count == 1 else { return nil }
         return parts[0]
+    }
+
+    private func containsImageMarkup(in doc: MathMarkupDocument) -> Bool {
+        for segment in doc.segments {
+            guard case .text(let text) = segment else { continue }
+            // Basic detection for markdown images: ![alt](url)
+            if text.contains("![") && text.contains("](") {
+                return true
+            }
+        }
+        return false
     }
 }
 

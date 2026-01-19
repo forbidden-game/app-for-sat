@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "./config.js";
 import { logger } from "./logger.js";
-import { resolveModel } from "./model.js";
+import { applyMinimaxAuth, resolveModel } from "./model.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools, type CoachToolOptions } from "./tools/coachTools.js";
 import { buildModelSpec, getPublishedAiPromptConfigs, type AiPromptKind } from "./aiConfig.js";
@@ -198,7 +198,7 @@ async function claimJobs(
 
 export async function runWorker(config: CoachConfig, supabase: SupabaseClient): Promise<void> {
   let lastScheduleAt = 0;
-  const apiKeyResolver = async (provider: string) => resolveProviderKey(supabase, config, provider);
+  const baseApiKeyResolver = async (provider: string) => resolveProviderKey(supabase, config, provider);
 
   for (;;) {
     const now = Date.now();
@@ -232,10 +232,23 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
       try {
         const promptConfigs = await getPublishedAiPromptConfigs(supabase);
         const overrides = resolvePromptOverrides(job.kind, promptConfigs);
+        const providerKeyCache = new Map<string, string | undefined>();
+        const apiKeyResolver = async (provider: string) => {
+          if (providerKeyCache.has(provider)) return providerKeyCache.get(provider);
+          const key = await baseApiKeyResolver(provider);
+          providerKeyCache.set(provider, key);
+          return key;
+        };
 
         if (job.kind === "attempt_insight") {
           if (!job.attempt_id) throw new Error("missing attempt_id");
-          const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          const baseModel = overrides?.modelSpec
+            ? modelForSpec(overrides.modelSpec)
+            : resolveJobModel(config, job.kind);
+          const model =
+            baseModel.provider === "minimax"
+              ? applyMinimaxAuth(baseModel, await apiKeyResolver(baseModel.provider))
+              : baseModel;
           const systemPrompt = overrides?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.attempt_insight;
           const promptVersion = overrides?.promptVersion ?? DEFAULT_PROMPT_VERSIONS.attempt_insight;
           const agent = createCoachAgent(
@@ -266,7 +279,13 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
             logSession.detach();
           }
         } else if (job.kind === "coach_reply") {
-          const model = overrides?.modelSpec ? modelForSpec(overrides.modelSpec) : resolveJobModel(config, job.kind);
+          const baseModel = overrides?.modelSpec
+            ? modelForSpec(overrides.modelSpec)
+            : resolveJobModel(config, job.kind);
+          const model =
+            baseModel.provider === "minimax"
+              ? applyMinimaxAuth(baseModel, await apiKeyResolver(baseModel.provider))
+              : baseModel;
           const systemPrompt = overrides?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.coach_reply;
           const promptVersion = overrides?.promptVersion ?? DEFAULT_PROMPT_VERSIONS.coach_reply;
           const agent = createCoachAgent(
