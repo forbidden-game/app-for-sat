@@ -259,18 +259,24 @@ private struct MathWebContainer: UIViewRepresentable {
         webView.isHidden = true
         measuredHeight = max(1, payload.estimatedHeight)
 
-        context.coordinator.renderTask?.cancel()
-        context.coordinator.renderer.cancel()
-        context.coordinator.renderTask = Task {
+        let coordinator = context.coordinator
+        let currentKey = requestKey
+
+        coordinator.renderTask?.cancel()
+        coordinator.renderer.cancel()
+        coordinator.renderTask = Task {
             do {
-                let height = try await context.coordinator.renderer.render(payload, into: webView)
+                let height = try await coordinator.renderer.render(payload, into: webView)
                 await MainActor.run {
+                    guard coordinator.lastKey == currentKey else { return }
                     measuredHeight = height
                     isRendered = true
                     webView.isHidden = false
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
+                    guard coordinator.lastKey == currentKey else { return }
                     isRendered = false
                     onFailure()
                 }
