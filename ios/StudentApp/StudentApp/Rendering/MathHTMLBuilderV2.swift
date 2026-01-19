@@ -146,8 +146,9 @@ enum MathHTMLBuilderV2 {
               .content {
                 height: 100%;
                 white-space: pre-wrap;
-                word-break: break-word;
-                overflow-wrap: anywhere;
+                word-break: normal;
+                overflow-wrap: break-word;
+                word-wrap: break-word;
                 text-align: \(style.textAlign);
                 column-width: 100vw;
                 column-gap: 0;
