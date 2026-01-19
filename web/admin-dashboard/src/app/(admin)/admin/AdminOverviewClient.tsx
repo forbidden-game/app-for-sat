@@ -188,7 +188,7 @@ export default function AdminOverviewClient({
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
                           bank.is_active
                             ? "bg-[color:var(--accent-strong)]"
                             : "bg-[color:var(--danger-strong)]"
