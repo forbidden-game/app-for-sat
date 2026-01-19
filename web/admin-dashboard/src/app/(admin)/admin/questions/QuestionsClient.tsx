@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
@@ -52,6 +52,7 @@ export default function QuestionsPage() {
   const [drawerError, setDrawerError] = useState<string | null>(null);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
+  const requestIdRef = useRef(0);
 
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [subject, setSubject] = useState(() => searchParams.get("subject") ?? "");
@@ -72,20 +73,32 @@ export default function QuestionsPage() {
   const [modules, setModules] = useState<string[]>([]);
   const [questionTypes, setQuestionTypes] = useState<QuestionType[]>([]);
 
-  const loadQuestions = useCallback(async () => {
-    if (!supabase) return;
-
+  const getAccessToken = useCallback(async () => {
+    if (!supabase) {
+      setError("Supabase not configured.");
+      return null;
+    }
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
     if (!session) {
       setError("You are not signed in.");
+      return null;
+    }
+    return session.access_token;
+  }, [supabase]);
+
+  const loadQuestions = useCallback(async () => {
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
       setLoading(false);
       return;
     }
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
 
     try {
       setLoading(true);
-      const data = await listQuestions(session.access_token, {
+      const data = await listQuestions(accessToken, {
         page,
         pageSize: 20,
         search: search || undefined,
@@ -94,14 +107,18 @@ export default function QuestionsPage() {
         difficulty: difficulty || undefined,
         question_type: questionType || undefined,
       });
+      if (requestId !== requestIdRef.current) return;
       setResult(data);
       setError(null);
     } catch (err) {
+      if (requestId !== requestIdRef.current) return;
       setError(err instanceof Error ? err.message : "Failed to load questions.");
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
-  }, [supabase, page, search, subject, module, difficulty, questionType]);
+  }, [getAccessToken, page, search, subject, module, difficulty, questionType]);
 
   useEffect(() => {
     loadQuestions();
@@ -162,16 +179,14 @@ export default function QuestionsPage() {
 
   useEffect(() => {
     async function loadFilters() {
-      if (!supabase) return;
-      const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData.session;
-      if (!session) return;
+      const accessToken = await getAccessToken();
+      if (!accessToken) return;
 
       try {
         const [subjectList, moduleList, typeList] = await Promise.all([
-          getDistinctValues(session.access_token, "subject"),
-          getDistinctValues(session.access_token, "module"),
-          listQuestionTypes(session.access_token),
+          getDistinctValues(accessToken, "subject"),
+          getDistinctValues(accessToken, "module"),
+          listQuestionTypes(accessToken),
         ]);
         setSubjects(subjectList);
         setModules(moduleList);
@@ -180,18 +195,7 @@ export default function QuestionsPage() {
       }
     }
     loadFilters();
-  }, [supabase]);
-
-  async function getAccessToken() {
-    if (!supabase) return null;
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
-    if (!session) {
-      setError("You are not signed in.");
-      return null;
-    }
-    return session.access_token;
-  }
+  }, [getAccessToken]);
 
   function openCreateDrawer() {
     setDrawerMode("create");
@@ -227,17 +231,15 @@ export default function QuestionsPage() {
   }
 
   async function handleDelete(questionId: string, stem: string) {
-    if (!supabase) return;
     const confirmed = window.confirm(`Delete this question?\n\n"${truncate(stem, 100)}"`);
     if (!confirmed) return;
 
-    const { data: sessionData } = await supabase.auth.getSession();
-    const session = sessionData.session;
-    if (!session) return;
+    const accessToken = await getAccessToken();
+    if (!accessToken) return;
 
     try {
       setDeleting(questionId);
-      await deleteQuestion(session.access_token, questionId);
+      await deleteQuestion(accessToken, questionId);
       await loadQuestions();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete question.");

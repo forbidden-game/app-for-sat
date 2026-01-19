@@ -150,13 +150,17 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   }
 
   const isMCQ = questionType === "mcq";
-  const tagsByCategory = allTags.reduce(
-    (acc, tag) => {
-      if (!acc[tag.category]) acc[tag.category] = [];
-      acc[tag.category].push(tag);
-      return acc;
-    },
-    {} as Record<string, Tag[]>,
+  const tagsByCategory = useMemo(
+    () =>
+      allTags.reduce(
+        (acc, tag) => {
+          if (!acc[tag.category]) acc[tag.category] = [];
+          acc[tag.category].push(tag);
+          return acc;
+        },
+        {} as Record<string, Tag[]>,
+      ),
+    [allTags],
   );
 
   return (
