@@ -8,7 +8,7 @@ struct QuestionContentView: View {
     let total: Int
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
-    let submission: AnswerSubmissionCoordinator
+    @ObservedObject var submission: AnswerSubmissionCoordinator
     @Binding var returnToOverviewOnAnswer: Bool
     let headerTitle: String?
     let onBack: () -> Void
@@ -347,16 +347,40 @@ struct QuestionContentView: View {
         return questionTitle(for: question)
     }
 
+    @ViewBuilder
     private func answerStatusPill(for question: Question) -> some View {
         let raw = store[question.id]?.displayString ?? ""
         let isAnswered = !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let title = isAnswered ? "Answered · Editable" : "Not answered"
-        let icon = isAnswered ? "checkmark.seal.fill" : "circle"
-        let fill = isAnswered ? AppTheme.accentSoft : AppTheme.surfaceRaised
-        let stroke = isAnswered ? AppTheme.accentStrong : AppTheme.divider
-        let textColor = isAnswered ? AppTheme.accentStrong : AppTheme.textMuted
+        let status = isAnswered ? submission.status(for: question.id) : .idle
 
-        return HStack(spacing: 6) {
+        let title: String
+        let icon: String
+        let fill: Color
+        let stroke: Color
+        let textColor: Color
+
+        switch status {
+        case .submitting:
+            title = "Saving..."
+            icon = "arrow.triangle.2.circlepath"
+            fill = AppTheme.accentSoft
+            stroke = AppTheme.accentStrong
+            textColor = AppTheme.accentStrong
+        case .failed:
+            title = "Failed · Tap to retry"
+            icon = "exclamationmark.triangle.fill"
+            fill = AppTheme.statusDanger.opacity(0.15)
+            stroke = AppTheme.statusDanger
+            textColor = AppTheme.statusDanger
+        case .idle:
+            title = isAnswered ? "Answered · Editable" : "Not answered"
+            icon = isAnswered ? "checkmark.seal.fill" : "circle"
+            fill = isAnswered ? AppTheme.accentSoft : AppTheme.surfaceRaised
+            stroke = isAnswered ? AppTheme.accentStrong : AppTheme.divider
+            textColor = isAnswered ? AppTheme.accentStrong : AppTheme.textMuted
+        }
+
+        let pill = HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.caption.weight(.semibold))
             Text(title)
@@ -372,6 +396,27 @@ struct QuestionContentView: View {
                 .stroke(stroke, lineWidth: 1)
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+
+        if case .failed = status, isAnswered {
+            Button {
+                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { return }
+                submission.submit(
+                    question: question,
+                    answer: trimmed,
+                    questionId: question.id,
+                    onSuccess: { _ in },
+                    onFailure: { error in
+                        onSubmissionError(error)
+                    }
+                )
+            } label: {
+                pill
+            }
+            .buttonStyle(.plain)
+        } else {
+            pill
+        }
     }
 
 }
