@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "../config.js";
 import { logger } from "../logger.js";
+import { applyMinimaxAuth } from "../model.js";
 import { getProviderApiKey } from "../providerKeys.js";
 import { buildProgressReportPrompt } from "../prompts/progressReportPrompt.js";
 import type { PeriodStats } from "../stats.js";
@@ -181,8 +182,9 @@ export async function processProgressReportJob(
     const apiKey =
       (await getProviderApiKey(supabase, model.provider)) ??
       (model.provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(model.provider));
+    const modelWithAuth = applyMinimaxAuth(model, apiKey);
     const response = await completeSimple(
-      model,
+      modelWithAuth,
       {
         systemPrompt,
         messages: [{ role: "user", content: prompt, timestamp: Date.now() }],
