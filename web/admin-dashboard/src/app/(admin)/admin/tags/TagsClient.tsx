@@ -222,13 +222,13 @@ export default function TagsPage() {
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Tags</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Tags</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">Manage tags for categorizing questions.</p>
         </div>
         <div className="flex items-center gap-3">
           <select
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink)]"
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
             aria-label="Filter category"
@@ -241,7 +241,7 @@ export default function TagsPage() {
             ))}
           </select>
           <button
-            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
             onClick={openCreateDrawer}
             type="button"
           >
@@ -252,7 +252,7 @@ export default function TagsPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error} Try refreshing or checking Supabase config.
@@ -262,7 +262,7 @@ export default function TagsPage() {
       <section className="flex flex-col gap-6">
         {Object.keys(groupedTags).length === 0 ? (
           <div
-            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center text-sm text-[color:var(--ink-muted)]"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center text-sm text-[color:var(--ink-muted)]"
             role="status"
             aria-live="polite"
           >
@@ -270,7 +270,7 @@ export default function TagsPage() {
           </div>
         ) : (
           Object.entries(groupedTags).map(([category, categoryTags]) => (
-            <div key={category} className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+            <div key={category} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
               <div className="border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
                 <h3 className="text-sm font-medium text-[color:var(--ink)] capitalize">{category}</h3>
               </div>
@@ -278,7 +278,7 @@ export default function TagsPage() {
                 {categoryTags.map((tag) => (
                   <div
                     key={tag.id}
-                    className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
+                    className={`group flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       editingId === tag.id
                         ? "border-[color:var(--accent-strong)] bg-[color:var(--accent)] text-white"
                         : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--ink)] hover:border-[color:var(--accent-strong)]"
@@ -294,7 +294,7 @@ export default function TagsPage() {
                     </button>
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <button
-                        className="text-[10px] uppercase tracking-[0.2em] hover:text-[color:var(--ink)]"
+                        className="text-[11px] font-medium hover:text-[color:var(--ink)]"
                         onClick={(event) => {
                           event.stopPropagation();
                           openEditDrawer(tag);
@@ -306,7 +306,7 @@ export default function TagsPage() {
                         Edit
                       </button>
                       <button
-                        className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)]"
+                        className="text-[11px] font-medium text-[color:var(--danger-strong)]"
                         onClick={(event) => {
                           event.stopPropagation();
                           void handleDelete(tag);
@@ -336,15 +336,15 @@ export default function TagsPage() {
           <aside className="relative z-10 flex h-full w-full max-w-md flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                <p className="text-xs font-medium text-[color:var(--ink-muted)]">
                   {drawerMode === "edit" ? "Edit Tag" : "Create Tag"}
                 </p>
-                <p className="text-sm font-semibold text-[color:var(--ink)]">
+                <p className="text-sm font-semibold tracking-tight text-[color:var(--ink)]">
                   {drawerMode === "edit" ? "Update Tag" : "New Tag"}
                 </p>
               </div>
               <button
-                className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
+                className="text-xs font-medium text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
                 onClick={closeDrawer}
               >
                 Close
@@ -352,8 +352,8 @@ export default function TagsPage() {
             </div>
 
             {drawerMode === "edit" && selectedTag ? (
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Tag details</p>
+              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
+                <p className="text-xs font-medium text-[color:var(--ink-muted)]">Tag details</p>
                 <dl className="mt-3 space-y-2 text-sm">
                   <div className="flex items-start justify-between gap-3">
                     <dt className="text-xs text-[color:var(--ink-muted)]">ID</dt>
@@ -366,22 +366,22 @@ export default function TagsPage() {
             ) : null}
 
             <div className="grid gap-4 text-sm text-[color:var(--ink)]">
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Name
                 <input
                   name="tagName"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="e.g., algebra, geometry…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Category
                 <select
                   name="tagCategory"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                 >
@@ -394,7 +394,7 @@ export default function TagsPage() {
               </label>
               <div className="flex flex-wrap gap-2 pt-2">
                 <button
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
                   disabled={saving || !form.name.trim()}
                   onClick={handleSave}
                   type="button"
@@ -402,7 +402,7 @@ export default function TagsPage() {
                   {drawerMode === "edit" ? "Save Changes" : "Create Tag"}
                 </button>
                 <button
-                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)]"
                   onClick={closeDrawer}
                   type="button"
                   disabled={saving}
