@@ -166,6 +166,22 @@ struct QuestionAnswerContentView: View {
                         commitFreeResponse(questionId: questionId)
                     }
                 }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Button("Done") {
+                            state.setFocus(false)
+                        }
+                        Spacer()
+                        Button("Next") {
+                            if isCurrentQuestion {
+                                commitFreeResponse(questionId: questionId)
+                            } else {
+                                state.setFocus(false)
+                            }
+                        }
+                        .disabled(!isCurrentQuestion)
+                    }
+                }
                 .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
                 .disabled(!isCurrentQuestion)
         }
@@ -206,6 +222,7 @@ struct QuestionAnswerContentView: View {
 
     private func recordAnswer(_ value: String, questionId: String) {
         store[questionId] = .string(value)
+        state.clearDraft(for: questionId)
     }
 
     private func submitAnswer(questionId: String, answer: String) {
