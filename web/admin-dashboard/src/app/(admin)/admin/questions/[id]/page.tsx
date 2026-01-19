@@ -103,8 +103,8 @@ export default function EditQuestionPage() {
   return (
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
-        <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-        <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Edit Question</h1>
+        <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Edit Question</h1>
         <p className="text-sm text-[color:var(--ink-muted)]">
           ID:{" "}
           <code className="rounded bg-[color:var(--surface-soft)] px-1 py-0.5 text-xs">{questionId}</code>
@@ -113,18 +113,18 @@ export default function EditQuestionPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <QuestionForm initialData={question} onSubmit={handleSubmit} onCancel={handleCancel} saving={saving} />
       </div>
 
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <AssetUploader questionId={questionId} />
       </div>
     </main>

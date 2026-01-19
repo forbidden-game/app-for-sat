@@ -41,21 +41,21 @@ export default function NewQuestionPage() {
   return (
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
-        <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-        <h1 className="text-2xl font-semibold text-[color:var(--ink)]">New Question</h1>
+        <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">New Question</h1>
         <p className="text-sm text-[color:var(--ink-muted)]">Create a new question in the question bank.</p>
       </header>
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <QuestionForm onSubmit={handleSubmit} onCancel={handleCancel} saving={saving} />
       </div>
     </main>

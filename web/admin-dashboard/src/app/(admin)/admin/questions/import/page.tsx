@@ -152,13 +152,13 @@ export default function ImportQuestionsPage() {
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Import Questions</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Import Questions</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">Bulk import questions from CSV or JSON.</p>
         </div>
         <Link
           href="/admin/questions"
-          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Back to Questions
         </Link>
@@ -166,7 +166,7 @@ export default function ImportQuestionsPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
@@ -175,7 +175,7 @@ export default function ImportQuestionsPage() {
 
       {result ? (
         <div
-          className="rounded-2xl border border-[color:var(--accent)] bg-[color:var(--surface)] px-4 py-4 text-sm"
+          className="rounded-xl border border-[color:var(--accent)] bg-[color:var(--surface)] px-4 py-4 text-sm"
           role="status"
           aria-live="polite"
         >
@@ -197,11 +197,11 @@ export default function ImportQuestionsPage() {
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="text-sm font-medium text-[color:var(--ink)]">Import file</label>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <div className="flex items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
               <button type="button" onClick={() => downloadSample("csv")} className="hover:text-[color:var(--ink)]">
                 Download CSV
               </button>
@@ -215,7 +215,7 @@ export default function ImportQuestionsPage() {
           <div className="flex flex-wrap items-center gap-3">
             <select
               name="importFormat"
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink)]"
               value={format}
               onChange={(event) => setFormat(event.target.value as ImportFormat)}
               aria-label="Import format"
@@ -236,7 +236,7 @@ export default function ImportQuestionsPage() {
               <button
                 type="button"
                 onClick={clearFile}
-                className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
+                className="text-xs font-medium text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
               >
                 Clear
               </button>
@@ -316,7 +316,7 @@ export default function ImportQuestionsPage() {
               type="button"
               onClick={handleImport}
               disabled={importing || parsing || !payload || parseErrors.length > 0}
-              className="rounded-full bg-[color:var(--accent)] px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+              className="rounded-full bg-[color:var(--accent)] px-6 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
             >
               {importing ? "Importing…" : "Import Questions"}
             </button>
@@ -324,20 +324,20 @@ export default function ImportQuestionsPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4 text-xs text-[color:var(--ink-muted)]">
-        <p className="font-medium mb-2">Supported formats</p>
+      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4 text-xs text-[color:var(--ink-muted)]">
+        <p className="mb-2 font-medium">Supported formats</p>
         <div className="space-y-3">
           <div>
-            <p className="font-medium text-[color:var(--ink)] mb-1">CSV columns</p>
+            <p className="mb-1 font-medium text-[color:var(--ink)]">CSV columns</p>
             <p className="text-[11px] text-[color:var(--ink-muted)]">
               subject, module, difficulty, question_type, stem, answer_key, options, tags, metadata
             </p>
-            <p className="text-[11px] text-[color:var(--ink-muted)] mt-1">
+            <p className="mt-1 text-[11px] text-[color:var(--ink-muted)]">
               options/tags/metadata accept JSON. options also supports &quot;A:3|B:4&quot;. tags can be &quot;tag1;tag2&quot;.
             </p>
           </div>
           <div>
-            <p className="font-medium text-[color:var(--ink)] mb-1">JSON schema</p>
+            <p className="mb-1 font-medium text-[color:var(--ink)]">JSON schema</p>
             <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[11px]">
 {`{
   "questions": [
