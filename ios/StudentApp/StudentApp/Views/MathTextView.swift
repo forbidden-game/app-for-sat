@@ -48,6 +48,15 @@ struct MathTextView: View {
 
         ZStack(alignment: .topLeading) {
             if case .webHTML = activePlan {
+                Text(fallbackText)
+                    .font(.system(size: style.fontSize, weight: style.fontWeight))
+                    .lineSpacing(style.lineSpacing)
+                    .multilineTextAlignment(style.textAlignment)
+                    .foregroundStyle(textColor)
+                    .frame(maxWidth: .infinity, alignment: style.alignment)
+                    .frame(height: max(1, measuredHeight), alignment: .top)
+                    .opacity(isRendered ? 0 : 1)
+
                 Color.clear
                     .frame(height: max(1, measuredHeight))
             }
