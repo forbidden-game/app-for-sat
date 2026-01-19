@@ -29,9 +29,22 @@ jobs:
             set -euo pipefail
             cd /root/apps/app-for-sat
             if [ -n "$(git status --porcelain)" ]; then
-              echo "Working tree is dirty. Aborting deploy."
+              echo "Working tree is dirty. Backing up local changes before deploy."
               git status --porcelain
-              exit 1
+              TS="$(date +%Y%m%d-%H%M%S)"
+              PATCH_PATH="/root/apps/app-for-sat/.dirty-${TS}.patch"
+              UNTRACKED_TGZ="/root/apps/app-for-sat/.dirty-${TS}-untracked.tgz"
+              git diff > "$PATCH_PATH"
+              git diff --cached >> "$PATCH_PATH"
+              if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+                git ls-files --others --exclude-standard -z | tar -czf "$UNTRACKED_TGZ" --null -T -
+              fi
+              git reset --hard
+              git clean -fd
+              echo "Dirty changes saved to ${PATCH_PATH}"
+              if [ -f "$UNTRACKED_TGZ" ]; then
+                echo "Untracked files archived to ${UNTRACKED_TGZ}"
+              fi
             fi
             PREV_HEAD="$(git rev-parse HEAD)"
             git fetch origin master
