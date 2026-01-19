@@ -5,23 +5,36 @@ struct PracticeHistoryView: View {
     @Environment(\.dismiss) private var dismiss
     let banks: [QuestionBank]
     let studentId: String
+    let showsHeader: Bool
 
     @StateObject private var vm = PracticeHistoryViewModel()
     @State private var selectedSession: SessionHistoryItem?
 
+    init(banks: [QuestionBank], studentId: String, showsHeader: Bool = true) {
+        self.banks = banks
+        self.studentId = studentId
+        self.showsHeader = showsHeader
+    }
+
     var body: some View {
         ZStack {
-            AppTheme.backgroundGradient
-                .ignoresSafeArea()
+            if showsHeader {
+                AppTheme.backgroundGradient
+                    .ignoresSafeArea()
+            } else {
+                Color.clear
+            }
 
             VStack(spacing: 12) {
-                header
+                if showsHeader {
+                    header
+                }
 
                 filterBar
 
                 content
             }
-            .padding(.top, 12)
+            .padding(.top, showsHeader ? 12 : 0)
             .padding(.bottom, 12)
         }
         .task {
