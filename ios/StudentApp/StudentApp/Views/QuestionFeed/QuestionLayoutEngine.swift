@@ -27,6 +27,8 @@ final class QuestionLayoutEngine {
         displayScale: CGFloat,
         textColor: Color
     ) async -> QuestionBodyLayout {
+        let signpostId = PerformanceSignpost.begin("QuestionLayout")
+        defer { PerformanceSignpost.end("QuestionLayout", id: signpostId) }
         let width = max(1, size.width)
         let height = max(1, size.height)
         let key = QuestionLayoutKey(
