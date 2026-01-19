@@ -8,7 +8,6 @@ struct QuestionCellConfiguration {
     let total: Int
     let isOverview: Bool
     let isActive: Bool
-    let headerTitle: String?
     let state: QuestionFeedState
     let store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
@@ -57,7 +56,6 @@ final class QuestionCell: UICollectionViewCell {
                     store: config.store,
                     submission: config.submission,
                     returnToOverviewOnAnswer: config.returnToOverviewOnAnswer,
-                    headerTitle: config.headerTitle,
                     onBack: config.onBack,
                     onShowOverview: config.onShowOverview,
                     onSubmissionError: config.onSubmissionError,

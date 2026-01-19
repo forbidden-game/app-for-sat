@@ -7,7 +7,6 @@ struct QuestionFeedContainerView: UIViewControllerRepresentable {
     @ObservedObject var store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
     @Binding var returnToOverviewOnAnswer: Bool
-    let headerTitle: String?
     let onBack: () -> Void
     let onShowOverview: () -> Void
     let onSubmissionError: (Error) -> Void
@@ -19,7 +18,6 @@ struct QuestionFeedContainerView: UIViewControllerRepresentable {
             store: store,
             submission: submission,
             returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
-            headerTitle: headerTitle,
             onBack: onBack,
             onShowOverview: onShowOverview,
             onSubmissionError: onSubmissionError
@@ -33,7 +31,6 @@ struct QuestionFeedContainerView: UIViewControllerRepresentable {
             store: store,
             submission: submission,
             returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
-            headerTitle: headerTitle,
             onBack: onBack,
             onShowOverview: onShowOverview,
             onSubmissionError: onSubmissionError

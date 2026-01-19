@@ -11,7 +11,6 @@ struct QuestionContentView: View {
     @ObservedObject var store: InMemoryAnswerStore
     @ObservedObject var submission: AnswerSubmissionCoordinator
     @Binding var returnToOverviewOnAnswer: Bool
-    let headerTitle: String?
     let onBack: () -> Void
     let onShowOverview: () -> Void
     let onSubmissionError: (Error) -> Void
@@ -31,7 +30,13 @@ struct QuestionContentView: View {
         let progress = total > 0 ? Double(index + 1) / Double(total) : 0
 
         VStack(spacing: AppMetrics.sectionSpacing) {
-            header(progress: progress, index: index + 1, total: total, question: question)
+            PracticeTopBar(
+                progress: progress,
+                index: index + 1,
+                total: total,
+                onBack: onBack,
+                onOverview: onShowOverview
+            )
 
             GeometryReader { proxy in
                 let size = proxy.size
@@ -50,10 +55,9 @@ struct QuestionContentView: View {
                     updateLayoutIfNeeded(size: newSize)
                 }
             }
+            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
         .padding(.bottom, AppMetrics.pageBottomPadding)
         .onChange(of: question.id) { _, _ in
             resetLayout()
@@ -307,62 +311,6 @@ struct QuestionContentView: View {
         )
     }
 
-    // MARK: - Header
-
-    private func header(progress: Double, index: Int, total: Int, question: Question) -> some View {
-        VStack(spacing: AppMetrics.headerSpacing) {
-            ZStack {
-                HStack {
-                    Button(action: onBack) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "chevron.left")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("Back")
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .foregroundStyle(AppTheme.textPrimary)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                        .background(AppTheme.surface)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(AppTheme.divider, lineWidth: 1)
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("question_back_\(question.id)")
-
-                    Spacer()
-
-                    Text("\(index)/\(total)")
-                        .font(.subheadline)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 12)
-                        .foregroundStyle(AppTheme.textPrimary)
-                        .background(AppTheme.surfaceRaised)
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(AppTheme.divider, lineWidth: 1)
-                        )
-                        .accessibilityIdentifier("question_index_\(question.id)")
-                }
-
-                Text(resolvedHeaderTitle(for: question))
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(AppTheme.textPrimary)
-                    .accessibilityIdentifier("question_title_\(question.id)")
-            }
-
-            ProgressView(value: progress)
-                .tint(AppTheme.accent)
-                .accessibilityIdentifier("question_progress_\(question.id)")
-
-            answerStatusPill(for: question)
-        }
-    }
-
     // MARK: - Question Card
 
     private func questionCard(text: String) -> some View {
@@ -379,98 +327,6 @@ struct QuestionContentView: View {
     }
 
     // MARK: - Helper Methods
-
-    private func questionTitle(for question: Question) -> String {
-        let raw = question.questionType.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty else { return "Question" }
-        let cleaned = raw
-            .replacingOccurrences(of: "_", with: " ")
-            .replacingOccurrences(of: "-", with: " ")
-        let parts = cleaned.split { !$0.isLetter && !$0.isNumber }
-        let title = parts.map { $0.capitalized }.joined(separator: " ")
-        return title.isEmpty ? "Question" : title
-    }
-
-    private func resolvedHeaderTitle(for question: Question) -> String {
-        if let headerTitle, !headerTitle.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return headerTitle
-        }
-        return questionTitle(for: question)
-    }
-
-    private func answerStatusPill(for question: Question) -> some View {
-        let raw = store[question.id]?.displayString ?? ""
-        let isAnswered = !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let status = isAnswered ? submission.status(for: question.id) : .idle
-
-        let title: String
-        let icon: String
-        let fill: Color
-        let stroke: Color
-        let textColor: Color
-
-        switch status {
-        case .submitting:
-            title = "Saving..."
-            icon = "arrow.triangle.2.circlepath"
-            fill = AppTheme.accentSoft
-            stroke = AppTheme.accentStrong
-            textColor = AppTheme.accentStrong
-        case .failed:
-            title = "Failed · Tap to retry"
-            icon = "exclamationmark.triangle.fill"
-            fill = AppTheme.statusDanger.opacity(0.15)
-            stroke = AppTheme.statusDanger
-            textColor = AppTheme.statusDanger
-        case .idle:
-            title = isAnswered ? "Answered · Editable" : "Not answered"
-            icon = isAnswered ? "checkmark.seal.fill" : "circle"
-            fill = isAnswered ? AppTheme.accentSoft : AppTheme.surfaceRaised
-            stroke = isAnswered ? AppTheme.accentStrong : AppTheme.divider
-            textColor = isAnswered ? AppTheme.accentStrong : AppTheme.textMuted
-        }
-
-        let pill = HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.caption.weight(.semibold))
-            Text(title)
-                .font(.caption.weight(.semibold))
-        }
-        .foregroundStyle(textColor)
-        .padding(.vertical, 6)
-        .padding(.horizontal, 10)
-        .background(fill)
-        .clipShape(Capsule())
-        .overlay(
-            Capsule()
-                .stroke(stroke, lineWidth: 1)
-        )
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .accessibilityIdentifier("question_status_\(question.id)")
-
-        return Group {
-            if case .failed = status, isAnswered {
-                Button {
-                    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !trimmed.isEmpty else { return }
-                    submission.submit(
-                        question: question,
-                        answer: trimmed,
-                        questionId: question.id,
-                        onSuccess: { _ in },
-                        onFailure: { error in
-                            onSubmissionError(error)
-                        }
-                    )
-                } label: {
-                    pill
-                }
-                .buttonStyle(.plain)
-            } else {
-                pill
-            }
-        }
-    }
 
 }
 

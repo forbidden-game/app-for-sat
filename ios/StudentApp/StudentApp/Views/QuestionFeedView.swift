@@ -7,7 +7,6 @@ struct QuestionFeedView: View {
     @ObservedObject var store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
     @Binding var returnToOverviewOnAnswer: Bool
-    let headerTitle: String?
     let onBack: () -> Void
     let onShowOverview: () -> Void
     let onSubmissionError: (Error) -> Void
@@ -19,8 +18,7 @@ struct QuestionFeedView: View {
         let total = session.questions.count
 
         ZStack {
-            AppTheme.backgroundGradient
-                .ignoresSafeArea()
+            PracticeBackgroundView()
 
             QuestionFeedContainerView(
                 session: session,
@@ -28,7 +26,6 @@ struct QuestionFeedView: View {
                 store: store,
                 submission: submission,
                 returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
-                headerTitle: headerTitle,
                 onBack: onBack,
                 onShowOverview: onShowOverview,
                 onSubmissionError: onSubmissionError

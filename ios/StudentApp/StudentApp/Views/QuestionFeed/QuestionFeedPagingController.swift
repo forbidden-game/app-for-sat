@@ -43,7 +43,6 @@ final class QuestionFeedPagingController: UIViewController {
     private var store: InMemoryAnswerStore
     private var submission: AnswerSubmissionCoordinator
     private var returnToOverviewOnAnswer: Binding<Bool>
-    private var headerTitle: String?
     private var onBack: () -> Void
     private var onShowOverview: () -> Void
     private var onSubmissionError: (Error) -> Void
@@ -63,7 +62,6 @@ final class QuestionFeedPagingController: UIViewController {
         store: InMemoryAnswerStore,
         submission: AnswerSubmissionCoordinator,
         returnToOverviewOnAnswer: Binding<Bool>,
-        headerTitle: String?,
         onBack: @escaping () -> Void,
         onShowOverview: @escaping () -> Void,
         onSubmissionError: @escaping (Error) -> Void
@@ -73,7 +71,6 @@ final class QuestionFeedPagingController: UIViewController {
         self.store = store
         self.submission = submission
         self.returnToOverviewOnAnswer = returnToOverviewOnAnswer
-        self.headerTitle = headerTitle
         self.onBack = onBack
         self.onShowOverview = onShowOverview
         self.onSubmissionError = onSubmissionError
@@ -107,7 +104,6 @@ final class QuestionFeedPagingController: UIViewController {
         store: InMemoryAnswerStore,
         submission: AnswerSubmissionCoordinator,
         returnToOverviewOnAnswer: Binding<Bool>,
-        headerTitle: String?,
         onBack: @escaping () -> Void,
         onShowOverview: @escaping () -> Void,
         onSubmissionError: @escaping (Error) -> Void
@@ -117,7 +113,6 @@ final class QuestionFeedPagingController: UIViewController {
         self.store = store
         self.submission = submission
         self.returnToOverviewOnAnswer = returnToOverviewOnAnswer
-        self.headerTitle = headerTitle
         self.onBack = onBack
         self.onShowOverview = onShowOverview
         self.onSubmissionError = onSubmissionError
@@ -214,7 +209,6 @@ extension QuestionFeedPagingController: UICollectionViewDataSource {
             total: total,
             isOverview: isOverview,
             isActive: indexPath.item == currentPageIndex,
-            headerTitle: headerTitle,
             state: state,
             store: store,
             submission: submission,

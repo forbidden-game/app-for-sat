@@ -88,11 +88,13 @@ struct QuestionAnswerContentView: View {
         let storedSelection = store[questionId]?.displayString
         let isSelected = isCurrentQuestion && storedSelection == option.label
         let isFeedback = isCurrentQuestion && state.inputState.showFeedback && isSelected
-        let badgeFill = isSelected ? AppTheme.accentStrong : AppTheme.surfaceRaised
-        let badgeStroke = isSelected ? AppTheme.accentStrong : AppTheme.dividerStrong
-        let badgeText = isSelected ? AppTheme.textOnAccent : AppTheme.textSecondary
-        let optionFill = isSelected ? AppTheme.accentSoft : AppTheme.surface
-        let optionStroke = isSelected ? AppTheme.accentStrong : AppTheme.divider
+        let selectedFill = AppTheme.boardDark.opacity(0.22)
+        let selectedStroke = AppTheme.boardDark
+        let badgeFill = isSelected ? AppTheme.boardDark : AppTheme.surfaceRaised
+        let badgeStroke = isSelected ? AppTheme.boardDark : AppTheme.dividerStrong
+        let badgeText = isSelected ? AppTheme.boardLight : AppTheme.textSecondary
+        let optionFill = isSelected ? selectedFill : AppTheme.surfaceRaised
+        let optionStroke = isSelected ? selectedStroke : AppTheme.divider
 
         return Button {
             guard isCurrentQuestion else { return }
@@ -125,7 +127,7 @@ struct QuestionAnswerContentView: View {
             .padding(.vertical, AppMetrics.rowPaddingVertical)
             .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
             .appSurface(
-                fill: isSelected ? optionFill : AppTheme.surfaceRaised,
+                fill: optionFill,
                 stroke: optionStroke,
                 shadowRadius: AppMetrics.rowShadowRadius,
                 shadowY: AppMetrics.rowShadowY,
@@ -134,7 +136,7 @@ struct QuestionAnswerContentView: View {
             .overlay(alignment: .leading) {
                 if isSelected {
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(AppTheme.accentStrong)
+                        .fill(AppTheme.boardDark)
                         .frame(width: 4)
                         .padding(.vertical, 8)
                         .offset(x: 6)
