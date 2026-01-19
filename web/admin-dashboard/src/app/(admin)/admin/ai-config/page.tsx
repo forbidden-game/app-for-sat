@@ -5,7 +5,7 @@ import { getAiProviderKeyStatus, listAiPromptConfigs, type AiProvider } from "./
 const PROVIDERS: AiProvider[] = ["minimax", "openai", "openrouter"];
 
 export default async function AiConfigPage() {
-  const accessToken = readAdminAccessToken();
+  const accessToken = await readAdminAccessToken();
   if (!accessToken) {
     return <AiConfigClient />;
   }

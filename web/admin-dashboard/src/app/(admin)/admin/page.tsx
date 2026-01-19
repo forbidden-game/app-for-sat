@@ -3,7 +3,7 @@ import { getAdminOverview } from "./actions";
 import AdminOverviewClient from "./AdminOverviewClient";
 
 export default async function AdminPage() {
-  const accessToken = readAdminAccessToken();
+  const accessToken = await readAdminAccessToken();
   if (!accessToken) {
     return <AdminOverviewClient />;
   }
