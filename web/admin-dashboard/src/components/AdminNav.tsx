@@ -47,14 +47,18 @@ export function AdminNav() {
   }
 
   return (
-    <nav className="sticky top-0 z-20 border-b border-[color:var(--border)] bg-[color:var(--surface)]/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1440px] items-center gap-6 px-6 py-3">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold text-[color:var(--ink)]">SAT Prep</span>
-          <span className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--ink-muted)]">Admin</span>
+    <nav className="sticky top-0 z-20 border-b border-[color:var(--border)] bg-[color:var(--surface)]/90 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1280px] items-center gap-6 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-semibold tracking-[-0.01em] text-[color:var(--ink)]">
+            Backside of Meng&apos;s Dream
+          </span>
+          <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            Admin
+          </span>
         </div>
         <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--ink-muted)]">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-[0.02em] text-[color:var(--ink-muted)]">
             {links.map((link) => {
               const isActive = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
               return (
@@ -80,7 +84,7 @@ export function AdminNav() {
               </span>
             ) : null}
             <button
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-1 text-xs text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-1.5 text-xs font-medium text-[color:var(--ink)] transition hover:bg-[color:var(--surface-soft)] disabled:cursor-not-allowed disabled:opacity-60"
               type="button"
               onClick={handleSignOut}
               disabled={!supabase || isSigningOut}
