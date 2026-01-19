@@ -5,6 +5,16 @@ public struct PracticeSessionRow: Decodable {
     public let id: UUID
 }
 
+public struct RecommendedPracticeSession {
+    public let session: PracticeSession
+    public let bank: QuestionBank
+
+    public init(session: PracticeSession, bank: QuestionBank) {
+        self.session = session
+        self.bank = bank
+    }
+}
+
 public final class SupabasePracticeService {
     private let client: SupabaseClient
     private let tokenProvider: SupabaseAuthTokenProvider
@@ -72,6 +82,26 @@ public final class SupabasePracticeService {
         }
 
         return PracticeSession(id: response.sessionId, questions: questions)
+    }
+
+    public func startRecommendedPracticeSession() async throws -> RecommendedPracticeSession {
+        let response: StartPracticeSessionResponse = try await client
+            .rpc("start_recommended_practice_session", params: EmptyParams())
+            .execute()
+            .value
+
+        let questions = response.questions.map { payload in
+            Question(
+                id: payload.id,
+                questionType: payload.questionType,
+                stem: payload.stem,
+                options: payload.options,
+                answerKey: nil
+            )
+        }
+
+        let session = PracticeSession(id: response.sessionId, questions: questions)
+        return RecommendedPracticeSession(session: session, bank: response.bank)
     }
 
     public func fetchQuestions(limit: Int) async throws -> [Question] {
@@ -460,6 +490,8 @@ public final class SupabasePracticeService {
         return false
     }
 }
+
+private struct EmptyParams: Encodable {}
 
 private struct StartPracticeSessionParams: Encodable {
     let bank_slug: String
