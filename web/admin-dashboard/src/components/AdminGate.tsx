@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "../lib/supabaseClient";
 import { SupabaseConfigBanner } from "./SupabaseConfigBanner";
+import { clearAdminAccessToken, writeAdminAccessToken } from "../lib/adminSessionClient";
 
 const LOADING_STATE = "loading" as const;
 const READY_STATE = "ready" as const;
@@ -32,9 +33,12 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (!session) {
+        clearAdminAccessToken();
         router.push("/login");
         return;
       }
+
+      writeAdminAccessToken(session.access_token);
 
       const { data: profile, error } = await supabase
         .from("profiles")
@@ -50,6 +54,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
       }
 
       if (error || !profile || profile.role !== "admin") {
+        clearAdminAccessToken();
         setState(DENIED_STATE);
         return;
       }
@@ -62,6 +67,21 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
       active = false;
     };
   }, [router, supabase]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) {
+        writeAdminAccessToken(session.access_token);
+      } else {
+        clearAdminAccessToken();
+      }
+    });
+
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   if (!supabase) {
     return (

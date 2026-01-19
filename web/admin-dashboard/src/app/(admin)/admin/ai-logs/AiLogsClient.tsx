@@ -2,9 +2,24 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import dynamic from "next/dynamic";
 
-import AiLogsConversations from "./AiLogsConversations";
-import AiLogsWorkbench from "./AiLogsWorkbench";
+const AiLogsConversations = dynamic(() => import("./AiLogsConversations"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)]">
+      Loading conversations…
+    </div>
+  ),
+});
+const AiLogsWorkbench = dynamic(() => import("./AiLogsWorkbench"), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)]">
+      Loading workbench…
+    </div>
+  ),
+});
 
 type ViewId = "conversations" | "workbench";
 
@@ -32,7 +47,6 @@ export default function AiLogsClient() {
 
   const view = useMemo(() => resolveView(searchParams), [searchParams]);
   const [maskEnabled, setMaskEnabled] = useState(true);
-
 
   const setView = useCallback(
     (next: ViewId) => {
@@ -79,6 +93,8 @@ export default function AiLogsClient() {
               <button
                 type="button"
                 onClick={() => setView("conversations")}
+                onMouseEnter={() => void import("./AiLogsConversations")}
+                onFocus={() => void import("./AiLogsConversations")}
                 className={`rounded-full px-3 py-1 transition ${
                   view === "conversations"
                     ? "bg-[color:var(--surface-strong)] text-[color:var(--ink)]"
@@ -91,6 +107,8 @@ export default function AiLogsClient() {
               <button
                 type="button"
                 onClick={() => setView("workbench")}
+                onMouseEnter={() => void import("./AiLogsWorkbench")}
+                onFocus={() => void import("./AiLogsWorkbench")}
                 className={`rounded-full px-3 py-1 transition ${
                   view === "workbench"
                     ? "bg-[color:var(--surface-strong)] text-[color:var(--ink)]"

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { getSupabaseClient } from "@/lib/supabaseClient";
+import { clearAdminAccessToken } from "@/lib/adminSessionClient";
 
 const links = [
   { href: "/admin", label: "Overview" },
@@ -40,6 +41,7 @@ export function AdminNav() {
       return;
     }
 
+    clearAdminAccessToken();
     router.push("/login");
     router.refresh();
   }
