@@ -355,10 +355,10 @@ export default function AiLogsConversations({
 
   return (
     <section className="grid gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
-      <aside className="flex min-w-0 flex-col gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+      <aside className="flex min-w-0 flex-col gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Conversations</div>
-          <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1 text-[11px] text-[color:var(--ink-muted)] tabular-nums">
+          <div className="text-xs font-medium text-[color:var(--ink-muted)]">Conversations</div>
+          <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] tabular-nums">
             {filteredThreads.length} threads
           </span>
         </div>
@@ -373,7 +373,7 @@ export default function AiLogsConversations({
             type="search"
             inputMode="search"
             autoComplete="off"
-            className="w-full rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs text-[color:var(--ink)]"
+            className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--ink)]"
             placeholder="Search users (name / id)…"
             value={userQuery}
             onChange={(e) => setUserQuery(e.target.value)}
@@ -388,7 +388,7 @@ export default function AiLogsConversations({
             type="search"
             inputMode="search"
             autoComplete="off"
-            className="w-full rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs text-[color:var(--ink)]"
+            className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--ink)]"
             placeholder="Search messages (all threads)…"
             value={globalMessageQuery}
             onChange={(e) => setGlobalMessageQuery(e.target.value)}
@@ -430,7 +430,7 @@ export default function AiLogsConversations({
                   >
                     <div className="flex min-w-0 items-center justify-between gap-2 text-[color:var(--ink-muted)] tabular-nums">
                       <span className="truncate">{formatDateTime(thread.last_message_at)}</span>
-                      <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5 text-[10px] uppercase tracking-[0.18em]">
+                      <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5 text-[11px] font-medium">
                         {thread.last_message_role}
                       </span>
                     </div>
@@ -441,7 +441,7 @@ export default function AiLogsConversations({
                       <span className="min-w-0 flex-1 truncate">{maskEnabled ? maskPII(thread.last_message_preview) : thread.last_message_preview}</span>
                       {thread.last_message_status ? (
                         <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white ${
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
                             thread.last_message_status === "done"
                               ? "bg-[color:var(--accent-strong)]"
                               : thread.last_message_status === "streaming"
@@ -461,9 +461,9 @@ export default function AiLogsConversations({
         )}
 
         {globalMessageQuery.trim().length > 0 ? (
-          <div className="mt-1 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
+          <div className="mt-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Search Results</div>
+              <div className="text-xs font-medium text-[color:var(--ink-muted)]">Search Results</div>
               <span className="text-xs text-[color:var(--ink-muted)] tabular-nums">
                 {searchLoading ? "…" : searchResults.length}
               </span>
@@ -505,11 +505,11 @@ export default function AiLogsConversations({
         ) : null}
       </aside>
 
-      <section className="flex min-w-0 flex-col gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+      <section className="flex min-w-0 flex-col gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Thread</div>
-            <div className="text-xl font-semibold text-[color:var(--ink)]">
+            <div className="text-xs font-medium text-[color:var(--ink-muted)]">Thread</div>
+            <div className="text-xl font-semibold tracking-tight text-[color:var(--ink)]">
               {threadHeader ? threadHeader.title : "Select a conversation"}
             </div>
             <div className="truncate text-xs text-[color:var(--ink-muted)]">
@@ -521,7 +521,7 @@ export default function AiLogsConversations({
             <button
               type="button"
               onClick={() => onToggleMask(!maskEnabled)}
-              className={`rounded-full border px-3 py-1 text-[10px] uppercase tracking-[0.2em] transition ${
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
                 maskEnabled
                   ? "border-[color:var(--accent)] text-[color:var(--accent-strong)]"
                   : "border-[color:var(--border)] text-[color:var(--ink-muted)]"
@@ -532,14 +532,14 @@ export default function AiLogsConversations({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
           <label className="flex min-w-[220px] flex-1 items-center gap-2 text-xs text-[color:var(--ink-muted)]">
-            <span className="shrink-0 text-[11px] uppercase tracking-[0.2em]">Search</span>
+            <span className="shrink-0 text-[11px] font-medium">Search</span>
             <input
               type="search"
               inputMode="search"
               autoComplete="off"
-              className="w-full rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs text-[color:var(--ink)]"
+              className="w-full rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm text-[color:var(--ink)]"
               placeholder="Search in this conversation…"
               value={threadMessageQuery}
               onChange={(e) => setThreadMessageQuery(e.target.value)}
@@ -571,14 +571,14 @@ export default function AiLogsConversations({
             style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
           >
             {turns.prelude.length > 0 ? (
-              <details className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3" open={false}>
-                <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <details className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3" open={false}>
+                <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink-muted)]">
                   Prelude ({turns.prelude.length})
                 </summary>
                 <div className="mt-3 space-y-2">
                   {turns.prelude.map((msg) => (
                     <div key={msg.id} id={`msg-${msg.id}`} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
-                      <div className="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                      <div className="flex items-center justify-between gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
                         <span>{msg.role}</span>
                         <span className="tabular-nums">{formatDateTime(msg.created_at)}</span>
                       </div>
@@ -624,12 +624,12 @@ export default function AiLogsConversations({
                   <details
                     key={turn.user.id}
                     open={openByDefault || showOpen}
-                    className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3"
+                    className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3"
                   >
                     <summary className="cursor-pointer list-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] tabular-nums">
+                          <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)] tabular-nums">
                             <span>{formatDateTime(turn.user.created_at)}</span>
                             {turn.user.linked_attempt_id ? (
                               <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5">
@@ -638,7 +638,7 @@ export default function AiLogsConversations({
                             ) : null}
                             {status ? (
                               <span
-                                className={`rounded-full px-2 py-0.5 text-white ${
+                                className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
                                   status === "done"
                                     ? "bg-[color:var(--accent-strong)]"
                                     : "bg-[color:var(--danger-strong)]"
@@ -652,7 +652,7 @@ export default function AiLogsConversations({
                             {maskEnabled ? maskPII(textPreview(userText)) : textPreview(userText)}
                           </div>
                         </div>
-                        <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                        <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
                           {turn.meta ? (
                             <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5">
                               {turn.meta.model_provider}/{turn.meta.model_id}
@@ -679,7 +679,7 @@ export default function AiLogsConversations({
                         }`}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                          <div className="text-xs font-semibold text-[color:var(--ink-muted)]">
                             User
                           </div>
                           <div className="text-[11px] text-[color:var(--ink-muted)] tabular-nums">
@@ -708,14 +708,14 @@ export default function AiLogsConversations({
                                   msg.id === focusMessageId ? "border-[color:var(--accent)]" : "border-[color:var(--border)]"
                                 }`}
                               >
-                                <div className="flex flex-wrap items-center justify-between gap-2">
-                                  <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div className="text-xs font-semibold text-[color:var(--ink-muted)]">
                                     Assistant
                                   </div>
-                                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] tabular-nums">
+                                  <div className="flex items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)] tabular-nums">
                                     {assistantStatus ? (
                                       <span
-                                        className={`rounded-full px-2 py-0.5 text-white ${
+                                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
                                           assistantStatus === "done"
                                             ? "bg-[color:var(--accent-strong)]"
                                             : assistantStatus === "streaming"
@@ -744,13 +744,13 @@ export default function AiLogsConversations({
 
                       {turn.tools.length > 0 ? (
                         <details className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3" open={false}>
-                          <summary className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                          <summary className="cursor-pointer text-xs font-semibold text-[color:var(--ink-muted)]">
                             Tool Messages ({turn.tools.length})
                           </summary>
                           <div className="mt-2 space-y-2">
                             {turn.tools.map((msg) => (
                               <div key={msg.id} id={`msg-${msg.id}`} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
-                                <div className="flex items-center justify-between gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] tabular-nums">
+                                <div className="flex items-center justify-between gap-2 text-xs font-medium text-[color:var(--ink-muted)] tabular-nums">
                                   <span>tool</span>
                                   <span>{formatDateTime(msg.created_at)}</span>
                                 </div>
@@ -778,7 +778,7 @@ export default function AiLogsConversations({
                           <button
                             type="button"
                             onClick={() => onOpenWorkbench(turn.meta!.log_id)}
-                            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink)] transition hover:bg-[color:var(--surface-strong)]"
+                            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-semibold text-[color:var(--ink)] transition hover:bg-[color:var(--surface-strong)]"
                           >
                             Open Workbench
                           </button>
