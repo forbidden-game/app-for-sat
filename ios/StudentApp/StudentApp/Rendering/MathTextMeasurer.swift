@@ -10,14 +10,23 @@ final class MathTextMeasurer {
     private let renderer = MathWebRenderer(timeoutSeconds: 3.0)
     private let pool = MathWebViewPool(capacity: 1)
     private var webView: WKWebView?
-    private var cache: [String: CGFloat] = [:]
+    private let cache = NSCache<NSString, NSNumber>()
 
     private static let planner: MathRenderPlanner = {
         let native = AppConfig.swiftMathEnabled ? SwiftMathRenderer() : nil
         return MathRenderPlanner(nativeRenderer: native)
     }()
 
-    private init() {}
+    private init() {
+        cache.countLimit = 600
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.cache.removeAllObjects()
+        }
+    }
 
     func measure(
         text: String,
@@ -37,8 +46,8 @@ final class MathTextMeasurer {
             textColorHex: textColorHex
         )
         let key = MathRenderKeyBuilder.key(for: request) + "|measure"
-        if let cached = cache[key] {
-            return cached
+        if let cached = cache.object(forKey: key as NSString)?.doubleValue {
+            return CGFloat(cached)
         }
 
         let plan = Self.planner.plan(for: request)
@@ -59,7 +68,7 @@ final class MathTextMeasurer {
         }
 
         let finalHeight = max(1, ceil(height))
-        cache[key] = finalHeight
+        cache.setObject(NSNumber(value: Double(finalHeight)), forKey: key as NSString)
         return finalHeight
     }
 
