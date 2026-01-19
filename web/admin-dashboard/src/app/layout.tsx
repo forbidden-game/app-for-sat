@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Space_Grotesk } from "next/font/google";
+import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
-const spaceGrotesk = Space_Grotesk({
+const plexSans = IBM_Plex_Sans({
   variable: "--font-sans",
+  weight: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -14,8 +15,8 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SAT Prep Admin Console",
-  description: "Admin console for SAT Prep operations.",
+  title: "Backside of Meng's Dream Admin Console",
+  description: "Admin console for Backside of Meng's Dream operations.",
 };
 
 export default function RootLayout({
@@ -25,7 +26,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${spaceGrotesk.variable} ${plexMono.variable} antialiased`}>
+      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>
