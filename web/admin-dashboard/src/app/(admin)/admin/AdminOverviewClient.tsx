@@ -83,7 +83,7 @@ export default function AdminOverviewClient({
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading admin overview…
         </p>
@@ -93,7 +93,7 @@ export default function AdminOverviewClient({
 
   if (error) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
@@ -103,18 +103,18 @@ export default function AdminOverviewClient({
 
   if (!overview) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]">No admin data available.</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-8 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-8 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Operations Overview</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Operations Overview</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Signed in as{" "}
             <span className="font-medium text-[color:var(--ink)]">
@@ -122,7 +122,7 @@ export default function AdminOverviewClient({
             </span>
           </p>
         </div>
-        <div className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <div className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1 text-[11px] font-medium text-[color:var(--ink-muted)]">
           Updated {formatDateTime(overview.generated_at)}
         </div>
       </header>
@@ -131,12 +131,12 @@ export default function AdminOverviewClient({
         {metrics.map((metric) => (
           <div
             key={metric.label}
-            className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
           >
-            <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <p className="text-xs font-medium text-[color:var(--ink-muted)]">
               {metric.label}
             </p>
-            <p className="mt-2 text-2xl font-semibold text-[color:var(--ink)]">{metric.value}</p>
+            <p className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--ink)]">{metric.value}</p>
             {metric.helper ? (
               <p className="mt-1 text-xs text-[color:var(--ink-muted)]">{metric.helper}</p>
             ) : null}
@@ -146,9 +146,9 @@ export default function AdminOverviewClient({
 
       <section id="content" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[color:var(--ink)]">Question Banks</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">Question Banks</h2>
           <Link
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
             href="/admin/banks"
           >
             Manage Banks
@@ -156,7 +156,7 @@ export default function AdminOverviewClient({
         </div>
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
               <tr>
                 <th scope="col" className="px-4 py-3">Title</th>
                 <th scope="col" className="px-4 py-3">Slug</th>
@@ -207,12 +207,12 @@ export default function AdminOverviewClient({
 
       <section id="users" className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[color:var(--ink)]">Recent Users</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">Recent Users</h2>
           <span className="text-xs text-[color:var(--ink-muted)]">Latest 12 profiles</span>
         </div>
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
               <tr>
                 <th scope="col" className="px-4 py-3">Name</th>
                 <th scope="col" className="px-4 py-3">Role</th>
