@@ -78,7 +78,7 @@ export default function AiLogsClient() {
         Skip to main content
       </a>
 
-      <main id="ai-logs-main" className="mx-auto flex max-w-[1440px] flex-col gap-5 overflow-x-hidden px-6 pb-10 pt-8">
+      <main id="ai-logs-main" className="mx-auto flex max-w-[1280px] flex-col gap-5 overflow-x-hidden px-6 pb-10 pt-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>

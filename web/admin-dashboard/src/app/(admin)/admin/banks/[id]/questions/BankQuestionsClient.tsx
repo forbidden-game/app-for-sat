@@ -214,7 +214,7 @@ export default function BankQuestionsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading…
         </p>
@@ -223,7 +223,7 @@ export default function BankQuestionsPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>

@@ -39,7 +39,7 @@ export default function NewQuestionPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
         <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
         <h1 className="text-2xl font-semibold text-[color:var(--ink)]">New Question</h1>

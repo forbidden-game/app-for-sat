@@ -72,7 +72,7 @@ export default function EditQuestionPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading question…
         </p>
@@ -82,7 +82,7 @@ export default function EditQuestionPage() {
 
   if (error && !question) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
@@ -92,7 +92,7 @@ export default function EditQuestionPage() {
 
   if (!question) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Question not found.
         </p>
@@ -101,7 +101,7 @@ export default function EditQuestionPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
         <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
         <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Edit Question</h1>
