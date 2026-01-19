@@ -168,11 +168,13 @@ struct CoachChatMessageBubble: View {
                         foreground: foreground
                     )
                 } else {
+                    let usePlainTextLabel = isUser && !MathMarkupParser().parse(message.content.text).requiresMathRendering
                     CoachChatBubbleText(
                         text: message.content.text,
                         style: .chatBubble(isUser: isUser),
                         textColor: foreground,
-                        maxWidth: bubbleMaxWidth
+                        maxWidth: bubbleMaxWidth,
+                        usePlainTextLabel: usePlainTextLabel
                     )
                 }
 
@@ -280,14 +282,27 @@ private struct CoachChatBubbleText: View {
     let style: MathTextStyle
     let textColor: Color
     let maxWidth: CGFloat
+    let usePlainTextLabel: Bool
 
     var body: some View {
-        MathTextView(
-            text: text,
-            style: style,
-            textColor: textColor,
-            expandsHorizontally: false
-        )
+        Group {
+            if usePlainTextLabel {
+                CoachChatPlainTextLabel(
+                    text: text,
+                    font: uiFont,
+                    textColor: textColor,
+                    lineSpacing: style.lineSpacing,
+                    maxWidth: bubbleWidth
+                )
+            } else {
+                MathTextView(
+                    text: text,
+                    style: style,
+                    textColor: textColor,
+                    expandsHorizontally: false
+                )
+            }
+        }
         .frame(width: bubbleWidth, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -305,9 +320,8 @@ private struct CoachChatBubbleText: View {
         // - If it doesn't fit, use maxWidth and let the renderer decide wrapping.
         // This avoids a feedback loop where a slightly-too-small width causes an extra wrap,
         // which then makes the bubble even narrower ("too hard" -> "too\nhard" -> word-per-line).
-        let font = UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: font
+            .font: uiFont
         ]
 
         let scale = UIScreen.main.scale
@@ -335,6 +349,10 @@ private struct CoachChatBubbleText: View {
         return roundUpToPixel(maxExplicitLineWidth + 2)
     }
 
+    private var uiFont: UIFont {
+        UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
+    }
+
     private var uiFontWeight: UIFont.Weight {
         switch style.fontWeight {
         case .ultraLight:
@@ -356,6 +374,49 @@ private struct CoachChatBubbleText: View {
         default:
             return .regular
         }
+    }
+}
+
+private struct CoachChatPlainTextLabel: UIViewRepresentable {
+    let text: String
+    let font: UIFont
+    let textColor: Color
+    let lineSpacing: CGFloat
+    let maxWidth: CGFloat
+
+    func makeUIView(context: Context) -> UILabel {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        label.textAlignment = .left
+        label.backgroundColor = .clear
+        label.isOpaque = false
+        return label
+    }
+
+    func updateUIView(_ label: UILabel, context: Context) {
+        label.preferredMaxLayoutWidth = maxWidth
+        label.attributedText = attributedText()
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setContentHuggingPriority(.required, for: .vertical)
+    }
+
+    private func attributedText() -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.alignment = .left
+        paragraphStyle.lineSpacing = lineSpacing
+        paragraphStyle.hyphenationFactor = 0
+        if #available(iOS 14.0, *) {
+            paragraphStyle.lineBreakStrategy = [.pushOut]
+        }
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor(textColor),
+            .paragraphStyle: paragraphStyle
+        ]
+        return NSAttributedString(string: text, attributes: attributes)
     }
 }
 
