@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import StudentCore
 
 struct CoachChatMessageRow: View {
@@ -166,12 +167,13 @@ struct CoachChatMessageBubble: View {
                         foreground: foreground
                     )
                 } else {
-                    MathTextView(
+                    CoachChatBubbleText(
                         text: message.content.text,
                         style: .chatBubble(isUser: isUser),
-                        textColor: foreground
+                        textColor: foreground,
+                        maxWidth: bubbleMaxWidth,
+                        alignment: isUser ? .trailing : .leading
                     )
-                    .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if message.role == .assistant, message.content.status == "streaming" {
@@ -192,6 +194,11 @@ struct CoachChatMessageBubble: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+    }
+
+    private var bubbleMaxWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        return screenWidth * 0.72
     }
 
     private var avatarSlot: some View {
@@ -268,6 +275,62 @@ private struct CoachChatReplyPreview: View {
     }
 }
 
+private struct CoachChatBubbleText: View {
+    let text: String
+    let style: MathTextStyle
+    let textColor: Color
+    let maxWidth: CGFloat
+    let alignment: Alignment
+
+    var body: some View {
+        MathTextView(
+            text: text,
+            style: style,
+            textColor: textColor,
+            expandsHorizontally: false
+        )
+        .frame(width: bubbleWidth, alignment: alignment)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var bubbleWidth: CGFloat {
+        let width = max(lineWidth, 0)
+        return min(width, maxWidth)
+    }
+
+    private var lineWidth: CGFloat {
+        let font = UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
+        let lines = text.components(separatedBy: .newlines)
+        let widths = lines.map { line -> CGFloat in
+            (line as NSString).size(withAttributes: [.font: font]).width
+        }
+        return ceil(widths.max() ?? 0)
+    }
+
+    private var uiFontWeight: UIFont.Weight {
+        switch style.fontWeight {
+        case .ultraLight:
+            return .ultraLight
+        case .thin:
+            return .thin
+        case .light:
+            return .light
+        case .medium:
+            return .medium
+        case .semibold:
+            return .semibold
+        case .bold:
+            return .bold
+        case .heavy:
+            return .heavy
+        case .black:
+            return .black
+        default:
+            return .regular
+        }
+    }
+}
+
 private struct CoachChatImageBubble: View {
     let payload: CoachChatImagePayload
     let isUser: Bool
@@ -300,7 +363,8 @@ private struct CoachChatImageBubble: View {
                 MathTextView(
                     text: caption,
                     style: .chatBubble(isUser: isUser),
-                    textColor: foreground
+                    textColor: foreground,
+                    expandsHorizontally: false
                 )
                 .fixedSize(horizontal: false, vertical: true)
             }
