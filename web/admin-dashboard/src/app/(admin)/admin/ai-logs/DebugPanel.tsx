@@ -56,13 +56,13 @@ function Section({
   return (
     <details
       open={defaultOpen}
-      className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3"
+      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3"
     >
-      <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
+      <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink-muted)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
         <div className="flex items-center justify-between gap-2">
           <span>{title}</span>
           {subtitle ? (
-            <span className="text-[11px] font-normal uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <span className="text-[11px] font-medium text-[color:var(--ink-muted)]">
               {subtitle}
             </span>
           ) : null}
@@ -215,8 +215,8 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
   }
 
   return (
-    <aside className="flex min-w-0 flex-col gap-4 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
-      <div className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Debug Panel</div>
+    <aside className="flex min-w-0 flex-col gap-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+      <div className="text-xs font-medium text-[color:var(--ink-muted)]">Debug Panel</div>
       {!selectedLog ? <div className="text-xs text-[color:var(--ink-muted)]">No session selected.</div> : null}
 
       {selectedLog ? (
@@ -259,7 +259,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                   <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span>{entry.title}</span>
-                      <div className="flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
                         <span className="rounded-full border border-[color:var(--border)] px-2 py-0.5">
                           {entry.source ?? "source: unknown"}
                         </span>
@@ -337,7 +337,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                   <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
                     <div className="flex items-center justify-between gap-2">
                       <span>{key}</span>
-                      <span className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                      <span className="text-xs font-medium text-[color:var(--ink-muted)]">
                         {entries.length} sources
                       </span>
                     </div>
@@ -350,7 +350,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                           {entry.timestamp ? <span>{formatDateTime(entry.timestamp)}</span> : null}
                         </div>
                         <details className="mt-2">
-                          <summary className="cursor-pointer text-[10px] uppercase tracking-[0.2em] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
+                          <summary className="cursor-pointer text-xs font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
                             Raw JSON
                           </summary>
                           <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-words text-[10px] text-[color:var(--ink)]">
@@ -374,7 +374,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
             <button
               type="button"
               onClick={() => onToggleMask(!maskEnabled)}
-              className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] transition hover:opacity-80 ${
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition hover:opacity-80 ${
                 maskEnabled
                   ? "bg-[color:var(--accent-strong)] text-white"
                   : "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
@@ -387,7 +387,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
             <button
               type="button"
               onClick={() => handleCopy(formatPlain(serializeJson(promptPack, 2), maskEnabled))}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink)] transition hover:bg-[color:var(--surface-strong)]"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs font-semibold text-[color:var(--ink)] transition hover:bg-[color:var(--surface-strong)]"
             >
               Copy Prompt Pack ({maskEnabled ? "masked" : "raw"})
             </button>
@@ -409,7 +409,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                     <button
                       type="button"
                       onClick={() => setPinned((prev) => ({ ...prev, [key]: !prev[key] }))}
-                      className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] transition hover:opacity-80 ${
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition hover:opacity-80 ${
                         pinned[key]
                           ? "bg-[color:var(--accent)] text-white"
                           : "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
@@ -421,7 +421,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                   <div className="mt-2 text-[11px] text-[color:var(--ink-muted)]">
                     {entry ? "Using context captured in events." : "No context found; override JSON to inject."}
                   </div>
-                  <label className="mt-2 grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                  <label className="mt-2 grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                     Override JSON
                     <textarea
                       value={overrideText[key]}
@@ -434,7 +434,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                           [key]: event.target.value,
                         }))
                       }
-                      className="min-h-[80px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
+                      className="min-h-[80px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
                       placeholder='{"field": "value"}'
                     />
                   </label>
@@ -445,14 +445,14 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
               );
             })}
 
-            <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
               Debug note
               <textarea
                 value={note}
                 name="debug-note"
                 autoComplete="off"
                 onChange={(event) => setNote(event.target.value)}
-                className="min-h-[80px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
+                className="min-h-[80px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px] text-[color:var(--ink)]"
                 placeholder="Why this replay matters…"
               />
             </label>
@@ -460,7 +460,7 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
             <div className="grid gap-2">
               <button
                 type="button"
-                className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+                className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
                 onClick={() =>
                   handleCopy(
                     formatPlain(

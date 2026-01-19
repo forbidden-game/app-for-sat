@@ -22,10 +22,10 @@ export function DiffField({
 
   return (
     <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
-      <div className="flex items-center justify-between gap-2 text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+      <div className="flex items-center justify-between gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
         <span>{label}</span>
         <span
-          className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
+          className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
             changed ? "bg-[color:var(--danger-strong)]" : "bg-[color:var(--accent-strong)]"
           }`}
         >
@@ -51,7 +51,7 @@ function DiffBlock({
 }) {
   return (
     <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-2">
-      <div className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">{label}</div>
+      <div className="text-[11px] font-medium text-[color:var(--ink-muted)]">{label}</div>
       <div className="mt-1 max-h-40 overflow-auto text-[11px] font-mono">
         {rows.map((row, index) => (
           <div
