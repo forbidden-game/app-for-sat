@@ -36,6 +36,8 @@ final class MathTextMeasurer {
         displayScale: CGFloat,
         textColorHex: String
     ) async -> CGFloat {
+        let signpostId = PerformanceSignpost.begin("MathMeasure")
+        defer { PerformanceSignpost.end("MathMeasure", id: signpostId) }
         let width = max(1, width)
         let request = MathRenderRequest(
             text: text,

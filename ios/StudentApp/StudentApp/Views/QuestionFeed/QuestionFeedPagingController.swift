@@ -346,6 +346,8 @@ private extension QuestionFeedPagingController {
     }
 
     func finalizePageChange() {
+        let signpostId = PerformanceSignpost.begin("QuestionFeedFinalize")
+        defer { PerformanceSignpost.end("QuestionFeedFinalize", id: signpostId) }
         guard let pageIndex = centeredIndexPath()?.item else { return }
         let totalQuestions = session.questions.count
         currentPageIndex = pageIndex
