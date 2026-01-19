@@ -1,4 +1,6 @@
 import SwiftUI
+import UIKit
+import CoreText
 import StudentCore
 
 struct CoachChatMessageRow: View {
@@ -166,12 +168,14 @@ struct CoachChatMessageBubble: View {
                         foreground: foreground
                     )
                 } else {
-                    MathTextView(
+                    let usePlainTextLabel = isUser && !MathMarkupParser().parse(message.content.text).requiresMathRendering
+                    CoachChatBubbleText(
                         text: message.content.text,
                         style: .chatBubble(isUser: isUser),
-                        textColor: foreground
+                        textColor: foreground,
+                        maxWidth: bubbleMaxWidth,
+                        usePlainTextLabel: usePlainTextLabel
                     )
-                    .fixedSize(horizontal: false, vertical: true)
                 }
 
                 if message.role == .assistant, message.content.status == "streaming" {
@@ -192,6 +196,11 @@ struct CoachChatMessageBubble: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: isUser ? .trailing : .leading)
+    }
+
+    private var bubbleMaxWidth: CGFloat {
+        let screenWidth = UIScreen.main.bounds.width
+        return screenWidth * 0.72
     }
 
     private var avatarSlot: some View {
@@ -268,6 +277,149 @@ private struct CoachChatReplyPreview: View {
     }
 }
 
+private struct CoachChatBubbleText: View {
+    let text: String
+    let style: MathTextStyle
+    let textColor: Color
+    let maxWidth: CGFloat
+    let usePlainTextLabel: Bool
+
+    var body: some View {
+        Group {
+            if usePlainTextLabel {
+                CoachChatPlainTextLabel(
+                    text: text,
+                    font: uiFont,
+                    textColor: textColor,
+                    lineSpacing: style.lineSpacing,
+                    maxWidth: bubbleWidth
+                )
+            } else {
+                MathTextView(
+                    text: text,
+                    style: style,
+                    textColor: textColor,
+                    expandsHorizontally: false
+                )
+            }
+        }
+        .frame(width: bubbleWidth, alignment: .leading)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var bubbleWidth: CGFloat {
+        min(textLayoutWidth, maxWidth)
+    }
+
+    private var textLayoutWidth: CGFloat {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return 0 }
+
+        // Decouple bubble sizing from auto-wrapping.
+        // - If the whole message fits on one line (under maxWidth), shrink bubble to that width.
+        // - If it doesn't fit, use maxWidth and let the renderer decide wrapping.
+        // This avoids a feedback loop where a slightly-too-small width causes an extra wrap,
+        // which then makes the bubble even narrower ("too hard" -> "too\nhard" -> word-per-line).
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: uiFont
+        ]
+
+        let scale = UIScreen.main.scale
+        func roundUpToPixel(_ value: CGFloat) -> CGFloat {
+            ceil(value * scale) / scale
+        }
+
+        let explicitLines = trimmed.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+        var maxExplicitLineWidth: CGFloat = 0
+
+        for lineSub in explicitLines {
+            let line = String(lineSub)
+            let attributed = NSAttributedString(string: line, attributes: attributes)
+            let ctLine = CTLineCreateWithAttributedString(attributed)
+            let width = CTLineGetTypographicBounds(ctLine, nil, nil, nil)
+            let trailing = CTLineGetTrailingWhitespaceWidth(ctLine)
+            maxExplicitLineWidth = max(maxExplicitLineWidth, max(0, CGFloat(width) - trailing))
+        }
+
+        if maxExplicitLineWidth >= maxWidth {
+            return maxWidth
+        }
+
+        // Tiny safety padding to avoid accidental wraps from fractional metrics.
+        return roundUpToPixel(maxExplicitLineWidth + 2)
+    }
+
+    private var uiFont: UIFont {
+        UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
+    }
+
+    private var uiFontWeight: UIFont.Weight {
+        switch style.fontWeight {
+        case .ultraLight:
+            return .ultraLight
+        case .thin:
+            return .thin
+        case .light:
+            return .light
+        case .medium:
+            return .medium
+        case .semibold:
+            return .semibold
+        case .bold:
+            return .bold
+        case .heavy:
+            return .heavy
+        case .black:
+            return .black
+        default:
+            return .regular
+        }
+    }
+}
+
+private struct CoachChatPlainTextLabel: UIViewRepresentable {
+    let text: String
+    let font: UIFont
+    let textColor: Color
+    let lineSpacing: CGFloat
+    let maxWidth: CGFloat
+
+    func makeUIView(context: Context) -> UILabel {
+        let label = UILabel()
+        label.numberOfLines = 0
+        label.lineBreakMode = .byWordWrapping
+        label.textAlignment = .left
+        label.backgroundColor = .clear
+        label.isOpaque = false
+        return label
+    }
+
+    func updateUIView(_ label: UILabel, context: Context) {
+        label.preferredMaxLayoutWidth = maxWidth
+        label.attributedText = attributedText()
+        label.setContentCompressionResistancePriority(.required, for: .vertical)
+        label.setContentHuggingPriority(.required, for: .vertical)
+    }
+
+    private func attributedText() -> NSAttributedString {
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.lineBreakMode = .byWordWrapping
+        paragraphStyle.alignment = .left
+        paragraphStyle.lineSpacing = lineSpacing
+        paragraphStyle.hyphenationFactor = 0
+        if #available(iOS 14.0, *) {
+            paragraphStyle.lineBreakStrategy = [.pushOut]
+        }
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: UIColor(textColor),
+            .paragraphStyle: paragraphStyle
+        ]
+        return NSAttributedString(string: text, attributes: attributes)
+    }
+}
+
 private struct CoachChatImageBubble: View {
     let payload: CoachChatImagePayload
     let isUser: Bool
@@ -300,7 +452,8 @@ private struct CoachChatImageBubble: View {
                 MathTextView(
                     text: caption,
                     style: .chatBubble(isUser: isUser),
-                    textColor: foreground
+                    textColor: foreground,
+                    expandsHorizontally: false
                 )
                 .fixedSize(horizontal: false, vertical: true)
             }

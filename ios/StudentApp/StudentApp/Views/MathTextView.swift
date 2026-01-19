@@ -6,6 +6,7 @@ struct MathTextView: View {
     let text: String
     var style: MathTextStyle = .body
     var textColor: Color = AppTheme.textPrimary
+    var expandsHorizontally: Bool = true
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.displayScale) private var displayScale
@@ -27,10 +28,16 @@ struct MathTextView: View {
     private static let webPlanner = MathRenderPlanner(cache: MathRenderCache(), nativeRenderer: nil)
     private static let webPool = MathWebViewPool()
 
-    init(text: String, style: MathTextStyle = .body, textColor: Color = AppTheme.textPrimary) {
+    init(
+        text: String,
+        style: MathTextStyle = .body,
+        textColor: Color = AppTheme.textPrimary,
+        expandsHorizontally: Bool = true
+    ) {
         self.text = text
         self.style = style
         self.textColor = textColor
+        self.expandsHorizontally = expandsHorizontally
     }
 
     var body: some View {
@@ -46,26 +53,36 @@ struct MathTextView: View {
         let requestKey = MathRenderKeyBuilder.key(for: request)
         let activePlan = renderFailed ? MathRenderPlan.plainText(AttributedString(fallbackText)) : plan
 
-        ZStack(alignment: .topLeading) {
-            if case .webHTML = activePlan {
-                Color.clear
-                    .frame(height: max(1, measuredHeight))
-            }
+        expandIfNeeded(
+            ZStack(alignment: .topLeading) {
+                if case .webHTML = activePlan {
+                    Color.clear
+                        .frame(height: max(1, measuredHeight))
+                }
 
-            content(for: activePlan, requestKey: requestKey, request: request)
-        }
-        .frame(maxWidth: .infinity, alignment: style.alignment)
-        .background(WidthReader())
-        .onPreferenceChange(WidthKey.self) { newWidth in
-            if abs(width - newWidth) > 0.5 {
-                width = newWidth
+                content(for: activePlan, requestKey: requestKey, request: request)
             }
-        }
-        .onAppear {
-            updatePlan(request: request, key: requestKey)
-        }
-        .onChange(of: requestKey) { _, newKey in
-            updatePlan(request: request, key: newKey)
+            .background(WidthReader())
+            .onPreferenceChange(WidthKey.self) { newWidth in
+                if abs(width - newWidth) > 0.5 {
+                    width = newWidth
+                }
+            }
+            .onAppear {
+                updatePlan(request: request, key: requestKey)
+            }
+            .onChange(of: requestKey) { _, newKey in
+                updatePlan(request: request, key: newKey)
+            }
+        )
+    }
+
+    @ViewBuilder
+    private func expandIfNeeded<V: View>(_ view: V) -> some View {
+        if expandsHorizontally {
+            view.frame(maxWidth: .infinity, alignment: style.alignment)
+        } else {
+            view
         }
     }
 
@@ -73,39 +90,42 @@ struct MathTextView: View {
         switch plan {
         case .plainText(let text):
             return AnyView(
-                Text(text)
-                    .font(.system(size: style.fontSize, weight: style.fontWeight))
-                    .lineSpacing(style.lineSpacing)
-                    .multilineTextAlignment(style.textAlignment)
-                    .foregroundStyle(textColor)
-                    .frame(maxWidth: .infinity, alignment: style.alignment)
+                expandIfNeeded(
+                    Text(text)
+                        .font(.system(size: style.fontSize, weight: style.fontWeight))
+                        .lineSpacing(style.lineSpacing)
+                        .multilineTextAlignment(style.textAlignment)
+                        .foregroundStyle(textColor)
+                )
             )
         case .nativeLabel(let payload):
             return AnyView(
-                SwiftMathLabelView(payload: payload, textColor: textColor, onError: {
-                    forceWebKey = requestKey
-                    updatePlan(request: request, key: requestKey)
-                })
-                    .frame(maxWidth: .infinity, alignment: style.alignment)
-                    .accessibilityLabel(Text(payload.plainText))
+                expandIfNeeded(
+                    SwiftMathLabelView(payload: payload, textColor: textColor, onError: {
+                        forceWebKey = requestKey
+                        updatePlan(request: request, key: requestKey)
+                    })
+                        .accessibilityLabel(Text(payload.plainText))
+                )
             )
         case .webHTML(let payload):
             return AnyView(
-                MathWebContainer(
-                    payload: payload,
-                    requestKey: requestKey,
-                    pool: Self.webPool,
-                    measuredHeight: $measuredHeight,
-                    isRendered: $isRendered,
-                    onFailure: {
-                        renderFailed = true
-                    }
+                expandIfNeeded(
+                    MathWebContainer(
+                        payload: payload,
+                        requestKey: requestKey,
+                        pool: Self.webPool,
+                        measuredHeight: $measuredHeight,
+                        isRendered: $isRendered,
+                        onFailure: {
+                            renderFailed = true
+                        }
+                    )
+                    .frame(height: max(1, measuredHeight))
+                    .opacity(isRendered ? 1 : 0)
+                    .allowsHitTesting(false)
+                    .accessibilityLabel(Text(payload.accessibilityText))
                 )
-                .frame(height: max(1, measuredHeight))
-                .frame(maxWidth: .infinity, alignment: style.alignment)
-                .opacity(isRendered ? 1 : 0)
-                .allowsHitTesting(false)
-                .accessibilityLabel(Text(payload.accessibilityText))
             )
         }
     }
@@ -190,16 +210,16 @@ struct MathTextStyle: Equatable {
         textAlignment: .leading
     )
 
-    static func chatBubble(isUser: Bool) -> MathTextStyle {
+    static func chatBubble(isUser _: Bool) -> MathTextStyle {
         MathTextStyle(
             fontSize: 16,
             fontWeight: .medium,
             fontWeightValue: 500,
             lineHeight: 1.5,
             lineSpacing: 3,
-            alignment: isUser ? .trailing : .leading,
-            textAlign: isUser ? "right" : "left",
-            textAlignment: isUser ? .trailing : .leading
+            alignment: .leading,
+            textAlign: "left",
+            textAlignment: .leading
         )
     }
 
@@ -239,18 +259,24 @@ private struct MathWebContainer: UIViewRepresentable {
         webView.isHidden = true
         measuredHeight = max(1, payload.estimatedHeight)
 
-        context.coordinator.renderTask?.cancel()
-        context.coordinator.renderer.cancel()
-        context.coordinator.renderTask = Task {
+        let coordinator = context.coordinator
+        let currentKey = requestKey
+
+        coordinator.renderTask?.cancel()
+        coordinator.renderer.cancel()
+        coordinator.renderTask = Task {
             do {
-                let height = try await context.coordinator.renderer.render(payload, into: webView)
+                let height = try await coordinator.renderer.render(payload, into: webView)
                 await MainActor.run {
+                    guard coordinator.lastKey == currentKey else { return }
                     measuredHeight = height
                     isRendered = true
                     webView.isHidden = false
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
+                    guard coordinator.lastKey == currentKey else { return }
                     isRendered = false
                     onFailure()
                 }
