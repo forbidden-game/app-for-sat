@@ -95,7 +95,6 @@ struct MathTextView: View {
                         .font(.system(size: style.fontSize, weight: style.fontWeight))
                         .lineSpacing(style.lineSpacing)
                         .multilineTextAlignment(style.textAlignment)
-                        .lineBreakStrategy(.pushOut)
                         .foregroundStyle(textColor)
                 )
             )
