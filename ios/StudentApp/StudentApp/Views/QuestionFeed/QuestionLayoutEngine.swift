@@ -29,6 +29,59 @@ final class QuestionLayoutEngine {
         }
     }
 
+    private func cacheKey(
+        questionId: String,
+        width: CGFloat,
+        height: CGFloat,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat
+    ) -> String {
+        QuestionLayoutKey(
+            questionId: questionId,
+            widthBucket: Int(width.rounded(.up)),
+            heightBucket: Int(height.rounded(.up)),
+            scheme: colorScheme == .dark ? "dark" : "light",
+            scaleBucket: String(format: "%.2f", displayScale)
+        ).cacheKey
+    }
+
+    func cachedLayout(
+        question: Question,
+        size: CGSize,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat
+    ) -> QuestionBodyLayout? {
+        let width = max(1, size.width)
+        let height = max(1, size.height)
+        let key = cacheKey(
+            questionId: question.id,
+            width: width,
+            height: height,
+            colorScheme: colorScheme,
+            displayScale: displayScale
+        )
+        return cache.object(forKey: key as NSString)?.value
+    }
+
+    func prefetch(
+        question: Question,
+        size: CGSize,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat,
+        textColor: Color
+    ) async {
+        if cachedLayout(question: question, size: size, colorScheme: colorScheme, displayScale: displayScale) != nil {
+            return
+        }
+        _ = await layout(
+            question: question,
+            size: size,
+            colorScheme: colorScheme,
+            displayScale: displayScale,
+            textColor: textColor
+        )
+    }
+
     func layout(
         question: Question,
         size: CGSize,
@@ -40,13 +93,13 @@ final class QuestionLayoutEngine {
         defer { PerformanceSignpost.end("QuestionLayout", id: signpostId) }
         let width = max(1, size.width)
         let height = max(1, size.height)
-        let key = QuestionLayoutKey(
+        let key = cacheKey(
             questionId: question.id,
-            widthBucket: Int(width.rounded(.up)),
-            heightBucket: Int(height.rounded(.up)),
-            scheme: colorScheme == .dark ? "dark" : "light",
-            scaleBucket: String(format: "%.2f", displayScale)
-        ).cacheKey
+            width: width,
+            height: height,
+            colorScheme: colorScheme,
+            displayScale: displayScale
+        )
         if let cached = cache.object(forKey: key as NSString)?.value {
             return cached
         }

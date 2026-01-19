@@ -6,6 +6,7 @@ struct QuestionContentView: View {
     let question: Question
     let index: Int
     let total: Int
+    let questionProvider: (Int) -> Question?
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
     @ObservedObject var submission: AnswerSubmissionCoordinator
@@ -22,6 +23,7 @@ struct QuestionContentView: View {
     @State private var layout: QuestionBodyLayout = .short
     @State private var layoutReady = false
     @State private var layoutTask: Task<Void, Never>?
+    @State private var prefetchTask: Task<Void, Never>?
     @State private var layoutSignature: LayoutSignature?
     @State private var lastLayoutSize: CGSize = .zero
 
@@ -65,6 +67,8 @@ struct QuestionContentView: View {
         .onDisappear {
             layoutTask?.cancel()
             layoutTask = nil
+            prefetchTask?.cancel()
+            prefetchTask = nil
         }
     }
 
@@ -230,9 +234,23 @@ struct QuestionContentView: View {
         guard signature != layoutSignature else { return }
         layoutSignature = signature
         lastLayoutSize = size
-        layoutReady = false
 
         layoutTask?.cancel()
+        layoutTask = nil
+
+        if let cached = QuestionLayoutEngine.shared.cachedLayout(
+            question: question,
+            size: size,
+            colorScheme: colorScheme,
+            displayScale: displayScale
+        ) {
+            applyLayout(cached)
+            schedulePrefetchNeighbors(size: size)
+            return
+        }
+
+        layoutReady = false
+
         layoutTask = Task {
             let result = await QuestionLayoutEngine.shared.layout(
                 question: question,
@@ -243,21 +261,48 @@ struct QuestionContentView: View {
             )
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                layout = result
-                layoutReady = true
-                if case .long(let stemPages, let answerPages) = result {
-                    let pageCount = stemPages.count + answerPages.count
-                    state.setStemPageCount(pageCount, for: question.id)
-                    let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
-                    if clamped != state.stemPage(for: question.id) {
-                        state.setStemPage(clamped, for: question.id)
-                    }
-                } else {
-                    state.setStemPageCount(1, for: question.id)
-                    state.setStemPage(0, for: question.id)
-                }
+                applyLayout(result)
+                schedulePrefetchNeighbors(size: size)
             }
         }
+    }
+
+    private func applyLayout(_ result: QuestionBodyLayout) {
+        layout = result
+        layoutReady = true
+        if case .long(let stemPages, let answerPages) = result {
+            let pageCount = stemPages.count + answerPages.count
+            state.setStemPageCount(pageCount, for: question.id)
+            let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
+            if clamped != state.stemPage(for: question.id) {
+                state.setStemPage(clamped, for: question.id)
+            }
+        } else {
+            state.setStemPageCount(1, for: question.id)
+            state.setStemPage(0, for: question.id)
+        }
+    }
+
+    private func schedulePrefetchNeighbors(size: CGSize) {
+        guard index == state.currentIndex else { return }
+        prefetchTask?.cancel()
+        prefetchTask = Task {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled else { return }
+            await prefetchNeighbor(at: index - 1, size: size)
+            await prefetchNeighbor(at: index + 1, size: size)
+        }
+    }
+
+    private func prefetchNeighbor(at index: Int, size: CGSize) async {
+        guard let neighbor = questionProvider(index) else { return }
+        await QuestionLayoutEngine.shared.prefetch(
+            question: neighbor,
+            size: size,
+            colorScheme: colorScheme,
+            displayScale: displayScale,
+            textColor: AppTheme.textPrimary
+        )
     }
 
     // MARK: - Header

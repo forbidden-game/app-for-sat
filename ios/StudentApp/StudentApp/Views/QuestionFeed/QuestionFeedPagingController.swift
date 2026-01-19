@@ -202,7 +202,12 @@ extension QuestionFeedPagingController: UICollectionViewDataSource {
 
         let total = session.questions.count
         let isOverview = indexPath.item >= total
-        let question = isOverview ? nil : session.questions[indexPath.item]
+        let questions = session.questions
+        let question = isOverview ? nil : questions[indexPath.item]
+        let questionProvider: (Int) -> Question? = { index in
+            guard index >= 0, index < questions.count else { return nil }
+            return questions[index]
+        }
         let config = QuestionCellConfiguration(
             question: question,
             index: indexPath.item,
@@ -216,7 +221,8 @@ extension QuestionFeedPagingController: UICollectionViewDataSource {
             returnToOverviewOnAnswer: returnToOverviewOnAnswer,
             onBack: onBack,
             onShowOverview: onShowOverview,
-            onSubmissionError: onSubmissionError
+            onSubmissionError: onSubmissionError,
+            questionProvider: questionProvider
         )
 
         cell.configure(config, outerPan: collectionView.panGestureRecognizer)
