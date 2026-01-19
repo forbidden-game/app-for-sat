@@ -142,6 +142,7 @@ struct QuestionAnswerContentView: View {
             .scaleEffect(isFeedback ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("question_option_\(questionId)_\(option.label)")
         .disabled(!isCurrentQuestion)
     }
 
@@ -184,6 +185,7 @@ struct QuestionAnswerContentView: View {
                 }
                 .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
                 .disabled(!isCurrentQuestion)
+                .accessibilityIdentifier("question_free_response_\(questionId)")
         }
         .padding(.vertical, AppMetrics.fieldPaddingVertical)
         .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)

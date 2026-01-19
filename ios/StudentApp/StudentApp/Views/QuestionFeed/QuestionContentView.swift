@@ -284,6 +284,7 @@ struct QuestionContentView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("question_back_\(question.id)")
 
                     Spacer()
 
@@ -298,15 +299,18 @@ struct QuestionContentView: View {
                             Capsule()
                                 .stroke(AppTheme.divider, lineWidth: 1)
                         )
+                        .accessibilityIdentifier("question_index_\(question.id)")
                 }
 
                 Text(resolvedHeaderTitle(for: question))
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(AppTheme.textPrimary)
+                    .accessibilityIdentifier("question_title_\(question.id)")
             }
 
             ProgressView(value: progress)
                 .tint(AppTheme.accent)
+                .accessibilityIdentifier("question_progress_\(question.id)")
 
             answerStatusPill(for: question)
         }
@@ -396,6 +400,7 @@ struct QuestionContentView: View {
                 .stroke(stroke, lineWidth: 1)
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("question_status_\(question.id)")
 
         if case .failed = status, isAnswered {
             Button {
