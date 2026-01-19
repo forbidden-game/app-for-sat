@@ -1,4 +1,5 @@
 import SwiftUI
+import StudentCore
 
 struct AppShellView: View {
     @ObservedObject var vm: AppViewModel
