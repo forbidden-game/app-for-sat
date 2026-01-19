@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 const AiLogsConversations = dynamic(() => import("./AiLogsConversations"), {
   ssr: false,
   loading: () => (
-    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)]">
+    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)]">
       Loading conversations…
     </div>
   ),
@@ -15,7 +15,7 @@ const AiLogsConversations = dynamic(() => import("./AiLogsConversations"), {
 const AiLogsWorkbench = dynamic(() => import("./AiLogsWorkbench"), {
   ssr: false,
   loading: () => (
-    <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)]">
+    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-sm text-[color:var(--ink-muted)]">
       Loading workbench…
     </div>
   ),
@@ -81,15 +81,15 @@ export default function AiLogsClient() {
       <main id="ai-logs-main" className="mx-auto flex max-w-[1280px] flex-col gap-5 overflow-x-hidden px-6 pb-10 pt-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-            <h1 className="text-balance text-2xl font-semibold text-[color:var(--ink)]">AI Logs</h1>
+            <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+            <h1 className="text-balance text-2xl font-semibold tracking-tight text-[color:var(--ink)]">AI Logs</h1>
             <p className="text-sm text-[color:var(--ink-muted)]">
               Conversation-first view for coach chat, plus the original debug workbench.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1 text-[10px] font-semibold uppercase tracking-[0.2em]">
+            <div className="flex items-center gap-2 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] p-1 text-xs font-medium">
               <button
                 type="button"
                 onClick={() => setView("conversations")}
