@@ -215,6 +215,8 @@ struct QuestionContentView: View {
     private func resetLayout() {
         layoutTask?.cancel()
         layoutTask = nil
+        prefetchTask?.cancel()
+        prefetchTask = nil
         layoutReady = false
         layoutSignature = nil
         if lastLayoutSize != .zero {
