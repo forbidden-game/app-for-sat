@@ -333,7 +333,7 @@ export default function ImportQuestionsPage() {
               subject, module, difficulty, question_type, stem, answer_key, options, tags, metadata
             </p>
             <p className="text-[11px] text-[color:var(--ink-muted)] mt-1">
-              options/tags/metadata accept JSON. options also supports "A:3|B:4". tags can be "tag1;tag2".
+              options/tags/metadata accept JSON. options also supports &quot;A:3|B:4&quot;. tags can be &quot;tag1;tag2&quot;.
             </p>
           </div>
           <div>
