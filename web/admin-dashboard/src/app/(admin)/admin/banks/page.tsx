@@ -334,16 +334,14 @@ export default function QuestionBanksPage() {
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
-            Admin Console
-          </p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Question Banks</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Question Banks</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Create, edit, and retire question banks for the student app.
           </p>
         </div>
         <button
-          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
           onClick={openCreateDrawer}
           type="button"
         >
@@ -353,7 +351,7 @@ export default function QuestionBanksPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
@@ -362,7 +360,7 @@ export default function QuestionBanksPage() {
 
       {lastImportResult ? (
         <div
-          className="rounded-2xl border border-[color:var(--accent)] bg-[color:var(--surface)] px-4 py-3 text-sm"
+          className="rounded-xl border border-[color:var(--accent)] bg-[color:var(--surface)] px-4 py-3 text-sm"
           role="status"
           aria-live="polite"
         >
@@ -373,7 +371,7 @@ export default function QuestionBanksPage() {
             <button
               type="button"
               onClick={() => setLastImportResult(null)}
-              className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+              className="text-xs font-medium text-[color:var(--ink-muted)]"
             >
               Dismiss
             </button>
@@ -389,16 +387,16 @@ export default function QuestionBanksPage() {
           )}
           <Link
             href={`/admin/banks/${lastImportResult.bankId}/questions`}
-            className="mt-2 inline-block text-[10px] uppercase tracking-[0.2em] text-[color:var(--accent-strong)]"
+            className="mt-2 inline-block text-xs font-medium text-[color:var(--accent-strong)]"
           >
             View Bank Questions
           </Link>
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-          <table className="w-full text-left text-sm text-[color:var(--ink)]">
-            <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+      <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
+            <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
               <tr>
                 <th scope="col" className="px-4 py-3">Title</th>
                 <th scope="col" className="px-4 py-3">Slug</th>
@@ -437,7 +435,7 @@ export default function QuestionBanksPage() {
                     <td className="px-4 py-3">{bank.question_limit}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={`rounded-full px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-white ${
+                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
                           bank.is_active
                             ? "bg-[color:var(--accent-strong)]"
                             : "bg-[color:var(--danger-strong)]"
@@ -451,13 +449,13 @@ export default function QuestionBanksPage() {
                       <div className="flex flex-wrap gap-2">
                         <Link
                           href={`/admin/banks/${bank.id}/questions`}
-                          className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                           onClick={(event) => event.stopPropagation()}
                         >
                           Questions
                         </Link>
                         <button
-                          className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                           onClick={(event) => {
                             event.stopPropagation();
                             openEditDrawer(bank);
@@ -467,7 +465,7 @@ export default function QuestionBanksPage() {
                           Edit
                         </button>
                         <button
-                          className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)]"
+                          className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-xs font-medium text-[color:var(--danger-strong)]"
                           onClick={(event) => {
                             event.stopPropagation();
                             void handleDelete(bank);
@@ -495,15 +493,15 @@ export default function QuestionBanksPage() {
           <aside className="relative z-10 flex h-full w-full max-w-lg flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                <p className="text-xs font-medium text-[color:var(--ink-muted)]">
                   {drawerMode === "edit" ? "Edit Bank" : "Create Bank"}
                 </p>
-                <p className="text-sm font-semibold text-[color:var(--ink)]">
+                <p className="text-sm font-semibold tracking-tight text-[color:var(--ink)]">
                   {drawerMode === "edit" ? "Update Settings" : "New Question Bank"}
                 </p>
               </div>
               <button
-                className="text-xs text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink-muted)]"
+                className="text-xs font-medium text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
                 onClick={closeDrawer}
               >
                 Close
@@ -511,8 +509,8 @@ export default function QuestionBanksPage() {
             </div>
 
             {drawerMode === "edit" && selectedBank ? (
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
+                <p className="text-xs font-medium text-[color:var(--ink-muted)]">
                   Bank Details
                 </p>
                 <dl className="mt-3 space-y-2 text-sm">
@@ -537,55 +535,55 @@ export default function QuestionBanksPage() {
             ) : null}
 
             <div className="grid gap-3 text-sm text-[color:var(--ink)]">
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Slug
                 <input
                   name="slug"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.slug}
                   onChange={(event) => setForm({ ...form, slug: event.target.value })}
                   placeholder="sat-practice…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Title
                 <input
                   name="title"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.title}
                   onChange={(event) => setForm({ ...form, title: event.target.value })}
                   placeholder="SAT Practice…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Subtitle
                 <input
                   name="subtitle"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.subtitle}
                   onChange={(event) => setForm({ ...form, subtitle: event.target.value })}
                   placeholder="Optional description…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Icon
                 <input
                   name="icon"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   value={form.icon}
                   onChange={(event) => setForm({ ...form, icon: event.target.value })}
                   placeholder="sparkle…"
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Mode
                 <select
                   name="mode"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                   value={form.mode}
                   onChange={(event) => setForm({ ...form, mode: event.target.value })}
                 >
@@ -596,11 +594,11 @@ export default function QuestionBanksPage() {
                   {MODE_DESCRIPTIONS[form.mode as keyof typeof MODE_DESCRIPTIONS]}
                 </span>
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Question limit
                 <input
                   name="question_limit"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   type="number"
                   value={form.question_limit}
                   onChange={(event) =>
@@ -612,11 +610,11 @@ export default function QuestionBanksPage() {
                   autoComplete="off"
                 />
               </label>
-              <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                 Sort order
                 <input
                   name="sort_order"
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                  className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
                   type="number"
                   value={form.sort_order}
                   onChange={(event) =>
@@ -638,16 +636,16 @@ export default function QuestionBanksPage() {
                 Active
               </label>
               {form.mode === "daily_mix" && (
-                <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                   <span className="flex items-center gap-2">
                     Rule JSON
-                    <span className="rounded-full border border-[color:var(--accent)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[color:var(--accent-strong)]">
+                    <span className="rounded-full border border-[color:var(--accent)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--accent-strong)]">
                       Required for Daily Mix
                     </span>
                   </span>
                   <textarea
                     name="rule_json"
-                    className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 font-mono text-xs"
+                    className="min-h-[120px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 font-mono text-xs"
                     value={form.rule_json}
                     onChange={(event) => setForm({ ...form, rule_json: event.target.value })}
                     placeholder='{"subjects": ["math"], "difficulty_min": 1, "difficulty_max": 5}…'
@@ -660,14 +658,14 @@ export default function QuestionBanksPage() {
               )}
 
               {drawerMode === "create" ? (
-                <div className="rounded-2xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4 text-sm text-[color:var(--ink)]">
-                  <p className="text-xs uppercase tracking-[0.2em] text-[color:var(--ink-muted)] mb-2">
+                <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4 text-sm text-[color:var(--ink)]">
+                  <p className="mb-2 text-xs font-medium text-[color:var(--ink-muted)]">
                     Import from file (optional)
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
                     <select
                       name="importFormat"
-                      className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
+                      className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink)]"
                       value={importFormat}
                       onChange={(event) => setImportFormat(event.target.value as ImportFormat)}
                       aria-label="Import format"
@@ -703,7 +701,7 @@ export default function QuestionBanksPage() {
 
                   {importParsing ? (
                     <p
-                      className="text-xs text-[color:var(--ink-muted)] mb-2"
+                      className="mb-2 text-xs text-[color:var(--ink-muted)]"
                       role="status"
                       aria-live="polite"
                     >
@@ -713,10 +711,10 @@ export default function QuestionBanksPage() {
 
                   {importParseErrors.length > 0 && (
                     <div
-                      className="mb-2 rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]"
+                      className="mb-2 rounded-lg border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]"
                       role="alert"
                     >
-                      <p className="font-medium mb-1">Parse errors</p>
+                      <p className="mb-1 font-medium">Parse errors</p>
                       <ul className="list-inside list-disc space-y-1">
                         {importParseErrors.slice(0, 5).map((err, index) => (
                           <li key={index}>
@@ -729,11 +727,11 @@ export default function QuestionBanksPage() {
 
                   {importParseWarnings.length > 0 && (
                     <div
-                      className="mb-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs text-[color:var(--ink-muted)]"
+                      className="mb-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs text-[color:var(--ink-muted)]"
                       role="status"
                       aria-live="polite"
                     >
-                      <p className="font-medium mb-1">Warnings</p>
+                      <p className="mb-1 font-medium">Warnings</p>
                       <ul className="list-inside list-disc space-y-1">
                         {importParseWarnings.slice(0, 4).map((warning, index) => (
                           <li key={index}>{warning}</li>
@@ -743,7 +741,7 @@ export default function QuestionBanksPage() {
                   )}
 
                   {importPayload ? (
-                    <p className="text-xs text-[color:var(--ink-muted)] mb-2">
+                    <p className="mb-2 text-xs text-[color:var(--ink-muted)]">
                       Parsed {importPayload.questions.length} questions.
                     </p>
                   ) : null}
@@ -762,7 +760,7 @@ export default function QuestionBanksPage() {
               ) : null}
               <div className="flex flex-wrap gap-2 pt-2">
                 <button
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white disabled:opacity-60"
+                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
                   disabled={
                     saving ||
                     importing ||
@@ -776,7 +774,7 @@ export default function QuestionBanksPage() {
                   {drawerMode === "edit" ? "Save Changes" : "Create Bank"}
                 </button>
                 <button
-                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)]"
                   onClick={closeDrawer}
                   type="button"
                   disabled={saving}

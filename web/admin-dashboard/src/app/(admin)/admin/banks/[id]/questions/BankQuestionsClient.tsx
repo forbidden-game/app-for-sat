@@ -226,8 +226,8 @@ export default function BankQuestionsPage() {
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
             {bankInfo?.title ?? "Bank"} Questions
           </h1>
           <p className="text-sm text-[color:var(--ink-muted)]">Manage questions in this bank. Drag to reorder.</p>
@@ -236,13 +236,13 @@ export default function BankQuestionsPage() {
           <button
             type="button"
             onClick={() => setShowSearch(!showSearch)}
-            className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
             {showSearch ? "Hide Search" : "Add Questions"}
           </button>
           <Link
             href="/admin/banks"
-            className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
             Back to Banks
           </Link>
@@ -251,7 +251,7 @@ export default function BankQuestionsPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
@@ -259,11 +259,11 @@ export default function BankQuestionsPage() {
       ) : null}
 
       {showSearch ? (
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+        <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
           <div className="mb-4 flex flex-wrap gap-2">
             <select
               name="searchSubject"
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink)]"
               value={searchSubject}
               onChange={(e) => setSearchSubject(e.target.value)}
               aria-label="Filter by subject"
@@ -279,7 +279,7 @@ export default function BankQuestionsPage() {
               type="search"
               name="searchQuery"
               inputMode="search"
-              className="min-w-[200px] flex-1 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs"
+              className="min-w-[200px] flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
               placeholder="Search by question text…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -291,7 +291,7 @@ export default function BankQuestionsPage() {
               type="button"
               onClick={handleSearch}
               disabled={searching}
-              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
             >
               {searching ? "…" : "Search"}
             </button>
@@ -313,7 +313,7 @@ export default function BankQuestionsPage() {
                     type="button"
                     onClick={() => handleAddQuestion(q.id)}
                     disabled={saving}
-                    className="ml-2 rounded-full border border-[color:var(--accent)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--accent-strong)] hover:bg-[color:var(--surface-soft)]"
+                    className="ml-2 rounded-full border border-[color:var(--accent)] px-3 py-1 text-xs font-medium text-[color:var(--accent-strong)] hover:bg-[color:var(--surface-soft)]"
                   >
                     Add
                   </button>
@@ -336,13 +336,13 @@ export default function BankQuestionsPage() {
                 <div className="flex justify-center gap-2">
                   <Link
                     href="/admin/questions/new"
-                    className="rounded-full border border-[color:var(--border)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                    className="rounded-full border border-[color:var(--border)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                   >
                     Create Question
                   </Link>
                   <Link
                     href="/admin/questions/import"
-                    className="rounded-full bg-[color:var(--accent)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+                    className="rounded-full bg-[color:var(--accent)] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
                   >
                     Import Questions
                   </Link>
@@ -357,7 +357,7 @@ export default function BankQuestionsPage() {
         </div>
       ) : null}
 
-      <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+      <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
         {questions.length === 0 ? (
           <div className="p-6 text-center text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
             No questions in this bank yet.
@@ -397,7 +397,7 @@ export default function BankQuestionsPage() {
                   type="button"
                   onClick={() => handleRemoveQuestion(q.question_id)}
                   disabled={saving}
-                  className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)]"
+                  className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-xs font-medium text-[color:var(--danger-strong)]"
                 >
                   Remove
                 </button>
