@@ -166,12 +166,12 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Subject
           <input
             list="subjects-list"
             name="subject"
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
             placeholder="e.g., math…"
@@ -185,12 +185,12 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
           </datalist>
         </label>
 
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Module
           <input
             list="modules-list"
             name="module"
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={module}
             onChange={(e) => setModule(e.target.value)}
             placeholder="e.g., algebra…"
@@ -204,11 +204,11 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
           </datalist>
         </label>
 
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Difficulty
           <select
             name="difficulty"
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={difficulty}
             onChange={(e) => setDifficulty(Number(e.target.value))}
           >
@@ -220,11 +220,11 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
           </select>
         </label>
 
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Question Type
           <select
             name="questionType"
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={questionType}
             onChange={(e) => setQuestionType(e.target.value)}
             disabled={loadingMeta}
@@ -238,11 +238,11 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
         </label>
       </div>
 
-      <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+      <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
         Question Stem
         <textarea
           name="stem"
-          className="min-h-[120px] rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+          className="min-h-[120px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
           value={stem}
           onChange={(e) => setStem(e.target.value)}
           placeholder="Enter the question text…"
@@ -258,7 +258,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
             <button
               type="button"
               onClick={addOption}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
             >
               Add Option
             </button>
@@ -267,7 +267,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
             <div key={index} className="flex items-center gap-2">
               <input
                 name={`option-label-${index}`}
-                className="w-12 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-2 text-center text-sm font-medium text-[color:var(--ink)]"
+                className="w-12 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-2 text-center text-sm font-medium text-[color:var(--ink)]"
                 value={opt.label}
                 onChange={(e) => handleOptionChange(index, "label", e.target.value)}
                 placeholder="A…"
@@ -276,7 +276,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
               />
               <input
                 name={`option-content-${index}`}
-                className="flex-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={opt.content}
                 onChange={(e) => handleOptionChange(index, "content", e.target.value)}
                 placeholder="Option content…"
@@ -307,13 +307,13 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
           ))}
         </div>
       ) : (
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Correct Answer
           <input
             name="answer"
             type={questionType === "numeric" ? "number" : "text"}
             inputMode={questionType === "numeric" ? "decimal" : "text"}
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={String(answerKey.correct ?? "")}
             onChange={(e) => {
               const val = e.target.value;
@@ -342,7 +342,7 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
                     key={tag.id}
                     type="button"
                     onClick={() => toggleTag(tag.id)}
-                    className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] transition ${
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                       selectedTagIds.includes(tag.id)
                         ? "bg-[color:var(--accent-strong)] text-white"
                         : "border border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
@@ -361,14 +361,14 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
         <button
           type="submit"
           disabled={saving}
-          className="rounded-full bg-[color:var(--accent)] px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+          className="rounded-full bg-[color:var(--accent)] px-6 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
         >
           {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Question"}
         </button>
         <button
           type="button"
           onClick={handleCancel}
-          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Cancel
         </button>

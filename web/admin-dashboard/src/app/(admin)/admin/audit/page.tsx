@@ -92,7 +92,7 @@ export default function AuditLogPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading audit logs…
         </p>
@@ -101,17 +101,17 @@ export default function AuditLogPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Audit Log</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Audit Log</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">Last 7 days of admin activity.</p>
         </div>
         <button
           type="button"
           onClick={downloadCsv}
-          className="rounded-full border border-[color:var(--border)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Export CSV
         </button>
@@ -119,16 +119,16 @@ export default function AuditLogPage() {
 
       {error ? (
         <div
-          className="rounded-2xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
+          className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-4 py-3 text-sm text-[color:var(--danger-strong)]"
           role="alert"
         >
           {error}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-        <table className="w-full text-left text-sm text-[color:var(--ink)]">
-          <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+      <div className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
+          <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
               <th scope="col" className="px-4 py-3">Time</th>
               <th scope="col" className="px-4 py-3">Actor</th>
@@ -151,7 +151,7 @@ export default function AuditLogPage() {
               </tr>
             ) : (
               logs.map((log) => (
-                <tr key={log.id} className="border-t border-[color:var(--border)]">
+                <tr key={log.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
                   <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                     {formatDateTime(log.created_at)}
                   </td>

@@ -190,7 +190,7 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
           Loading users…
         </p>
@@ -200,7 +200,7 @@ export default function UsersPage() {
 
   if (error && users.length === 0) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error} Try refreshing or checking Supabase config.
         </p>
@@ -209,23 +209,23 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Users</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Users</h1>
           <p className="mt-1 text-sm text-[color:var(--ink-muted)]">
             Create users via email invite and manage roles across student, parent, and admin accounts.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]" htmlFor="role-filter">
+          <label className="text-xs font-medium text-[color:var(--ink-muted)]" htmlFor="role-filter">
             Filter role
           </label>
           <select
             id="role-filter"
             name="roleFilter"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-[11px]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink)]"
             value={roleFilter}
             onChange={(event) => {
               setRoleFilter(event.target.value);
@@ -249,7 +249,7 @@ export default function UsersPage() {
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+        <div className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--border)] px-4 py-3">
             <div>
               <p className="text-sm font-semibold text-[color:var(--ink)]">User List</p>
@@ -257,16 +257,16 @@ export default function UsersPage() {
                 Showing page {page}. Filters only apply to the current page.
               </p>
             </div>
-            <div className="flex items-center gap-2 text-[10px] uppercase tracking-[0.2em]">
+            <div className="flex items-center gap-2">
               <button
-                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
                 disabled={page <= 1 || loading}
               >
                 Prev
               </button>
               <button
-                className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() => setPage((prev) => (hasNext ? prev + 1 : prev))}
                 disabled={!hasNext || loading}
               >
@@ -275,9 +275,9 @@ export default function UsersPage() {
             </div>
           </div>
           <div className="max-h-[560px] overflow-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="sticky top-0 bg-[color:var(--surface)]">
-                <tr className="border-b border-[color:var(--border)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <table className="min-w-full text-left text-sm text-[color:var(--ink-muted)]">
+              <thead className="sticky top-0 bg-[color:var(--surface-soft)]">
+                <tr className="border-b border-[color:var(--border)] text-xs font-medium text-[color:var(--ink-muted)]">
                   <th scope="col" className="px-4 py-3">Email</th>
                   <th scope="col" className="px-4 py-3">Name</th>
                   <th scope="col" className="px-4 py-3">Role</th>
@@ -300,7 +300,7 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                   filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-[color:var(--border)]">
+                    <tr key={user.id} className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.email ?? "(no email)"}</td>
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.display_name ?? "—"}</td>
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.role ?? "unknown"}</td>
@@ -313,13 +313,13 @@ export default function UsersPage() {
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
                           <button
-                            className="rounded-full border border-[color:var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                             onClick={() => startEdit(user)}
                           >
                             Edit
                           </button>
                           <button
-                            className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)] transition hover:bg-[color:var(--surface-soft)]"
+                            className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-xs font-medium text-[color:var(--danger-strong)] transition hover:bg-[color:var(--surface-soft)]"
                             onClick={() => handleDelete(user)}
                             disabled={saving}
                           >
@@ -335,19 +335,19 @@ export default function UsersPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+        <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+              <p className="text-xs font-medium text-[color:var(--ink-muted)]">
                 {editingId ? "Edit User" : "Create User"}
               </p>
-              <p className="text-sm font-semibold text-[color:var(--ink)]">
+              <p className="text-sm font-semibold tracking-tight text-[color:var(--ink)]">
                 {editingId ? "Update Profile" : "Send Invite"}
               </p>
             </div>
             {editingId ? (
               <button
-                className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
+                className="text-xs font-medium text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
                 onClick={resetForm}
               >
                 Cancel
@@ -356,13 +356,13 @@ export default function UsersPage() {
           </div>
 
           <div className="mt-4 flex flex-col gap-4 text-sm">
-            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <label className="flex flex-col gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
               Email
               <input
                 name="email"
                 type="email"
                 inputMode="email"
-                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.email}
                 onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
                 placeholder="name@example.com…"
@@ -370,11 +370,11 @@ export default function UsersPage() {
                 spellCheck={false}
               />
             </label>
-            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <label className="flex flex-col gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
               Display name
               <input
                 name="displayName"
-                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.display_name}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -386,11 +386,11 @@ export default function UsersPage() {
                 autoComplete="name"
               />
             </label>
-            <label className="flex flex-col gap-2 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+            <label className="flex flex-col gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
               Role
               <select
                 name="role"
-                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm"
+                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
                 value={form.role}
                 onChange={(event) =>
                   setForm((prev) => ({
@@ -410,7 +410,7 @@ export default function UsersPage() {
 
           <div className="mt-6 flex flex-col gap-2">
             <button
-              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
               onClick={handleSave}
               disabled={saving}
             >

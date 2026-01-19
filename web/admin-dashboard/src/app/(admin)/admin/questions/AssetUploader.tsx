@@ -121,7 +121,7 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-[color:var(--ink)]">Images & Assets</span>
-        <label className="cursor-pointer rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]">
+        <label className="cursor-pointer rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]">
           {uploading ? "Uploading…" : "Add Image"}
           <input
             type="file"

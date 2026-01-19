@@ -295,7 +295,7 @@ export default function QuestionsPage() {
 
   if (error && !result) {
     return (
-      <main className="mx-auto max-w-[1440px] px-6 py-12">
+      <main className="mx-auto max-w-[1280px] px-6 py-12">
         <p className="text-sm text-[color:var(--danger-strong)]" role="alert">
           {error}
         </p>
@@ -304,22 +304,22 @@ export default function QuestionsPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-[1440px] flex-col gap-6 px-6 pb-10 pt-8">
+    <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold text-[color:var(--ink)]">Questions</h1>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Questions</h1>
           <p className="text-sm text-[color:var(--ink-muted)]">Manage questions in the question bank.</p>
         </div>
         <div className="flex gap-2">
           <Link
             href="/admin/questions/import"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
           >
             Import
           </Link>
           <button
-            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
             onClick={openCreateDrawer}
             type="button"
           >
@@ -339,26 +339,26 @@ export default function QuestionsPage() {
 
       <form
         onSubmit={handleSearch}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+        className="flex flex-wrap items-end gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
       >
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Search
           <input
             type="search"
             name="search"
             inputMode="search"
-            className="w-48 rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
+            className="w-48 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             placeholder="Search stem…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             autoComplete="off"
           />
         </label>
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Subject
           <select
             name="subject"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={subject}
             onChange={(e) => setSubject(e.target.value)}
           >
@@ -370,11 +370,11 @@ export default function QuestionsPage() {
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Module
           <select
             name="module"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={module}
             onChange={(e) => setModule(e.target.value)}
           >
@@ -386,11 +386,11 @@ export default function QuestionsPage() {
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Difficulty
           <select
             name="difficulty"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value ? Number(e.target.value) : "")}
           >
@@ -402,11 +402,11 @@ export default function QuestionsPage() {
             ))}
           </select>
         </label>
-        <label className="grid gap-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+        <label className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
           Type
           <select
             name="questionType"
-            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={questionType}
             onChange={(e) => setQuestionType(e.target.value)}
           >
@@ -420,22 +420,22 @@ export default function QuestionsPage() {
         </label>
         <button
           type="submit"
-          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-[color:var(--accent-strong)]"
+          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
         >
           Search
         </button>
         <button
           type="button"
           onClick={clearFilters}
-          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Clear
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+      <div className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
         <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-          <thead className="bg-[color:var(--surface-soft)] text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+          <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
               <th scope="col" className="px-4 py-3">Stem</th>
               <th scope="col" className="w-24 px-4 py-3">Subject</th>
@@ -486,7 +486,7 @@ export default function QuestionsPage() {
                         {q.tags.slice(0, 3).map((tag, i) => (
                           <span
                             key={i}
-                            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]"
+                            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--ink-muted)]"
                           >
                             {tag.name}
                           </span>
@@ -510,7 +510,7 @@ export default function QuestionsPage() {
                           event.stopPropagation();
                           void openEditDrawer(q.id);
                         }}
-                        className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                        className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                       >
                         Edit
                       </button>
@@ -521,7 +521,7 @@ export default function QuestionsPage() {
                           void handleDelete(q.id, q.stem);
                         }}
                         disabled={deleting === q.id}
-                        className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--danger-strong)] transition disabled:opacity-50"
+                        className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-xs font-medium text-[color:var(--danger-strong)] transition disabled:opacity-50"
                       >
                         {deleting === q.id ? "…" : "Del"}
                       </button>
@@ -545,7 +545,7 @@ export default function QuestionsPage() {
               type="button"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] disabled:opacity-50"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] disabled:opacity-50"
             >
               Previous
             </button>
@@ -556,7 +556,7 @@ export default function QuestionsPage() {
               type="button"
               onClick={() => setPage((p) => Math.min(result.totalPages, p + 1))}
               disabled={page >= result.totalPages}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] disabled:opacity-50"
+              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] disabled:opacity-50"
             >
               Next
             </button>
@@ -570,15 +570,15 @@ export default function QuestionsPage() {
           <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)]">
+                <p className="text-xs font-medium text-[color:var(--ink-muted)]">
                   {drawerMode === "edit" ? "Edit question" : "Create question"}
                 </p>
-                <p className="text-sm font-semibold text-[color:var(--ink)]">
+                <p className="text-sm font-semibold tracking-tight text-[color:var(--ink)]">
                   {drawerMode === "edit" ? "Update content" : "New question"}
                 </p>
               </div>
               <button
-                className="text-[10px] uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
+                className="text-xs font-medium text-[color:var(--ink-muted)] transition hover:text-[color:var(--ink)]"
                 onClick={closeDrawer}
               >
                 Close
@@ -595,13 +595,13 @@ export default function QuestionsPage() {
             ) : null}
 
             {drawerMode === "edit" && selectedQuestionId ? (
-              <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
                 <div className="text-xs text-[color:var(--ink-muted)]">
                   ID: <span className="font-mono text-[color:var(--ink)]">{selectedQuestionId}</span>
                 </div>
                 <Link
                   href={`/admin/questions/${selectedQuestionId}`}
-                  className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                  className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
                 >
                   Open Full Editor
                 </Link>
@@ -623,7 +623,7 @@ export default function QuestionsPage() {
             )}
 
             {drawerMode === "edit" && selectedQuestionId ? (
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
+              <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
                 <AssetUploader questionId={selectedQuestionId} />
               </div>
             ) : null}
