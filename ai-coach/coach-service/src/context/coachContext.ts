@@ -8,6 +8,7 @@ export type CoachMessage = {
   text: string;
   created_at: string;
   linked_attempt_id: string | null;
+  reply_to_message_id: string | null;
 };
 
 export type CoachContextPacket = {
@@ -53,6 +54,7 @@ type CoachThreadMessageRow = {
   content: unknown;
   created_at: string;
   linked_attempt_id: string | null;
+  reply_to_message_id: string | null;
 };
 
 type ProfileRow = { display_name: string | null };
@@ -184,7 +186,7 @@ export async function buildCoachContext(params: BuildCoachContextParams): Promis
   if (params.includeMessages !== false) {
     let query = params.supabase
       .from("coach_thread_messages")
-      .select("id,student_id,role,content,created_at,linked_attempt_id")
+      .select("id,student_id,role,content,created_at,linked_attempt_id,reply_to_message_id")
       .eq("student_id", resolvedStudentId);
 
     if (params.messagesBeforeCreatedAt) {
@@ -203,6 +205,7 @@ export async function buildCoachContext(params: BuildCoachContextParams): Promis
         text: extractText(row.content),
         created_at: row.created_at,
         linked_attempt_id: row.linked_attempt_id,
+        reply_to_message_id: row.reply_to_message_id,
       }));
     }
   }

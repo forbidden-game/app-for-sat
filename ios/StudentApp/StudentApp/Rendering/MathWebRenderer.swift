@@ -42,7 +42,7 @@ final class MathWebRenderer: NSObject, MathRenderer, WKNavigationDelegate, WKScr
     private var timeoutTask: Task<Void, Never>?
     private let timeoutSeconds: TimeInterval
 
-    init(timeoutSeconds: TimeInterval = 1.2) {
+    init(timeoutSeconds: TimeInterval = 2.5) {
         self.timeoutSeconds = timeoutSeconds
     }
 

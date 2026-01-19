@@ -49,22 +49,30 @@ final class CoachChatViewModel: ObservableObject {
         await service.stopRealtime()
     }
 
-    func send(linkedAttemptId: String?) async {
+    @discardableResult
+    func send(linkedAttemptId: String?, replyToMessageId: String?) async -> Bool {
         if isSending {
-            return
+            return false
         }
 
         let text = draftText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty else { return false }
 
         isSending = true
+        errorMessage = nil
         defer { isSending = false }
 
         do {
-            _ = try await service.sendMessage(text: text, linkedAttemptId: linkedAttemptId)
+            _ = try await service.sendMessage(
+                text: text,
+                linkedAttemptId: linkedAttemptId,
+                replyToMessageId: replyToMessageId
+            )
             draftText = ""
+            return true
         } catch {
             errorMessage = UserFacingError.message(error)
+            return false
         }
     }
 

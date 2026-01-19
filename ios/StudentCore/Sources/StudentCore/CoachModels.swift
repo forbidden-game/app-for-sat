@@ -21,13 +21,22 @@ public struct CoachThreadMessage: Codable, Equatable, Identifiable {
     public let role: CoachThreadRole
     public let content: CoachMessageContent
     public let linkedAttemptId: String?
+    public let replyToMessageId: String?
     public let createdAt: Date
 
-    public init(id: String, role: CoachThreadRole, content: CoachMessageContent, linkedAttemptId: String?, createdAt: Date) {
+    public init(
+        id: String,
+        role: CoachThreadRole,
+        content: CoachMessageContent,
+        linkedAttemptId: String?,
+        replyToMessageId: String? = nil,
+        createdAt: Date
+    ) {
         self.id = id
         self.role = role
         self.content = content
         self.linkedAttemptId = linkedAttemptId
+        self.replyToMessageId = replyToMessageId
         self.createdAt = createdAt
     }
 
@@ -36,6 +45,7 @@ public struct CoachThreadMessage: Codable, Equatable, Identifiable {
         case role
         case content
         case linkedAttemptId = "linked_attempt_id"
+        case replyToMessageId = "reply_to_message_id"
         case createdAt = "created_at"
     }
 }

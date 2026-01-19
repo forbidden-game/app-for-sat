@@ -5,10 +5,13 @@ struct CoachChatMessageRow: View {
     let message: CoachThreadMessage
     let previousMessage: CoachThreadMessage?
     let nextMessage: CoachThreadMessage?
+    let replyMessage: CoachThreadMessage?
 
     let playingMessageId: String?
     let playbackProgress: Double
     let onPlayAudio: (String, CoachChatAudioPayload) -> Void
+    let onReply: (CoachThreadMessage) -> Void
+    let onTapReply: (String) -> Void
 
     var body: some View {
         VStack(spacing: 6) {
@@ -19,11 +22,22 @@ struct CoachChatMessageRow: View {
 
             CoachChatMessageBubble(
                 message: message,
+                replyMessage: replyMessage,
                 showAssistantAvatar: showAssistantAvatar,
                 playingMessageId: playingMessageId,
                 playbackProgress: playbackProgress,
-                onPlayAudio: onPlayAudio
+                onPlayAudio: onPlayAudio,
+                onTapReply: onTapReply
             )
+            .contextMenu {
+                if message.role != .tool {
+                    Button {
+                        onReply(message)
+                    } label: {
+                        Label("引用", systemImage: "quote.bubble")
+                    }
+                }
+            }
         }
         .padding(.top, rowTopPadding)
     }
@@ -98,11 +112,13 @@ private struct ChatTimestampPill: View {
 
 struct CoachChatMessageBubble: View {
     let message: CoachThreadMessage
+    let replyMessage: CoachThreadMessage?
     let showAssistantAvatar: Bool
 
     let playingMessageId: String?
     let playbackProgress: Double
     let onPlayAudio: (String, CoachChatAudioPayload) -> Void
+    let onTapReply: (String) -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -126,6 +142,14 @@ struct CoachChatMessageBubble: View {
             }
 
             VStack(alignment: isUser ? .trailing : .leading, spacing: 6) {
+                if let replyMessage {
+                    CoachChatReplyPreview(
+                        message: replyMessage,
+                        isUser: isUser,
+                        onTap: { onTapReply(replyMessage.id) }
+                    )
+                }
+
                 if let audioPayload {
                     AudioMessageBubble(
                         payload: audioPayload,
@@ -211,6 +235,39 @@ struct CoachChatTypingIndicator: View {
     }
 }
 
+private struct CoachChatReplyPreview: View {
+    let message: CoachThreadMessage
+    let isUser: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        let titleColor = isUser ? AppTheme.textOnAccent.opacity(0.75) : AppTheme.textSecondary
+        let textColor = isUser ? AppTheme.textOnAccent.opacity(0.9) : AppTheme.textPrimary
+        let background = isUser ? AppTheme.textOnAccent.opacity(0.12) : AppTheme.surface
+        let stroke = isUser ? AppTheme.textOnAccent.opacity(0.2) : AppTheme.divider
+
+        return VStack(alignment: .leading, spacing: 4) {
+            Text(message.replyAuthorLabel)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(titleColor)
+            Text(message.replyPreviewText)
+                .font(.caption)
+                .foregroundStyle(textColor)
+                .lineLimit(2)
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 8)
+        .background(background)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(stroke, lineWidth: 1)
+        )
+        .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .onTapGesture(perform: onTap)
+    }
+}
+
 private struct CoachChatImageBubble: View {
     let payload: CoachChatImagePayload
     let isUser: Bool
@@ -256,5 +313,37 @@ private struct CoachChatImageBubble: View {
         let ratio = payload.width > 0 && payload.height > 0 ? payload.height / payload.width : 0.75
         let height = max(120, width * ratio)
         return CGSize(width: width, height: height)
+    }
+}
+
+extension CoachThreadMessage {
+    var replyAuthorLabel: String {
+        switch role {
+        case .assistant:
+            return "王校长"
+        case .user:
+            return "我"
+        case .tool:
+            return "系统"
+        }
+    }
+
+    var replyPreviewText: String {
+        let trimmed = content.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if CoachChatAudioPayload.parse(from: trimmed) != nil {
+            return "语音消息"
+        }
+        if let imagePayload = CoachChatImagePayload.parse(from: trimmed) {
+            let caption = imagePayload.caption?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return caption.isEmpty ? "图片" : "图片：\(caption)"
+        }
+        if trimmed.isEmpty {
+            return "（空消息）"
+        }
+        let maxChars = 80
+        if trimmed.count > maxChars {
+            return String(trimmed.prefix(maxChars)) + "…"
+        }
+        return trimmed
     }
 }
