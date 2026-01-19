@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import CoreText
 import StudentCore
 
 struct CoachChatMessageRow: View {
@@ -299,35 +300,39 @@ private struct CoachChatBubbleText: View {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return 0 }
 
+        // Decouple bubble sizing from auto-wrapping.
+        // - If the whole message fits on one line (under maxWidth), shrink bubble to that width.
+        // - If it doesn't fit, use maxWidth and let the renderer decide wrapping.
+        // This avoids a feedback loop where a slightly-too-small width causes an extra wrap,
+        // which then makes the bubble even narrower ("too hard" -> "too\nhard" -> word-per-line).
         let font = UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineBreakMode = .byWordWrapping
-        paragraphStyle.alignment = .left
-
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .paragraphStyle: paragraphStyle
+            .font: font
         ]
-        let attributed = NSAttributedString(string: trimmed, attributes: attributes)
 
-        let textStorage = NSTextStorage(attributedString: attributed)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(
-            size: CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
-        )
-        textContainer.lineFragmentPadding = 0
-        textContainer.lineBreakMode = .byWordWrapping
-
-        layoutManager.addTextContainer(textContainer)
-        textStorage.addLayoutManager(layoutManager)
-
-        let glyphRange = layoutManager.glyphRange(for: textContainer)
-        var maxLineWidth: CGFloat = 0
-        layoutManager.enumerateLineFragments(forGlyphRange: glyphRange) { _, usedRect, _, _, _ in
-            maxLineWidth = max(maxLineWidth, usedRect.width)
+        let scale = UIScreen.main.scale
+        func roundUpToPixel(_ value: CGFloat) -> CGFloat {
+            ceil(value * scale) / scale
         }
 
-        return ceil(maxLineWidth + 4)
+        let explicitLines = trimmed.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+        var maxExplicitLineWidth: CGFloat = 0
+
+        for lineSub in explicitLines {
+            let line = String(lineSub)
+            let attributed = NSAttributedString(string: line, attributes: attributes)
+            let ctLine = CTLineCreateWithAttributedString(attributed)
+            let width = CTLineGetTypographicBounds(ctLine, nil, nil, nil)
+            let trailing = CTLineGetTrailingWhitespaceWidth(ctLine)
+            maxExplicitLineWidth = max(maxExplicitLineWidth, max(0, CGFloat(width) - trailing))
+        }
+
+        if maxExplicitLineWidth >= maxWidth {
+            return maxWidth
+        }
+
+        // Tiny safety padding to avoid accidental wraps from fractional metrics.
+        return roundUpToPixel(maxExplicitLineWidth + 2)
     }
 
     private var uiFontWeight: UIFont.Weight {
