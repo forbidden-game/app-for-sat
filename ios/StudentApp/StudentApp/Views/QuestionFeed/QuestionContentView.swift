@@ -398,7 +398,6 @@ struct QuestionContentView: View {
         return questionTitle(for: question)
     }
 
-    @ViewBuilder
     private func answerStatusPill(for question: Question) -> some View {
         let raw = store[question.id]?.displayString ?? ""
         let isAnswered = !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -449,25 +448,27 @@ struct QuestionContentView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .accessibilityIdentifier("question_status_\(question.id)")
 
-        if case .failed = status, isAnswered {
-            Button {
-                let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { return }
-                submission.submit(
-                    question: question,
-                    answer: trimmed,
-                    questionId: question.id,
-                    onSuccess: { _ in },
-                    onFailure: { error in
-                        onSubmissionError(error)
-                    }
-                )
-            } label: {
+        return Group {
+            if case .failed = status, isAnswered {
+                Button {
+                    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    submission.submit(
+                        question: question,
+                        answer: trimmed,
+                        questionId: question.id,
+                        onSuccess: { _ in },
+                        onFailure: { error in
+                            onSubmissionError(error)
+                        }
+                    )
+                } label: {
+                    pill
+                }
+                .buttonStyle(.plain)
+            } else {
                 pill
             }
-            .buttonStyle(.plain)
-        } else {
-            pill
         }
     }
 
