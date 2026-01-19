@@ -16,9 +16,18 @@ enum QuestionBodyLayout: Equatable {
 final class QuestionLayoutEngine {
     static let shared = QuestionLayoutEngine()
 
-    private var cache: [QuestionLayoutKey: QuestionBodyLayout] = [:]
+    private let cache = NSCache<NSString, QuestionLayoutBox>()
 
-    private init() {}
+    private init() {
+        cache.countLimit = 120
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.cache.removeAllObjects()
+        }
+    }
 
     func layout(
         question: Question,
@@ -37,8 +46,8 @@ final class QuestionLayoutEngine {
             heightBucket: Int(height.rounded(.up)),
             scheme: colorScheme == .dark ? "dark" : "light",
             scaleBucket: String(format: "%.2f", displayScale)
-        )
-        if let cached = cache[key] {
+        ).cacheKey
+        if let cached = cache.object(forKey: key as NSString)?.value {
             return cached
         }
 
@@ -64,7 +73,7 @@ final class QuestionLayoutEngine {
         let totalHeight = stemCardHeight + answerHeight + AppMetrics.sectionSpacing
         if totalHeight <= height {
             let layout: QuestionBodyLayout = .short
-            cache[key] = layout
+            cache.setObject(QuestionLayoutBox(layout), forKey: key as NSString)
             return layout
         }
 
@@ -86,7 +95,7 @@ final class QuestionLayoutEngine {
             textColorHex: textColorHex
         )
         let layout: QuestionBodyLayout = .long(stemPages: stemPages, answerPages: answerPages)
-        cache[key] = layout
+        cache.setObject(QuestionLayoutBox(layout), forKey: key as NSString)
         return layout
     }
 
@@ -292,4 +301,22 @@ private struct QuestionLayoutKey: Hashable {
     let heightBucket: Int
     let scheme: String
     let scaleBucket: String
+
+    var cacheKey: String {
+        [
+            questionId,
+            String(widthBucket),
+            String(heightBucket),
+            scheme,
+            scaleBucket
+        ].joined(separator: "|")
+    }
+}
+
+private final class QuestionLayoutBox: NSObject {
+    let value: QuestionBodyLayout
+
+    init(_ value: QuestionBodyLayout) {
+        self.value = value
+    }
 }
