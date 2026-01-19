@@ -292,38 +292,19 @@ private struct CoachChatBubbleText: View {
     }
 
     private var bubbleWidth: CGFloat {
-        min(textLayoutWidth, maxWidth)
+        min(explicitLineWidth, maxWidth)
     }
 
-    private var textLayoutWidth: CGFloat {
+    private var explicitLineWidth: CGFloat {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return 0 }
 
         let font = UIFont.systemFont(ofSize: style.fontSize, weight: uiFontWeight)
-        let paragraphStyle = NSMutableParagraphStyle()
-        paragraphStyle.lineBreakMode = .byWordWrapping
-        paragraphStyle.alignment = .left
-
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .paragraphStyle: paragraphStyle
-        ]
-        let attributed = NSAttributedString(string: trimmed, attributes: attributes)
-
-        let textStorage = NSTextStorage(attributedString: attributed)
-        let layoutManager = NSLayoutManager()
-        let textContainer = NSTextContainer(
-            size: CGSize(width: maxWidth, height: .greatestFiniteMagnitude)
-        )
-        textContainer.lineFragmentPadding = 0
-        textContainer.lineBreakMode = .byWordWrapping
-
-        layoutManager.addTextContainer(textContainer)
-        textStorage.addLayoutManager(layoutManager)
-        layoutManager.glyphRange(for: textContainer)
-
-        let rect = layoutManager.usedRect(for: textContainer)
-        return ceil(rect.width)
+        let lines = trimmed.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
+        let widths = lines.map { line -> CGFloat in
+            (String(line) as NSString).size(withAttributes: [.font: font]).width
+        }
+        return ceil((widths.max() ?? 0) + 1)
     }
 
     private var uiFontWeight: UIFont.Weight {
