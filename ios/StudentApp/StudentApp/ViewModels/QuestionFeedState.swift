@@ -11,6 +11,7 @@ final class QuestionFeedState: ObservableObject {
     private var stemPageByQuestionId: [String: Int] = [:]
     private var stemPageCountByQuestionId: [String: Int] = [:]
     private var stemSwipeHintSeenQuestionIds: Set<String> = []
+    private var draftFreeResponseByQuestionId: [String: String] = [:]
 
     init(initialIndex: Int = 0) {
         currentIndex = initialIndex
@@ -36,8 +37,12 @@ final class QuestionFeedState: ObservableObject {
 
     func resetInput(for questionId: String, from store: AnswerStore, isMultipleChoice: Bool) {
         var next = QuestionInputState()
-        if !isMultipleChoice, let answer = store[questionId] {
-            next.freeResponse = answer.displayString
+        if !isMultipleChoice {
+            if let answer = store[questionId] {
+                next.freeResponse = answer.displayString
+            } else if let draft = draftFreeResponseByQuestionId[questionId] {
+                next.freeResponse = draft
+            }
         }
         inputState = next
         autoAdvanceState = AutoAdvanceState()
@@ -56,10 +61,21 @@ final class QuestionFeedState: ObservableObject {
         inputState = next
     }
 
-    func updateFreeResponse(_ value: String) {
+    func updateFreeResponse(_ value: String, questionId: String) {
         var next = inputState
         next.freeResponse = value
         inputState = next
+
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            draftFreeResponseByQuestionId.removeValue(forKey: questionId)
+        } else {
+            draftFreeResponseByQuestionId[questionId] = value
+        }
+    }
+
+    func clearDraft(for questionId: String) {
+        draftFreeResponseByQuestionId.removeValue(forKey: questionId)
     }
 
     func setFocus(_ focused: Bool) {

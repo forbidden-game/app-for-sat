@@ -6,9 +6,10 @@ struct QuestionContentView: View {
     let question: Question
     let index: Int
     let total: Int
+    let questionProvider: (Int) -> Question?
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
-    let submission: AnswerSubmissionCoordinator
+    @ObservedObject var submission: AnswerSubmissionCoordinator
     @Binding var returnToOverviewOnAnswer: Bool
     let headerTitle: String?
     let onBack: () -> Void
@@ -22,6 +23,7 @@ struct QuestionContentView: View {
     @State private var layout: QuestionBodyLayout = .short
     @State private var layoutReady = false
     @State private var layoutTask: Task<Void, Never>?
+    @State private var prefetchTask: Task<Void, Never>?
     @State private var layoutSignature: LayoutSignature?
     @State private var lastLayoutSize: CGSize = .zero
 
@@ -65,6 +67,8 @@ struct QuestionContentView: View {
         .onDisappear {
             layoutTask?.cancel()
             layoutTask = nil
+            prefetchTask?.cancel()
+            prefetchTask = nil
         }
     }
 
@@ -211,6 +215,8 @@ struct QuestionContentView: View {
     private func resetLayout() {
         layoutTask?.cancel()
         layoutTask = nil
+        prefetchTask?.cancel()
+        prefetchTask = nil
         layoutReady = false
         layoutSignature = nil
         if lastLayoutSize != .zero {
@@ -230,9 +236,23 @@ struct QuestionContentView: View {
         guard signature != layoutSignature else { return }
         layoutSignature = signature
         lastLayoutSize = size
-        layoutReady = false
 
         layoutTask?.cancel()
+        layoutTask = nil
+
+        if let cached = QuestionLayoutEngine.shared.cachedLayout(
+            question: question,
+            size: size,
+            colorScheme: colorScheme,
+            displayScale: displayScale
+        ) {
+            applyLayout(cached)
+            schedulePrefetchNeighbors(size: size)
+            return
+        }
+
+        layoutReady = false
+
         layoutTask = Task {
             let result = await QuestionLayoutEngine.shared.layout(
                 question: question,
@@ -243,21 +263,48 @@ struct QuestionContentView: View {
             )
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                layout = result
-                layoutReady = true
-                if case .long(let stemPages, let answerPages) = result {
-                    let pageCount = stemPages.count + answerPages.count
-                    state.setStemPageCount(pageCount, for: question.id)
-                    let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
-                    if clamped != state.stemPage(for: question.id) {
-                        state.setStemPage(clamped, for: question.id)
-                    }
-                } else {
-                    state.setStemPageCount(1, for: question.id)
-                    state.setStemPage(0, for: question.id)
-                }
+                applyLayout(result)
+                schedulePrefetchNeighbors(size: size)
             }
         }
+    }
+
+    private func applyLayout(_ result: QuestionBodyLayout) {
+        layout = result
+        layoutReady = true
+        if case .long(let stemPages, let answerPages) = result {
+            let pageCount = stemPages.count + answerPages.count
+            state.setStemPageCount(pageCount, for: question.id)
+            let clamped = clampPageIndex(state.stemPage(for: question.id), pageCount: pageCount)
+            if clamped != state.stemPage(for: question.id) {
+                state.setStemPage(clamped, for: question.id)
+            }
+        } else {
+            state.setStemPageCount(1, for: question.id)
+            state.setStemPage(0, for: question.id)
+        }
+    }
+
+    private func schedulePrefetchNeighbors(size: CGSize) {
+        guard index == state.currentIndex else { return }
+        prefetchTask?.cancel()
+        prefetchTask = Task {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            guard !Task.isCancelled else { return }
+            await prefetchNeighbor(at: index - 1, size: size)
+            await prefetchNeighbor(at: index + 1, size: size)
+        }
+    }
+
+    private func prefetchNeighbor(at index: Int, size: CGSize) async {
+        guard let neighbor = questionProvider(index) else { return }
+        await QuestionLayoutEngine.shared.prefetch(
+            question: neighbor,
+            size: size,
+            colorScheme: colorScheme,
+            displayScale: displayScale,
+            textColor: AppTheme.textPrimary
+        )
     }
 
     // MARK: - Header
@@ -284,6 +331,7 @@ struct QuestionContentView: View {
                         )
                     }
                     .buttonStyle(.plain)
+                    .accessibilityIdentifier("question_back_\(question.id)")
 
                     Spacer()
 
@@ -298,15 +346,18 @@ struct QuestionContentView: View {
                             Capsule()
                                 .stroke(AppTheme.divider, lineWidth: 1)
                         )
+                        .accessibilityIdentifier("question_index_\(question.id)")
                 }
 
                 Text(resolvedHeaderTitle(for: question))
                     .font(.callout.weight(.semibold))
                     .foregroundStyle(AppTheme.textPrimary)
+                    .accessibilityIdentifier("question_title_\(question.id)")
             }
 
             ProgressView(value: progress)
                 .tint(AppTheme.accent)
+                .accessibilityIdentifier("question_progress_\(question.id)")
 
             answerStatusPill(for: question)
         }
@@ -350,13 +401,36 @@ struct QuestionContentView: View {
     private func answerStatusPill(for question: Question) -> some View {
         let raw = store[question.id]?.displayString ?? ""
         let isAnswered = !raw.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        let title = isAnswered ? "Answered · Editable" : "Not answered"
-        let icon = isAnswered ? "checkmark.seal.fill" : "circle"
-        let fill = isAnswered ? AppTheme.accentSoft : AppTheme.surfaceRaised
-        let stroke = isAnswered ? AppTheme.accentStrong : AppTheme.divider
-        let textColor = isAnswered ? AppTheme.accentStrong : AppTheme.textMuted
+        let status = isAnswered ? submission.status(for: question.id) : .idle
 
-        return HStack(spacing: 6) {
+        let title: String
+        let icon: String
+        let fill: Color
+        let stroke: Color
+        let textColor: Color
+
+        switch status {
+        case .submitting:
+            title = "Saving..."
+            icon = "arrow.triangle.2.circlepath"
+            fill = AppTheme.accentSoft
+            stroke = AppTheme.accentStrong
+            textColor = AppTheme.accentStrong
+        case .failed:
+            title = "Failed · Tap to retry"
+            icon = "exclamationmark.triangle.fill"
+            fill = AppTheme.statusDanger.opacity(0.15)
+            stroke = AppTheme.statusDanger
+            textColor = AppTheme.statusDanger
+        case .idle:
+            title = isAnswered ? "Answered · Editable" : "Not answered"
+            icon = isAnswered ? "checkmark.seal.fill" : "circle"
+            fill = isAnswered ? AppTheme.accentSoft : AppTheme.surfaceRaised
+            stroke = isAnswered ? AppTheme.accentStrong : AppTheme.divider
+            textColor = isAnswered ? AppTheme.accentStrong : AppTheme.textMuted
+        }
+
+        let pill = HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.caption.weight(.semibold))
             Text(title)
@@ -372,6 +446,30 @@ struct QuestionContentView: View {
                 .stroke(stroke, lineWidth: 1)
         )
         .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityIdentifier("question_status_\(question.id)")
+
+        return Group {
+            if case .failed = status, isAnswered {
+                Button {
+                    let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !trimmed.isEmpty else { return }
+                    submission.submit(
+                        question: question,
+                        answer: trimmed,
+                        questionId: question.id,
+                        onSuccess: { _ in },
+                        onFailure: { error in
+                            onSubmissionError(error)
+                        }
+                    )
+                } label: {
+                    pill
+                }
+                .buttonStyle(.plain)
+            } else {
+                pill
+            }
+        }
     }
 
 }

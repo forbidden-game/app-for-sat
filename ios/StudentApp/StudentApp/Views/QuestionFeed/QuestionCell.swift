@@ -16,6 +16,7 @@ struct QuestionCellConfiguration {
     let onBack: () -> Void
     let onShowOverview: () -> Void
     let onSubmissionError: (Error) -> Void
+    let questionProvider: (Int) -> Question?
 }
 
 final class QuestionCell: UICollectionViewCell {
@@ -51,6 +52,7 @@ final class QuestionCell: UICollectionViewCell {
                     question: question,
                     index: config.index,
                     total: config.total,
+                    questionProvider: config.questionProvider,
                     state: config.state,
                     store: config.store,
                     submission: config.submission,

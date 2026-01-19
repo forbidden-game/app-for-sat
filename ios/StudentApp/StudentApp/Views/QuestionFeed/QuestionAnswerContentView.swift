@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 import StudentCore
@@ -142,6 +143,7 @@ struct QuestionAnswerContentView: View {
             .scaleEffect(isFeedback ? 0.98 : 1.0)
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("question_option_\(questionId)_\(option.label)")
         .disabled(!isCurrentQuestion)
     }
 
@@ -166,8 +168,25 @@ struct QuestionAnswerContentView: View {
                         commitFreeResponse(questionId: questionId)
                     }
                 }
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Button("Done") {
+                            state.setFocus(false)
+                        }
+                        Spacer()
+                        Button("Next") {
+                            if isCurrentQuestion {
+                                commitFreeResponse(questionId: questionId)
+                            } else {
+                                state.setFocus(false)
+                            }
+                        }
+                        .disabled(!isCurrentQuestion)
+                    }
+                }
                 .foregroundStyle(isEnabled ? AppTheme.textPrimary : AppTheme.textMuted)
                 .disabled(!isCurrentQuestion)
+                .accessibilityIdentifier("question_free_response_\(questionId)")
         }
         .padding(.vertical, AppMetrics.fieldPaddingVertical)
         .padding(.horizontal, AppMetrics.fieldPaddingHorizontal)
@@ -186,7 +205,7 @@ struct QuestionAnswerContentView: View {
             set: { newValue in
                 guard isCurrentQuestion else { return }
                 localFreeResponse = newValue
-                state.updateFreeResponse(newValue)
+                state.updateFreeResponse(newValue, questionId: question.id)
             }
         )
     }
@@ -206,6 +225,7 @@ struct QuestionAnswerContentView: View {
 
     private func recordAnswer(_ value: String, questionId: String) {
         store[questionId] = .string(value)
+        state.clearDraft(for: questionId)
     }
 
     private func submitAnswer(questionId: String, answer: String) {

@@ -16,9 +16,71 @@ enum QuestionBodyLayout: Equatable {
 final class QuestionLayoutEngine {
     static let shared = QuestionLayoutEngine()
 
-    private var cache: [QuestionLayoutKey: QuestionBodyLayout] = [:]
+    private let cache = NSCache<NSString, QuestionLayoutBox>()
 
-    private init() {}
+    private init() {
+        cache.countLimit = 120
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.cache.removeAllObjects()
+        }
+    }
+
+    private func cacheKey(
+        questionId: String,
+        width: CGFloat,
+        height: CGFloat,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat
+    ) -> String {
+        QuestionLayoutKey(
+            questionId: questionId,
+            widthBucket: Int(width.rounded(.up)),
+            heightBucket: Int(height.rounded(.up)),
+            scheme: colorScheme == .dark ? "dark" : "light",
+            scaleBucket: String(format: "%.2f", displayScale)
+        ).cacheKey
+    }
+
+    func cachedLayout(
+        question: Question,
+        size: CGSize,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat
+    ) -> QuestionBodyLayout? {
+        let width = max(1, size.width)
+        let height = max(1, size.height)
+        let key = cacheKey(
+            questionId: question.id,
+            width: width,
+            height: height,
+            colorScheme: colorScheme,
+            displayScale: displayScale
+        )
+        return cache.object(forKey: key as NSString)?.value
+    }
+
+    func prefetch(
+        question: Question,
+        size: CGSize,
+        colorScheme: ColorScheme,
+        displayScale: CGFloat,
+        textColor: Color
+    ) async {
+        if cachedLayout(question: question, size: size, colorScheme: colorScheme, displayScale: displayScale) != nil {
+            return
+        }
+        _ = await layout(
+            question: question,
+            size: size,
+            colorScheme: colorScheme,
+            displayScale: displayScale,
+            textColor: textColor
+        )
+    }
 
     func layout(
         question: Question,
@@ -27,16 +89,18 @@ final class QuestionLayoutEngine {
         displayScale: CGFloat,
         textColor: Color
     ) async -> QuestionBodyLayout {
+        let signpostId = PerformanceSignpost.begin("QuestionLayout")
+        defer { PerformanceSignpost.end("QuestionLayout", id: signpostId) }
         let width = max(1, size.width)
         let height = max(1, size.height)
-        let key = QuestionLayoutKey(
+        let key = cacheKey(
             questionId: question.id,
-            widthBucket: Int(width.rounded(.up)),
-            heightBucket: Int(height.rounded(.up)),
-            scheme: colorScheme == .dark ? "dark" : "light",
-            scaleBucket: String(format: "%.2f", displayScale)
+            width: width,
+            height: height,
+            colorScheme: colorScheme,
+            displayScale: displayScale
         )
-        if let cached = cache[key] {
+        if let cached = cache.object(forKey: key as NSString)?.value {
             return cached
         }
 
@@ -62,7 +126,7 @@ final class QuestionLayoutEngine {
         let totalHeight = stemCardHeight + answerHeight + AppMetrics.sectionSpacing
         if totalHeight <= height {
             let layout: QuestionBodyLayout = .short
-            cache[key] = layout
+            cache.setObject(QuestionLayoutBox(layout), forKey: key as NSString)
             return layout
         }
 
@@ -84,7 +148,7 @@ final class QuestionLayoutEngine {
             textColorHex: textColorHex
         )
         let layout: QuestionBodyLayout = .long(stemPages: stemPages, answerPages: answerPages)
-        cache[key] = layout
+        cache.setObject(QuestionLayoutBox(layout), forKey: key as NSString)
         return layout
     }
 
@@ -290,4 +354,22 @@ private struct QuestionLayoutKey: Hashable {
     let heightBucket: Int
     let scheme: String
     let scaleBucket: String
+
+    var cacheKey: String {
+        [
+            questionId,
+            String(widthBucket),
+            String(heightBucket),
+            scheme,
+            scaleBucket
+        ].joined(separator: "|")
+    }
+}
+
+private final class QuestionLayoutBox: NSObject {
+    let value: QuestionBodyLayout
+
+    init(_ value: QuestionBodyLayout) {
+        self.value = value
+    }
 }
