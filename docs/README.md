@@ -13,10 +13,7 @@ read_when: adding or updating docs, changing doc conventions
 docs/
   README.md               # 本文档索引与规范
   project-overview.md     # 产品与系统总览
-  ai-coach-flow.md        # AI Coach 后端流程草案
   ai-coach/README.md      # AI Coach 入口（指向 ai-coach/docs）
-  ios/ios-app-overview.md # iOS 学生端概览
-  ios/question-feed-refactor-plan.md # Question Feed refactor plan
 ```
 
 跨目录文档入口：

@@ -67,7 +67,6 @@ read_when: changing core flows, submission, or backend data consistency
 ```text
 .
   docs/
-    plans/
   ios/
     StudentApp/
     StudentCore/
