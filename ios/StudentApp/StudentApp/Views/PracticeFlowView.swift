@@ -8,11 +8,10 @@ struct PracticeFlowView: View {
     @StateObject private var answerStore: InMemoryAnswerStore
     @StateObject private var flowModel: PracticeFlowViewModel
     @State private var returnToOverviewOnAnswer = false
-    let headerTitle: String?
     let onExit: () -> Void
     private let submissionCoordinator: AnswerSubmissionCoordinator
 
-    init(session: PracticeSession, sessionId: String, studentId: String, headerTitle: String?, onExit: @escaping () -> Void) {
+    init(session: PracticeSession, sessionId: String, studentId: String, onExit: @escaping () -> Void) {
         self.session = session
         self.studentId = studentId
         let flow = PracticeFlowViewModel(session: session, sessionId: sessionId)
@@ -20,7 +19,6 @@ struct PracticeFlowView: View {
         _feedState = StateObject(wrappedValue: QuestionFeedState(initialIndex: 0))
         _answerStore = StateObject(wrappedValue: InMemoryAnswerStore())
         submissionCoordinator = AnswerSubmissionCoordinator(submitter: flow)
-        self.headerTitle = headerTitle
         self.onExit = onExit
     }
 
@@ -34,7 +32,6 @@ struct PracticeFlowView: View {
                     store: answerStore,
                     submission: submissionCoordinator,
                     returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
-                    headerTitle: headerTitle,
                     onBack: onExit,
                     onShowOverview: {
                         flowModel.flowState = .overview

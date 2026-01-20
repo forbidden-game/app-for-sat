@@ -4,24 +4,32 @@ import StudentCore
 struct CoachReportsView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm: CoachReportsViewModel
+    let showsHeader: Bool
 
-    init(studentId: String) {
+    init(studentId: String, showsHeader: Bool = true) {
         _vm = StateObject(wrappedValue: CoachReportsViewModel(studentId: studentId))
+        self.showsHeader = showsHeader
     }
 
     var body: some View {
         ZStack {
-            AppTheme.backgroundGradient
-                .ignoresSafeArea()
+            if showsHeader {
+                AppTheme.backgroundGradient
+                    .ignoresSafeArea()
+            } else {
+                Color.clear
+            }
 
             VStack(spacing: 12) {
-                header
+                if showsHeader {
+                    header
+                }
 
                 kindPicker
 
                 content
             }
-            .padding(.top, 12)
+            .padding(.top, showsHeader ? 12 : 0)
             .padding(.bottom, 12)
         }
         .task {

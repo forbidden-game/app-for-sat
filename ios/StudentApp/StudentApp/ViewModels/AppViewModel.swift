@@ -10,6 +10,7 @@ final class AppViewModel: ObservableObject {
     @Published var selectedBank: QuestionBank?
     @Published var banks: [QuestionBank] = []
     @Published var isLoading = false
+    @Published var isStartingRecommended = false
     @Published var errorMessage: String?
 
     private let authService: AuthService
@@ -51,6 +52,7 @@ final class AppViewModel: ObservableObject {
             sessionId = nil
             selectedBank = nil
             banks = []
+            isStartingRecommended = false
         } catch {
             errorMessage = UserFacingError.message(error)
         }
@@ -120,5 +122,23 @@ final class AppViewModel: ObservableObject {
             selectedBank = nil
         }
         isLoading = false
+    }
+
+    func startRecommendedSession() async {
+        guard !isStartingRecommended else { return }
+        isStartingRecommended = true
+        errorMessage = nil
+        selectedBank = nil
+        session = nil
+        sessionId = nil
+        do {
+            let result = try await practiceService.startRecommendedPracticeSession()
+            session = result.session
+            sessionId = result.session.id
+            selectedBank = result.bank
+        } catch {
+            errorMessage = UserFacingError.message(error)
+        }
+        isStartingRecommended = false
     }
 }
