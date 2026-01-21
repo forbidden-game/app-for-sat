@@ -83,21 +83,23 @@ export async function publishAiPromptConfig(
     throw new Error("Failed to archive existing config.");
   }
 
+  const insertPayload = {
+    kind: input.kind,
+    prompt_version: promptVersion,
+    system_prompt: systemPrompt,
+    model_provider: input.model_provider,
+    model_id: modelId,
+    status: "published",
+    notes: input.notes ?? null,
+    created_by: context.admin.id,
+    created_at: now,
+    updated_at: now,
+    published_at: now,
+  } as unknown as never;
+
   const { data, error } = await context.supabase
     .from("ai_prompt_configs")
-    .insert({
-      kind: input.kind,
-      prompt_version: promptVersion,
-      system_prompt: systemPrompt,
-      model_provider: input.model_provider,
-      model_id: modelId,
-      status: "published",
-      notes: input.notes ?? null,
-      created_by: context.admin.id,
-      created_at: now,
-      updated_at: now,
-      published_at: now,
-    })
+    .insert(insertPayload)
     .select(
       "id, kind, prompt_version, system_prompt, model_provider, model_id, status, created_at, updated_at, published_at",
     )
