@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
@@ -48,6 +48,11 @@ export default function BankQuestionsPage() {
   });
   const [hasSearched, setHasSearched] = useState(false);
 
+  const existingQuestionIds = useMemo(
+    () => new Set(questions.map((q) => q.question_id)),
+    [questions],
+  );
+
   const loadData = useCallback(async () => {
     if (!supabase) return;
 
@@ -85,6 +90,8 @@ export default function BankQuestionsPage() {
     "position",
     "asc",
   );
+  const isPositionSort =
+    bankQuestionSortConfig.column === "position" && bankQuestionSortConfig.direction === "asc";
 
   useEffect(() => {
     setSearchQuery(searchParams.get("q") ?? "");
@@ -136,7 +143,8 @@ export default function BankQuestionsPage() {
         search: searchQuery,
         subject: searchSubject,
       });
-      setSearchResults(results);
+      const filtered = results.filter((item) => !existingQuestionIds.has(item.id));
+      setSearchResults(filtered);
     } catch {
       setSearchResults([]);
     } finally {
@@ -184,15 +192,15 @@ export default function BankQuestionsPage() {
   }
 
   async function handleMoveUp(index: number) {
-    if (index <= 0) return;
-    const newQuestions = [...questions];
+    if (!isPositionSort || index <= 0) return;
+    const newQuestions = [...sortedBankQuestions];
     [newQuestions[index - 1], newQuestions[index]] = [newQuestions[index], newQuestions[index - 1]];
     await saveOrder(newQuestions);
   }
 
   async function handleMoveDown(index: number) {
-    if (index >= questions.length - 1) return;
-    const newQuestions = [...questions];
+    if (!isPositionSort || index >= sortedBankQuestions.length - 1) return;
+    const newQuestions = [...sortedBankQuestions];
     [newQuestions[index], newQuestions[index + 1]] = [newQuestions[index + 1], newQuestions[index]];
     await saveOrder(newQuestions);
   }
@@ -447,7 +455,7 @@ export default function BankQuestionsPage() {
                     <button
                       type="button"
                       onClick={() => handleMoveUp(index)}
-                      disabled={index === 0 || saving}
+                      disabled={!isPositionSort || index === 0 || saving}
                       className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
                       aria-label="Move question up"
                     >
@@ -456,7 +464,7 @@ export default function BankQuestionsPage() {
                     <button
                       type="button"
                       onClick={() => handleMoveDown(index)}
-                      disabled={index === sortedBankQuestions.length - 1 || saving}
+                      disabled={!isPositionSort || index === sortedBankQuestions.length - 1 || saving}
                       className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
                       aria-label="Move question down"
                     >
