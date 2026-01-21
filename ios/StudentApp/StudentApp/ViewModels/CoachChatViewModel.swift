@@ -13,6 +13,8 @@ final class CoachChatViewModel: ObservableObject {
     private let service: SupabaseCoachService
     private var pollingTask: Task<Void, Never>?
     private var remoteMessages: [CoachThreadMessage] = []
+    private var lastSendFingerprint: String?
+    private var lastSendAt: Date = .distantPast
 
     init(
         studentId: String,
@@ -66,25 +68,24 @@ final class CoachChatViewModel: ObservableObject {
         let text = draftText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return false }
 
+        let fingerprint = [text, linkedAttemptId ?? "", replyToMessageId ?? ""].joined(separator: "|")
+        if fingerprint == lastSendFingerprint, Date().timeIntervalSince(lastSendAt) < 1.0 {
+            return false
+        }
+
+        lastSendFingerprint = fingerprint
+        lastSendAt = Date()
+
         isSending = true
         errorMessage = nil
         defer { isSending = false }
 
         do {
-            let messageId = try await service.sendMessage(
+            _ = try await service.sendMessage(
                 text: text,
                 linkedAttemptId: linkedAttemptId,
                 replyToMessageId: replyToMessageId
             )
-            let newMessage = CoachThreadMessage(
-                id: messageId,
-                role: .user,
-                content: CoachMessageContent(text: text, status: "sending"),
-                linkedAttemptId: linkedAttemptId,
-                replyToMessageId: replyToMessageId,
-                createdAt: Date()
-            )
-            upsertMessage(newMessage)
             draftText = ""
             return true
         } catch {
@@ -94,18 +95,6 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     private func upsertMessage(_ msg: CoachThreadMessage) {
-        if msg.role == .user {
-            if let pendingIndex = remoteMessages.firstIndex(where: { candidate in
-                candidate.role == .user
-                    && candidate.content.status == "sending"
-                    && candidate.content.text == msg.content.text
-                    && candidate.linkedAttemptId == msg.linkedAttemptId
-                    && candidate.replyToMessageId == msg.replyToMessageId
-            }) {
-                remoteMessages.remove(at: pendingIndex)
-            }
-        }
-
         if let idx = remoteMessages.firstIndex(where: { $0.id == msg.id }) {
             remoteMessages[idx] = msg
         } else {
