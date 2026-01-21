@@ -8,6 +8,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { DebugPanel } from "./DebugPanel";
 import { listAiAgentLogs, type AiAgentLog } from "./actions";
 import { formatDateTime, maskPII, serializeJson } from "./ai-log-utils";
+import { useSortable } from "@/hooks/useSortable";
 
 function toRecord(value: unknown): Record<string, unknown> | null {
   if (typeof value === "object" && value !== null) return value as Record<string, unknown>;
@@ -111,6 +112,13 @@ export default function AiLogsWorkbench({
     });
   }, [logs, kindFilter, statusFilter, providerFilter, query]);
 
+  // Sortable hook for logs table
+  const { sortedData: sortedLogs, handleSort: handleLogSort, sortConfig: logSortConfig } = useSortable(
+    filteredLogs,
+    "created_at",
+    "desc",
+  );
+
   useEffect(() => {
     const nextParams = new URLSearchParams(searchParams);
     if (query) {
@@ -160,13 +168,13 @@ export default function AiLogsWorkbench({
     }
     const stillVisible = filteredLogs.some((log) => log.id === selectedId);
     if (!stillVisible) {
-      setSelectedId(filteredLogs[0].id);
+      setSelectedId(sortedLogs[0].id);
     }
-  }, [filteredLogs, selectedId]);
+  }, [sortedLogs, selectedId]);
 
   const selectedLog = useMemo(() => {
-    return filteredLogs.find((log) => log.id === selectedId) ?? null;
-  }, [filteredLogs, selectedId]);
+    return sortedLogs.find((log) => log.id === selectedId) ?? null;
+  }, [sortedLogs, selectedId]);
 
   const previousSuccessLog = useMemo(() => {
     if (!selectedLog) return null;
@@ -215,7 +223,7 @@ export default function AiLogsWorkbench({
             Live
           </span>
           <span>
-            {filteredLogs.length} / {logs.length} sessions
+            {sortedLogs.length} / {logs.length} sessions
           </span>
         </div>
       </header>
@@ -298,7 +306,7 @@ export default function AiLogsWorkbench({
           </div>
           <div className="flex items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
             <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1">
-              {filteredLogs.length} visible
+              {sortedLogs.length} visible
             </span>
           </div>
         </section>
@@ -307,18 +315,43 @@ export default function AiLogsWorkbench({
           <aside className="flex min-w-0 flex-col gap-3 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
             <div className="flex items-center justify-between text-xs font-medium text-[color:var(--ink-muted)]">
               <span>Sessions</span>
-              <span>{filteredLogs.length}</span>
+              <span>{sortedLogs.length}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-1.5 text-xs text-[color:var(--ink)]"
+                value={logSortConfig.column ? String(logSortConfig.column) : ""}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleLogSort(e.target.value as keyof AiAgentLog);
+                  }
+                }}
+              >
+                <option value="">Sort by…</option>
+                <option value="created_at">Date</option>
+                <option value="kind">Kind</option>
+                <option value="status">Status</option>
+                <option value="model_provider">Provider</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => handleLogSort("created_at")}
+                className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-1.5 text-xs text-[color:var(--ink-muted)]"
+                title={logSortConfig.direction === "asc" ? "Ascending" : "Descending"}
+              >
+                {logSortConfig.direction === "asc" ? "▲" : "▼"}
+              </button>
             </div>
             <div
               className="flex-1 space-y-2 overflow-auto pr-1"
               style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
             >
-              {filteredLogs.length === 0 ? (
+              {sortedLogs.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]">
                   No sessions match.
                 </div>
               ) : (
-                filteredLogs.map((log) => (
+                sortedLogs.map((log) => (
                   <button
                     key={log.id}
                     type="button"
