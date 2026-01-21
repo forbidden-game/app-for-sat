@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -17,6 +17,9 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Backside of Meng's Dream Admin Console",
   description: "Admin console for Backside of Meng's Dream operations.",
+};
+
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#0f172a" },

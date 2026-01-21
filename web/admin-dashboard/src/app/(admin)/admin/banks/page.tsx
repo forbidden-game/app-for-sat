@@ -514,6 +514,7 @@ export default function QuestionBanksPage() {
               )}
             </tbody>
           </table>
+        </div>
       </section>
 
       {drawerOpen ? (

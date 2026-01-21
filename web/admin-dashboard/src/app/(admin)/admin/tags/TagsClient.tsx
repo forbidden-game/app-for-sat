@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { createTag, deleteTag, listTags, updateTag, type Tag, type TagInput } from "./actions";
 import { Skeleton } from "@/components/Skeleton";
 import { LoadingButton } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
 
 const TAG_CATEGORIES = ["topic", "skill", "difficulty", "source", "general"];
 
