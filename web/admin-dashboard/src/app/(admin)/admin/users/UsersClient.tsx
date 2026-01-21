@@ -13,7 +13,7 @@ import {
   type UserListItem,
   type UserRole,
 } from "./actions";
-import { Skeleton, SkeletonCard } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingButton } from "@/components/Button";
 import { useSortable, renderSortIcon } from "@/hooks/useSortable";
@@ -44,6 +44,11 @@ export default function UsersPage() {
   const [form, setForm] = useState<UserInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") ?? "");
+  const [page, setPage] = useState(() => {
+    const value = Number(searchParams.get("page"));
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  });
+  const [hasNext, setHasNext] = useState(false);
 
   const getAccessToken = useCallback(async () => {
     if (!supabase) {
@@ -61,7 +66,7 @@ export default function UsersPage() {
     return session.access_token;
   }, [supabase]);
 
-  const loadAllUsers = useCallback(async () => {
+  const loadUsersPage = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -72,25 +77,28 @@ export default function UsersPage() {
     }
 
     try {
-      // Fetch all users at once for global sorting
       const result: ListUsersResult = await listUsers(accessToken, {
-        page: 1,
-        pageSize: 10000, // Get all users
+        page,
+        pageSize: PAGE_SIZE,
+        role: roleFilter ? (roleFilter as UserRole) : undefined,
       });
       setUsers(result.users);
+      setHasNext(result.hasNext);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Failed to load users.");
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken]);
+  }, [getAccessToken, page, roleFilter]);
 
   useEffect(() => {
-    void loadAllUsers();
-  }, [loadAllUsers]);
+    void loadUsersPage();
+  }, [loadUsersPage]);
 
   useEffect(() => {
     setRoleFilter(searchParams.get("role") ?? "");
+    const value = Number(searchParams.get("page"));
+    setPage(Number.isFinite(value) && value > 0 ? value : 1);
   }, [searchParams]);
 
   useEffect(() => {
@@ -101,19 +109,25 @@ export default function UsersPage() {
       nextParams.delete("role");
     }
 
+    if (page > 1) {
+      nextParams.set("page", String(page));
+    } else {
+      nextParams.delete("page");
+    }
+
     const nextQuery = nextParams.toString();
     const currentQuery = searchParams.toString();
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [roleFilter, pathname, router, searchParams]);
+  }, [page, roleFilter, pathname, router, searchParams]);
 
   const filteredUsers = useMemo(() => {
     if (!roleFilter) return users;
     return users.filter((user) => user.role === roleFilter);
   }, [users, roleFilter]);
 
-  // Sortable hook for user table - using all users data for global sorting
+  // Sortable hook for user table - sorting current page
   const { sortedData: sortedUsers, handleSort: handleUserSort, sortConfig: userSortConfig } = useSortable(
     filteredUsers,
     "created_at",
@@ -134,11 +148,11 @@ export default function UsersPage() {
 
     try {
       if (editingId) {
-        const updated = await updateUser(accessToken, editingId, form);
-        setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)));
+        await updateUser(accessToken, editingId, form);
+        await loadUsersPage();
       } else {
-        const created = await createUser(accessToken, form);
-        setUsers((prev) => [created, ...prev]);
+        await createUser(accessToken, form);
+        setPage(1);
       }
       resetForm();
     } catch (saveError) {
@@ -160,10 +174,10 @@ export default function UsersPage() {
 
     try {
       await deleteUser(accessToken, user.id);
-      setUsers((prev) => prev.filter((item) => item.id !== user.id));
       if (editingId === user.id) {
         resetForm();
       }
+      await loadUsersPage();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete user.");
     } finally {
@@ -264,6 +278,7 @@ export default function UsersPage() {
             value={roleFilter}
             onChange={(event) => {
               setRoleFilter(event.target.value);
+              setPage(1);
             }}
           >
             <option value="">All</option>
@@ -288,8 +303,27 @@ export default function UsersPage() {
             <div>
               <p className="text-sm font-semibold text-[color:var(--ink)]">User List</p>
               <p className="text-xs text-[color:var(--ink-muted)]">
-                {sortedUsers.length} users total. Click column headers to sort.
+                Showing {sortedUsers.length} users on page {page}. Click column headers to sort.
               </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ink-muted)]">
+              <button
+                type="button"
+                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+                disabled={page <= 1}
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Prev
+              </button>
+              <span className="tabular-nums">Page {page}</span>
+              <button
+                type="button"
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={!hasNext}
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Next
+              </button>
             </div>
           </div>
           <div className="max-h-[560px] overflow-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
