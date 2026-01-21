@@ -16,6 +16,7 @@ import {
   type CoachThreadMessage,
 } from "./conversation-actions";
 import { estimateTokens, formatDateTime, maskPII, serializeJson } from "./ai-log-utils";
+import { useSortable } from "@/hooks/useSortable";
 
 type Turn = {
   user: CoachThreadMessage;
@@ -139,11 +140,18 @@ export default function AiLogsConversations({
     });
   }, [threads, userQuery]);
 
+  // Sortable hook for threads list
+  const { sortedData: sortedThreads, handleSort: handleThreadSort, sortConfig: threadSortConfig } = useSortable(
+    filteredThreads,
+    "last_message_at",
+    "desc",
+  );
+
   useEffect(() => {
     if (selectedStudentId) return;
-    if (filteredThreads.length === 0) return;
-    setSelectedStudentId(filteredThreads[0].student_id);
-  }, [filteredThreads, selectedStudentId]);
+    if (sortedThreads.length === 0) return;
+    setSelectedStudentId(sortedThreads[0].student_id);
+  }, [sortedThreads, selectedStudentId]);
 
   useEffect(() => {
     let active = true;
@@ -359,8 +367,33 @@ export default function AiLogsConversations({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs font-medium text-[color:var(--ink-muted)]">Conversations</div>
           <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] tabular-nums">
-            {filteredThreads.length} threads
+            {sortedThreads.length} threads
           </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <select
+            className="flex-1 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--ink)]"
+            value={threadSortConfig.column ? String(threadSortConfig.column) : ""}
+            onChange={(e) => {
+              if (e.target.value) {
+                handleThreadSort(e.target.value as keyof CoachThreadListItem);
+              }
+            }}
+          >
+            <option value="">Sort by…</option>
+            <option value="last_message_at">Last Message</option>
+            <option value="display_name">Name</option>
+            <option value="student_id">Student ID</option>
+          </select>
+          <button
+            type="button"
+            onClick={() => handleThreadSort("last_message_at")}
+            className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-2 py-2 text-xs text-[color:var(--ink-muted)]"
+            title={threadSortConfig.direction === "asc" ? "Ascending" : "Descending"}
+          >
+            {threadSortConfig.direction === "asc" ? "▲" : "▼"}
+          </button>
         </div>
 
         <div className="grid gap-2">
@@ -410,12 +443,12 @@ export default function AiLogsConversations({
             className="flex-1 space-y-2 overflow-auto pr-1"
             style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
           >
-            {filteredThreads.length === 0 ? (
+            {sortedThreads.length === 0 ? (
               <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]">
                 No conversations found.
               </div>
             ) : (
-              filteredThreads.map((thread) => {
+              sortedThreads.map((thread) => {
                 const isActive = thread.student_id === selectedStudentId;
                 return (
                   <button
