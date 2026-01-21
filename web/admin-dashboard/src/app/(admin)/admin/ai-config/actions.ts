@@ -69,10 +69,10 @@ export async function publishAiPromptConfig(
     throw new Error("Prompt version, system prompt, and model are required.");
   }
 
-  const archivePayload: Record<string, unknown> = {
+  const archivePayload = {
     status: "archived",
     updated_at: now,
-  };
+  } as unknown as never;
   const { error: archiveError } = await context.supabase
     .from("ai_prompt_configs")
     .update(archivePayload)
@@ -129,10 +129,10 @@ export async function archiveAiPromptConfig(
   const context = await requireAdmin(accessToken);
   const now = new Date().toISOString();
 
-  const archivePayload: Record<string, unknown> = {
+  const archivePayload = {
     status: "archived",
     updated_at: now,
-  };
+  } as unknown as never;
   const { data, error } = await context.supabase
     .from("ai_prompt_configs")
     .update(archivePayload)
@@ -201,11 +201,11 @@ export async function upsertAiProviderKey(
   }
 
   if (existing?.id) {
-    const updatePayload: Record<string, unknown> = {
+    const updatePayload = {
       api_key: trimmed,
       updated_at: now,
       updated_by: context.admin.id,
-    };
+    } as unknown as never;
     const { error } = await context.supabase
       .from("ai_provider_keys")
       .update(updatePayload)
