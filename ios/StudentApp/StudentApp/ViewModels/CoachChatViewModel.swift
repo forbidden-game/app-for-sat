@@ -29,15 +29,14 @@ final class CoachChatViewModel: ObservableObject {
     deinit {
         pollingTask?.cancel()
         pollingTask = nil
-        Task { await service.stopRealtime() }
     }
 
     func load() async {
         errorMessage = nil
 
         do {
-            remoteMessages = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
-            messages = mergeMessages(remoteMessages)
+            let latest = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
+            applySnapshot(latest)
         } catch {
             errorMessage = UserFacingError.message(error)
         }
@@ -98,9 +97,10 @@ final class CoachChatViewModel: ObservableObject {
         if let idx = remoteMessages.firstIndex(where: { $0.id == msg.id }) {
             remoteMessages[idx] = msg
         } else {
-            remoteMessages.append(msg)
+            let insertIndex = insertionIndex(for: msg)
+            remoteMessages.insert(msg, at: insertIndex)
         }
-        messages = mergeMessages(remoteMessages)
+        messages = remoteMessages
     }
 
     private func startPolling() {
@@ -119,8 +119,7 @@ final class CoachChatViewModel: ObservableObject {
                     let latest = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
                     await MainActor.run {
                         guard let self else { return }
-                        self.remoteMessages = latest
-                        self.messages = self.mergeMessages(latest)
+                        self.applySnapshot(latest)
                     }
                 } catch {
                     // Best-effort: keep polling silently; UI can still send.
@@ -131,12 +130,36 @@ final class CoachChatViewModel: ObservableObject {
         }
     }
 
-    private func mergeMessages(_ messages: [CoachThreadMessage]) -> [CoachThreadMessage] {
+    private func applySnapshot(_ latest: [CoachThreadMessage]) {
+        let sorted = sortMessages(latest)
+        remoteMessages = sorted
+        messages = sorted
+    }
+
+    private func sortMessages(_ messages: [CoachThreadMessage]) -> [CoachThreadMessage] {
         messages.sorted { lhs, rhs in
-            if lhs.createdAt != rhs.createdAt {
-                return lhs.createdAt < rhs.createdAt
-            }
-            return lhs.id < rhs.id
+            isOrderedBefore(lhs, rhs)
         }
+    }
+
+    private func insertionIndex(for message: CoachThreadMessage) -> Int {
+        var low = 0
+        var high = remoteMessages.count
+        while low < high {
+            let mid = (low + high) / 2
+            if isOrderedBefore(message, remoteMessages[mid]) {
+                high = mid
+            } else {
+                low = mid + 1
+            }
+        }
+        return low
+    }
+
+    private func isOrderedBefore(_ lhs: CoachThreadMessage, _ rhs: CoachThreadMessage) -> Bool {
+        if lhs.createdAt != rhs.createdAt {
+            return lhs.createdAt < rhs.createdAt
+        }
+        return lhs.id < rhs.id
     }
 }

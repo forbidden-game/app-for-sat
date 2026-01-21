@@ -50,6 +50,9 @@ struct CoachChatView: View {
     }
 
     var body: some View {
+        let messageLookup = Dictionary(vm.messages.map { ($0.id, $0) }, uniquingKeysWith: { current, _ in current })
+        let replyContextMessage = replyToMessageId.flatMap { messageLookup[$0] }
+
         ZStack {
             AppTheme.backgroundGradient
                 .ignoresSafeArea()
@@ -74,9 +77,7 @@ struct CoachChatView: View {
                 row: { message, index, scrollToMessage in
                     let previous = index > 0 ? vm.messages[index - 1] : nil
                     let next = index + 1 < vm.messages.count ? vm.messages[index + 1] : nil
-                    let replyMessage = message.replyToMessageId.flatMap { replyId in
-                        vm.messages.first(where: { $0.id == replyId })
-                    }
+                    let replyMessage = message.replyToMessageId.flatMap { messageLookup[$0] }
 
                     CoachChatMessageRow(
                         message: message,
@@ -126,7 +127,6 @@ struct CoachChatView: View {
                 }
             )
             .padding(.top, showsHeader ? 12 : 0)
-            .padding(.bottom, 12)
         }
         .overlay(alignment: .bottom) {
             if let toast {
@@ -187,11 +187,6 @@ struct CoachChatView: View {
         guard let last = vm.messages.last else { return "empty" }
         let status = last.content.status ?? ""
         return "\(last.id)|\(status)|\(last.content.text.count)"
-    }
-
-    private var replyContextMessage: CoachThreadMessage? {
-        guard let replyToMessageId else { return nil }
-        return vm.messages.first(where: { $0.id == replyToMessageId })
     }
 
     private func openSubtitleEditor() {

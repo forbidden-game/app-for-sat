@@ -54,7 +54,6 @@ struct FriendChatView: View {
                     )
                 }
             )
-            .padding(.bottom, 12)
         }
         .background(AppTheme.backgroundGradient.ignoresSafeArea())
         .task {

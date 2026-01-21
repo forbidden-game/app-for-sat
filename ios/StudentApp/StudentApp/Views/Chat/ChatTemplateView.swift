@@ -20,6 +20,7 @@ struct ChatTemplateView<
     @State private var isPinnedToBottom = true
     @State private var scrollViewHeight: CGFloat = 0
     @State private var lastMessageCount = 0
+    @State private var scrollToBottomTask: Task<Void, Never>?
 
     var body: some View {
         VStack(spacing: 12) {
@@ -69,10 +70,7 @@ struct ChatTemplateView<
                         let wasPinned = isPinnedToBottom
                         scrollViewHeight = newValue
                         guard wasPinned else { return }
-                        DispatchQueue.main.async {
-                            isPinnedToBottom = true
-                            scrollToBottom(scrollProxy, animated: false)
-                        }
+                        scheduleScrollToBottom(scrollProxy, animated: false, delay: scrollThrottle)
                     }
                     .onChange(of: messages.count) { _, newCount in
                         let wasEmpty = lastMessageCount == 0
@@ -82,7 +80,7 @@ struct ChatTemplateView<
                     }
                     .onChange(of: scrollToBottomToken) { _, _ in
                         guard isPinnedToBottom else { return }
-                        scrollToBottom(scrollProxy, animated: false)
+                        scheduleScrollToBottom(scrollProxy, animated: false, delay: scrollThrottle)
                     }
                     .onPreferenceChange(BottomAnchorPreferenceKey.self) { bottomY in
                         let threshold: CGFloat = 120
@@ -114,11 +112,30 @@ struct ChatTemplateView<
                     }
                 }
             }
-
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 8) {
                 banner()
                 composer()
             }
+            .padding(.top, 6)
+            .padding(.bottom, 12)
+        }
+        .onDisappear {
+            scrollToBottomTask?.cancel()
+            scrollToBottomTask = nil
+        }
+    }
+
+    private let scrollThrottle: UInt64 = 150_000_000
+
+    private func scheduleScrollToBottom(_ proxy: ScrollViewProxy, animated: Bool, delay: UInt64) {
+        scrollToBottomTask?.cancel()
+        scrollToBottomTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: delay)
+            guard !Task.isCancelled else { return }
+            guard isPinnedToBottom else { return }
+            scrollToBottom(proxy, animated: animated)
         }
     }
 

@@ -3,6 +3,47 @@ import UIKit
 import CoreText
 import StudentCore
 
+private enum CoachChatRenderCache {
+    static let parser = MathMarkupParser()
+    static let requiresMathCache: NSCache<NSString, NSNumber> = {
+        let cache = NSCache<NSString, NSNumber>()
+        cache.countLimit = 400
+        return cache
+    }()
+
+    static func requiresMath(for text: String) -> Bool {
+        if let cached = requiresMathCache.object(forKey: text as NSString) {
+            return cached.boolValue
+        }
+        let requires = parser.parse(text).requiresMathRendering
+        requiresMathCache.setObject(NSNumber(value: requires), forKey: text as NSString)
+        return requires
+    }
+}
+
+private enum CoachChatTextWidthCache {
+    static let cache: NSCache<NSString, NSNumber> = {
+        let cache = NSCache<NSString, NSNumber>()
+        cache.countLimit = 300
+        return cache
+    }()
+
+    static func width(for text: String, font: UIFont) -> CGFloat? {
+        let key = cacheKey(for: text, font: font)
+        guard let cached = cache.object(forKey: key as NSString) else { return nil }
+        return CGFloat(cached.doubleValue)
+    }
+
+    static func store(_ width: CGFloat, for text: String, font: UIFont) {
+        let key = cacheKey(for: text, font: font)
+        cache.setObject(NSNumber(value: Double(width)), forKey: key as NSString)
+    }
+
+    private static func cacheKey(for text: String, font: UIFont) -> String {
+        "\(font.fontName)|\(font.pointSize)|\(text)"
+    }
+}
+
 struct CoachChatMessageRow: View {
     let message: CoachThreadMessage
     let previousMessage: CoachThreadMessage?
@@ -168,7 +209,7 @@ struct CoachChatMessageBubble: View {
                         foreground: foreground
                     )
                 } else {
-                    let usePlainTextLabel = isUser && !MathMarkupParser().parse(message.content.text).requiresMathRendering
+                    let usePlainTextLabel = isUser && !CoachChatRenderCache.requiresMath(for: message.content.text)
                     CoachChatBubbleText(
                         text: message.content.text,
                         style: .chatBubble(isUser: isUser),
@@ -315,6 +356,10 @@ private struct CoachChatBubbleText: View {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return 0 }
 
+        if trimmed.count > 200 {
+            return maxWidth
+        }
+
         // Decouple bubble sizing from auto-wrapping.
         // - If the whole message fits on one line (under maxWidth), shrink bubble to that width.
         // - If it doesn't fit, use maxWidth and let the renderer decide wrapping.
@@ -329,6 +374,13 @@ private struct CoachChatBubbleText: View {
             ceil(value * scale) / scale
         }
 
+        if let cached = CoachChatTextWidthCache.width(for: trimmed, font: uiFont) {
+            if cached >= maxWidth {
+                return maxWidth
+            }
+            return roundUpToPixel(cached + 2)
+        }
+
         let explicitLines = trimmed.split(omittingEmptySubsequences: false, whereSeparator: \.isNewline)
         var maxExplicitLineWidth: CGFloat = 0
 
@@ -340,6 +392,8 @@ private struct CoachChatBubbleText: View {
             let trailing = CTLineGetTrailingWhitespaceWidth(ctLine)
             maxExplicitLineWidth = max(maxExplicitLineWidth, max(0, CGFloat(width) - trailing))
         }
+
+        CoachChatTextWidthCache.store(maxExplicitLineWidth, for: trimmed, font: uiFont)
 
         if maxExplicitLineWidth >= maxWidth {
             return maxWidth
@@ -425,9 +479,11 @@ private struct CoachChatImageBubble: View {
     let isUser: Bool
     let foreground: Color
 
+    @State private var loadedImage: UIImage?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let image = CoachChatImageStore.loadImage(fileName: payload.fileName) {
+            if let image = loadedImage {
                 Image(uiImage: image)
                     .resizable()
                     .scaledToFill()
@@ -457,6 +513,10 @@ private struct CoachChatImageBubble: View {
                 )
                 .fixedSize(horizontal: false, vertical: true)
             }
+        }
+        .task(id: payload.fileName) {
+            loadedImage = nil
+            loadedImage = await CoachChatImageStore.loadImageAsync(fileName: payload.fileName)
         }
     }
 

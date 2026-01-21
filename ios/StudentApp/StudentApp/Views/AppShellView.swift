@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import StudentCore
 
 struct AppShellView: View {
@@ -6,6 +7,7 @@ struct AppShellView: View {
     @State private var selectedTab: MainTab = .home
     @State private var showFriends = false
     @State private var showProfile = false
+    @State private var isKeyboardVisible = false
 
     var body: some View {
         ZStack {
@@ -29,7 +31,10 @@ struct AppShellView: View {
                     tabContent
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                    AppTabBar(selected: $selectedTab)
+                    if !isKeyboardVisible {
+                        AppTabBar(selected: $selectedTab)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
             }
         }
@@ -42,6 +47,21 @@ struct AppShellView: View {
             ProfileSheetView(displayName: displayName, onSignOut: {
                 Task { await vm.signOut() }
             })
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            setKeyboardVisible(true)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            setKeyboardVisible(false)
+        }
+    }
+
+    private func setKeyboardVisible(_ visible: Bool) {
+        guard isKeyboardVisible != visible else { return }
+        DispatchQueue.main.async {
+            withAnimation(.easeOut(duration: 0.15)) {
+                isKeyboardVisible = visible
+            }
         }
     }
 

@@ -51,8 +51,37 @@ enum CoachChatImageStore {
         }
         let url = imageURL(fileName: fileName)
         guard let image = UIImage(contentsOfFile: url.path) else { return nil }
-        cache.setObject(image, forKey: fileName as NSString)
-        return image
+        let decoded: UIImage
+        if #available(iOS 15.0, *) {
+            decoded = image.preparingForDisplay() ?? image
+        } else {
+            decoded = image
+        }
+        cache.setObject(decoded, forKey: fileName as NSString)
+        return decoded
+    }
+
+    static func loadImageAsync(fileName: String) async -> UIImage? {
+        if let cached = cache.object(forKey: fileName as NSString) {
+            return cached
+        }
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let url = imageURL(fileName: fileName)
+                guard let image = UIImage(contentsOfFile: url.path) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let decoded: UIImage
+                if #available(iOS 15.0, *) {
+                    decoded = image.preparingForDisplay() ?? image
+                } else {
+                    decoded = image
+                }
+                cache.setObject(decoded, forKey: fileName as NSString)
+                continuation.resume(returning: decoded)
+            }
+        }
     }
 
     private static func save(
