@@ -70,8 +70,11 @@ export function getConfig(): CoachConfig {
   const defaultModel = readStringEnv("AI_COACH_MODEL_DEFAULT", "minimax/MiniMax-M2.1");
   const jobKinds = parseJobKinds();
 
-  const claimLimit = readIntEnv("AI_COACH_CLAIM_LIMIT", 2);
-  const maxConcurrency = readIntEnv("AI_COACH_MAX_CONCURRENCY", Math.max(1, claimLimit));
+  const claimLimit = Math.max(1, readIntEnv("AI_COACH_CLAIM_LIMIT", 2));
+  const maxConcurrency = Math.max(
+    1,
+    readIntEnv("AI_COACH_MAX_CONCURRENCY", Math.max(1, claimLimit)),
+  );
 
   const modelInsight = readStringEnv("AI_COACH_MODEL_INSIGHT", defaultModel);
   const modelChat = readStringEnv("AI_COACH_MODEL_CHAT", defaultModel);

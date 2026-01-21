@@ -14,8 +14,11 @@ export function getConfig(): SenderConfig {
   const modeRaw = process.env["NOTIFICATION_SENDER_MODE"]?.toLowerCase() ?? "log";
   const mode = modeRaw === "noop" ? "noop" : "log";
 
-  const claimLimit = readIntEnv("NOTIFICATION_SENDER_CLAIM_LIMIT", 10);
-  const maxConcurrency = readIntEnv("NOTIFICATION_SENDER_MAX_CONCURRENCY", Math.max(1, claimLimit));
+  const claimLimit = Math.max(1, readIntEnv("NOTIFICATION_SENDER_CLAIM_LIMIT", 10));
+  const maxConcurrency = Math.max(
+    1,
+    readIntEnv("NOTIFICATION_SENDER_MAX_CONCURRENCY", Math.max(1, claimLimit)),
+  );
 
   return {
     supabaseUrl: requireEnv("SUPABASE_URL"),
