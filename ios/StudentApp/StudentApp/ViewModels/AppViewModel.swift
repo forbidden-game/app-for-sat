@@ -65,6 +65,10 @@ final class AppViewModel: ObservableObject {
         errorMessage = nil
     }
 
+    func dismissError() {
+        errorMessage = nil
+    }
+
     private func authenticate(_ action: () async throws -> AuthUser) async {
         isLoading = true
         errorMessage = nil
