@@ -13,6 +13,7 @@ import {
   type UserListItem,
   type UserRole,
 } from "./actions";
+import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 
 const ROLE_OPTIONS: UserRole[] = ["student", "parent", "admin"];
 
@@ -190,10 +191,53 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1280px] px-6 py-12">
-        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
-          Loading users…
-        </p>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton variant="text" width="80px" />
+            <Skeleton variant="text" width="200px" height="28px" />
+            <Skeleton variant="text" width="300px" />
+          </div>
+        </header>
+
+        <section className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <div className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--border)] px-4 py-3">
+              <Skeleton variant="text" width="100px" />
+              <div className="flex gap-2">
+                <Skeleton variant="rectangular" width="60px" height="32px" />
+                <Skeleton variant="rectangular" width="60px" height="32px" />
+              </div>
+            </div>
+            <div className="max-h-[560px] overflow-auto">
+              <div className="min-w-full">
+                <div className="sticky top-0 flex bg-[color:var(--surface-soft)] px-4 py-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton key={i} variant="text" width="16%" className="mr-4" />
+                  ))}
+                </div>
+                {Array.from({ length: 5 }).map((_, rowIndex) => (
+                  <div key={rowIndex} className="flex items-center gap-4 border-t border-[color:var(--border)] px-4 py-3">
+                    {Array.from({ length: 6 }).map((_, colIndex) => (
+                      <Skeleton key={colIndex} variant="text" width="16%" />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-5">
+            <Skeleton variant="text" width="80px" className="mb-2" />
+            <Skeleton variant="text" width="120px" height="20px" className="mb-4" />
+            <div className="mt-4 flex flex-col gap-4">
+              <Skeleton variant="rectangular" height="40px" />
+              <Skeleton variant="rectangular" height="40px" />
+              <Skeleton variant="rectangular" height="40px" />
+            </div>
+            <Skeleton variant="rectangular" height="36px" className="mt-6" />
+          </div>
+        </section>
       </main>
     );
   }

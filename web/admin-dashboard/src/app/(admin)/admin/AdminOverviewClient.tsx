@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getAdminOverview, type AdminOverview } from "./actions";
+import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -83,10 +84,43 @@ export default function AdminOverviewClient({
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1280px] px-6 py-12">
-        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
-          Loading admin overview…
-        </p>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-8 px-6 pb-10 pt-8">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton variant="text" width="80px" />
+            <Skeleton variant="text" width="200px" height="28px" />
+            <Skeleton variant="text" width="150px" />
+          </div>
+          <Skeleton variant="rectangular" width="120px" height="28px" />
+        </header>
+
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Skeleton variant="text" width="150px" height="24px" />
+          <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+            <div className="bg-[color:var(--surface-soft)] px-4 py-3">
+              <div className="flex gap-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} variant="text" width="20%" />
+                ))}
+              </div>
+            </div>
+            <div className="divide-y divide-[color:var(--border)] px-4 py-6">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-4 py-3">
+                  {Array.from({ length: 5 }).map((_, j) => (
+                    <Skeleton key={j} variant="text" width="20%" />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </main>
     );
   }

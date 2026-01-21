@@ -16,6 +16,7 @@ import {
   type QuestionBank,
   type QuestionBankInput,
 } from "./actions";
+import { Skeleton } from "@/components/Skeleton";
 
 const EMPTY_FORM: QuestionBankInput = {
   slug: "",
@@ -312,10 +313,36 @@ export default function QuestionBanksPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1280px] px-6 py-12">
-        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
-          Loading question banks…
-        </p>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton variant="text" width="80px" />
+            <Skeleton variant="text" width="200px" height="28px" />
+            <Skeleton variant="text" width="280px" />
+          </div>
+          <Skeleton variant="rectangular" width="120px" height="36px" />
+        </header>
+
+        <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <div className="flex items-center justify-between border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={i} variant="text" width={i === 0 ? "25%" : "12%"} />
+            ))}
+          </div>
+          <div className="divide-y divide-[color:var(--border)]">
+            {Array.from({ length: 5 }).map((_, rowIndex) => (
+              <div key={rowIndex} className="flex items-center gap-4 px-4 py-4">
+                <Skeleton variant="text" width="25%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="rectangular" width="80px" height="28px" />
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     );
   }
