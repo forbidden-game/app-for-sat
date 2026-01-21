@@ -7,6 +7,7 @@ import { getAdminOverview, type AdminOverview } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard, TrendIndicator } from "@/components/TrendIndicator";
+import { useSortable, SortableHeader } from "@/hooks/useSortable";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -83,6 +84,18 @@ export default function AdminOverviewClient({
   const metrics = overview?.metrics ?? [];
   const questionBanks = overview?.question_banks ?? [];
   const recentUsers = overview?.recent_users ?? [];
+
+  // Sortable hooks for tables
+  const { sortedData: sortedQuestionBanks, handleSort: handleBankSort, sortConfig: bankSortConfig } = useSortable(
+    questionBanks,
+    "title",
+    "asc",
+  );
+  const { sortedData: sortedRecentUsers, handleSort: handleUserSort, sortConfig: userSortConfig } = useSortable(
+    recentUsers,
+    "created_at",
+    "desc",
+  );
 
   if (loading) {
     return (
@@ -203,14 +216,38 @@ export default function AdminOverviewClient({
               <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
                   <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[140px]">Title</th>
-                  <th scope="col" className="px-4 py-3 min-w-[100px]">Slug</th>
-                  <th scope="col" className="px-4 py-3 min-w-[80px]">Mode</th>
-                  <th scope="col" className="px-4 py-3 min-w-[60px]">Limit</th>
-                  <th scope="col" className="px-4 py-3 min-w-[70px]">Status</th>
+                  <SortableHeader
+                    column="slug"
+                    label="Slug"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
+                    className="px-4 py-3 min-w-[100px]"
+                  />
+                  <SortableHeader
+                    column="mode"
+                    label="Mode"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
+                    className="px-4 py-3 min-w-[80px]"
+                  />
+                  <SortableHeader
+                    column="question_limit"
+                    label="Limit"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
+                    className="px-4 py-3 min-w-[60px] text-center"
+                  />
+                  <SortableHeader
+                    column="is_active"
+                    label="Status"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
+                    className="px-4 py-3 min-w-[70px]"
+                  />
                 </tr>
               </thead>
               <tbody>
-                {questionBanks.length === 0 ? (
+                {sortedQuestionBanks.length === 0 ? (
                   <tr>
                     <td
                       colSpan={5}
@@ -229,7 +266,7 @@ export default function AdminOverviewClient({
                     </td>
                   </tr>
                 ) : (
-                  questionBanks.map((bank) => (
+                  sortedQuestionBanks.map((bank) => (
                     <tr key={bank.id} className="border-t border-[color:var(--border)] transition-colors hover:bg-[color:var(--surface-soft)]">
                       <td className="px-4 py-3 font-medium text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{bank.title}</td>
                       <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.slug}</td>
@@ -266,13 +303,31 @@ export default function AdminOverviewClient({
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
             <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
               <tr>
-                <th scope="col" className="px-4 py-3">Name</th>
-                <th scope="col" className="px-4 py-3">Role</th>
-                <th scope="col" className="px-4 py-3">Created</th>
+                <SortableHeader
+                  column="display_name"
+                  label="Name"
+                  currentSort={userSortConfig}
+                  onSort={(col) => handleUserSort(col as typeof recentUsers[0] extends infer T ? keyof T : never)}
+                  className="px-4 py-3"
+                />
+                <SortableHeader
+                  column="role"
+                  label="Role"
+                  currentSort={userSortConfig}
+                  onSort={(col) => handleUserSort(col as typeof recentUsers[0] extends infer T ? keyof T : never)}
+                  className="px-4 py-3"
+                />
+                <SortableHeader
+                  column="created_at"
+                  label="Created"
+                  currentSort={userSortConfig}
+                  onSort={(col) => handleUserSort(col as typeof recentUsers[0] extends infer T ? keyof T : never)}
+                  className="px-4 py-3"
+                />
               </tr>
             </thead>
             <tbody>
-              {recentUsers.length === 0 ? (
+              {sortedRecentUsers.length === 0 ? (
                 <tr>
                   <td
                     colSpan={3}
@@ -286,7 +341,7 @@ export default function AdminOverviewClient({
                   </td>
                 </tr>
               ) : (
-                recentUsers.map((user) => (
+                sortedRecentUsers.map((user) => (
                   <tr key={user.id} className="border-t border-[color:var(--border)]">
                     <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
                       {user.display_name ?? "Unnamed"}
