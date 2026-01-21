@@ -145,13 +145,16 @@ export async function addQuestionToBank(
     throw new Error("Failed to determine next position.");
   }
 
-  const nextPosition = (maxPos?.position ?? 0) + 1;
+  const maxPosRecord = maxPos as unknown as { position: number } | null;
+  const nextPosition = (maxPosRecord?.position ?? 0) + 1;
 
-  const { error } = await supabase.from("question_bank_questions").insert({
+  const insertPayload = {
     bank_id: bankId,
     question_id: questionId,
     position: nextPosition,
-  });
+  } as unknown as never;
+
+  const { error } = await supabase.from("question_bank_questions").insert(insertPayload);
 
   if (error) {
     if (error.code === "23505") {
