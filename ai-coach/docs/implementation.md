@@ -72,6 +72,12 @@ The worker claims jobs via:
 - If wrong: show required step-selection sheet, then call `set_attempt_step` and poll `attempt_insights` for `explanation_short`.
 - Coach Chat: open the chat view, call `coach_chat` to send messages, and subscribe to `coach_thread_messages` realtime insert/update events to render streaming assistant replies.
 
+## Deployment Memo
+- Production host: `od_vps` (SSH access available)
+- Repo path: `/root/apps/app-for-sat`
+- Worker service (systemd): `ai-coach-insight-worker.service`
+- Use SSH for checks: `ssh od_vps` then `systemctl status ai-coach-insight-worker.service`
+
 ## Troubleshooting
 
 ### CI fails during `supabase db reset` with `generation expression is not immutable`
