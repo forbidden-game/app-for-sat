@@ -20,6 +20,7 @@ import {
 } from "./actions";
 import { QuestionForm } from "./QuestionForm";
 import { AssetUploader } from "./AssetUploader";
+import { useSortable, SortableHeader } from "@/hooks/useSortable";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -123,6 +124,13 @@ export default function QuestionsPage() {
   useEffect(() => {
     loadQuestions();
   }, [loadQuestions]);
+
+  // Sortable hook for questions table
+  const { sortedData: sortedQuestions, handleSort: handleQuestionSort, sortConfig: questionSortConfig } = useSortable(
+    result?.questions ?? [],
+    "created_at",
+    "desc",
+  );
 
   useEffect(() => {
     setSearch(searchParams.get("q") ?? "");
@@ -438,11 +446,41 @@ export default function QuestionsPage() {
           <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
               <th scope="col" className="px-4 py-3">Stem</th>
-              <th scope="col" className="w-24 px-4 py-3">Subject</th>
-              <th scope="col" className="w-24 px-4 py-3">Module</th>
-              <th scope="col" className="w-16 px-4 py-3">Diff</th>
-              <th scope="col" className="w-20 px-4 py-3">Type</th>
-              <th scope="col" className="w-24 px-4 py-3">Created</th>
+              <SortableHeader
+                column="subject"
+                label="Subject"
+                currentSort={questionSortConfig}
+                onSort={(col) => handleQuestionSort(col as keyof Question)}
+                className="w-24 px-4 py-3"
+              />
+              <SortableHeader
+                column="module"
+                label="Module"
+                currentSort={questionSortConfig}
+                onSort={(col) => handleQuestionSort(col as keyof Question)}
+                className="w-24 px-4 py-3"
+              />
+              <SortableHeader
+                column="difficulty"
+                label="Diff"
+                currentSort={questionSortConfig}
+                onSort={(col) => handleQuestionSort(col as keyof Question)}
+                className="w-16 px-4 py-3 text-center"
+              />
+              <SortableHeader
+                column="question_type"
+                label="Type"
+                currentSort={questionSortConfig}
+                onSort={(col) => handleQuestionSort(col as keyof Question)}
+                className="w-20 px-4 py-3"
+              />
+              <SortableHeader
+                column="created_at"
+                label="Created"
+                currentSort={questionSortConfig}
+                onSort={(col) => handleQuestionSort(col as keyof Question)}
+                className="w-24 px-4 py-3"
+              />
               <th scope="col" className="w-24 px-4 py-3">Actions</th>
             </tr>
           </thead>
@@ -458,7 +496,7 @@ export default function QuestionsPage() {
                   Loading…
                 </td>
               </tr>
-            ) : result?.questions.length === 0 ? (
+            ) : sortedQuestions.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}
@@ -470,7 +508,7 @@ export default function QuestionsPage() {
                 </td>
               </tr>
             ) : (
-              result?.questions.map((q) => (
+              sortedQuestions.map((q) => (
                 <tr key={q.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
                   <td className="px-4 py-3">
                     <button
