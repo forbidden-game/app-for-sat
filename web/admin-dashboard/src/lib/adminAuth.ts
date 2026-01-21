@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getSupabaseAdminClient } from "./supabaseAdmin";
 
 type AdminSupabase = NonNullable<ReturnType<typeof getSupabaseAdminClient>>;
@@ -12,7 +13,7 @@ export type AdminContext = {
   };
 };
 
-export async function requireAdmin(accessToken: string): Promise<AdminContext> {
+const requireAdminCached = cache(async (accessToken: string): Promise<AdminContext> => {
   const supabase = getSupabaseAdminClient();
   if (!supabase) {
     throw new Error("Supabase admin not configured.");
@@ -43,4 +44,6 @@ export async function requireAdmin(accessToken: string): Promise<AdminContext> {
       display_name: profile.display_name ?? null,
     },
   };
-}
+});
+
+export const requireAdmin = requireAdminCached;
