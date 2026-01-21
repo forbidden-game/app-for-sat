@@ -191,10 +191,26 @@ public final class SupabaseCoachService {
         return response.userMessageId
     }
 
-    private static func parseISODate(_ value: String) -> Date {
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return iso.date(from: value) ?? Date()
+    private static let isoFormatterWithFractional: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+
+    private static let isoFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime]
+        return formatter
+    }()
+
+    static func parseISODate(_ value: String) -> Date {
+        if let date = isoFormatterWithFractional.date(from: value) {
+            return date
+        }
+        if let date = isoFormatter.date(from: value) {
+            return date
+        }
+        return Date()
     }
 
     public func startRealtime(
