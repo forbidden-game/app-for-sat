@@ -1,11 +1,13 @@
 # AI Coach v2 API & Jobs Spec
-日期：2026-01-14
+日期：2026-01-22
 
 目标：实现“主动推送 + 长期画像 + 记忆优先”的学生一对一老师系统（每个学生一个 AI 老师）。
 
-本文件用于实现阶段的统一契约（DB/RPC/Jobs/Worker/Prompt）。
+本文件用于实现阶段的统一契约（DB/RPC/Jobs/Worker/Prompt），覆盖触发条件、工作流程、数据结构与错误处理。
 
-## 1. 新增/调整的核心能力
+---
+
+## 1. 核心能力
 
 1) 周期性进展报告
 - 周报/月报（默认：最近 7/30 天 vs 上一阶段对比）
@@ -24,12 +26,12 @@
 
 ---
 
-## 2. 数据模型（新增）
+## 2. 数据模型（概要）
 
 ### 2.1 `public.student_reports`
 用途：周报/月报存档（包含阶段对比与下一步学习计划）。
 
-字段建议：
+字段：
 - `id` uuid PK default `gen_random_uuid()`
 - `student_id` uuid not null FK -> `profiles.id`
 - `period_kind` text not null (weekly|monthly)
@@ -49,101 +51,192 @@
 - unique(student_id, period_key)
 - index(student_id, created_at desc)
 
-RLS：
-- 学生可读自己
-- service role 可写
+### 2.2 `public.ai_jobs`
+用途：异步任务队列（错题讲解、对话回复、快照刷新、报告生成等）。
 
-### 2.2 `public.ai_jobs` 扩展
-新增 `kind`：
-- `snapshot_refresh`：刷新 student_snapshots
-- `progress_report`：生成周/月报
+关键字段：
+- `id` uuid PK default `gen_random_uuid()`
+- `kind` text（attempt_insight|thread_summary|procedure_merge|coach_reply|snapshot_refresh|progress_report）
+- `status` text（queued|running|done|error）
+- `attempt_id` uuid nullable
+- `student_id` uuid nullable
+- `payload` jsonb not null
+- `run_after` timestamptz not null（延迟执行）
+- `locked_at` timestamptz nullable
+- `locked_by` text nullable
+- `dedupe_key` text nullable（同类任务去重）
+- `attempt_count` int default 0
+- `error` text nullable（当前 error）
+- `last_error` text nullable
+- `last_error_at` timestamptz nullable
+- `last_error_code` text nullable
+- `completed_at` timestamptz nullable
+- `created_at`/`updated_at`
 
-可选新增字段：
-- `dedupe_key` text nullable（同类任务去重用）
+约束/索引：
 - unique(kind, dedupe_key) where dedupe_key is not null
+- index(status, run_after)
+- index(status, updated_at)
 
-### 2.3 `public.notification_events` 扩展
-新增 `event_type`：
-- `progress_report_ready`
+### 2.3 `public.notification_events`
+用途：通知发送队列。
+
+关键字段：
+- `id` uuid PK
+- `student_id` uuid not null
+- `event_type` text（progress_report_ready 等）
+- `payload` jsonb
+- `status` text（queued|sending|sent|error）
+- `error` text nullable
+- `locked_at` timestamptz nullable
+- `locked_by` text nullable
+- `created_at`/`updated_at`
 
 ---
 
-## 3. RPC / SQL 函数（新增）
+## 3. RPC / SQL 函数（关键）
 
-### 3.1 `get_student_period_stats(p_student_id, p_start, p_end)`
+### 3.1 `claim_ai_jobs(p_worker_id, p_limit, p_kinds)`
+用途：领取 `ai_jobs`。
+
+行为：
+- 仅 service_role 可调用
+- 选择 `status=queued` 且 `run_after <= now()`
+- 跳过被锁定且 10 分钟内未过期的记录
+- 更新为 `running`，写入 `locked_at` / `locked_by`，并 `attempt_count + 1`
+
+### 3.2 `get_student_period_stats(p_student_id, p_start, p_end)`
 用途：生成报告/快照的结构化指标。
-返回 jsonb：
-- attempts: total, correct, accuracy, avg_duration_ms, skipped
-- mistakes: top_procedures, top_steps, top_error_modes
-- coverage: subjects/tags 分布（可选）
 
-权限：service_role only。
-
-### 3.2 `list_active_students(p_since)`
+### 3.3 `list_active_students(p_since)`
 用途：拉取近 N 天有练习记录的学生列表（调度用）。
-权限：service_role only。
 
-### 3.3 `claim_notification_events(p_worker_id, p_limit)`
+### 3.4 `claim_notification_events(p_worker_id, p_limit)`
 用途：通知发送 worker 领取 `notification_events`。
-权限：service_role only。
+
+行为：
+- 领取 `status=queued`
+- 或 `status=sending` 且超过 10 分钟未更新的记录（视作超时重试）
+- 标记为 `sending` 并写入锁定信息
 
 ---
 
-## 4. Job 设计
+## 4. Job 设计（payload + 处理流程）
 
-### 4.1 `snapshot_refresh`
-payload:
-- student_id
-- period_end (optional)
+### 4.1 `attempt_insight`
+触发：`attempts.is_correct = false` 且写入后。
 
-动作：
+payload：
+- `attempt_id`
+
+处理流程：
+1) 拉取 attempt + question + tags + 快照/历史
+2) 搜索/创建 procedure
+3) 检索相似错误
+4) 生成短讲解 + 追问
+5) 写入 `attempt_insights`
+6) 触发快照刷新（入队或工具内补写）
+
+特殊条件：
+- 若 `student_selected_step_index` 缺失且 `unknown` 未标记，会短暂 defer（默认 2 分钟内每 15 秒重试）
+
+### 4.2 `coach_reply`
+触发：学生在总线程发消息。
+
+payload：
+- `user_message_id`（可选）
+- `linked_attempt_id`（可选）
+
+处理流程：
+1) 拉取消息上下文（最近对话 + 快照 + 报告 + 历史 insights）
+2) 生成回复并流式写入 assistant message
+3) 失败时写入兜底回复并标记错误
+
+### 4.3 `snapshot_refresh`
+payload：
+- `student_id`
+- `period_end` (optional)
+
+处理流程：
 - 调用 `get_student_period_stats`（7/30/90 天）
 - 更新 `student_snapshots`（weak_procedures_top/weak_steps_top/common_error_modes_top/recent_trend）
 
-### 4.2 `progress_report`
-payload:
-- student_id
-- period_kind (weekly|monthly)
-- period_key
-- period_start
-- period_end
+### 4.4 `progress_report`
+payload：
+- `student_id`
+- `period_kind` (weekly|monthly)
+- `period_key`
+- `period_start`
+- `period_end`
 
-动作：
-- 取当前期 + 上一期 stats
-- 生成 summary + plan（LLM）
-- 写入 `student_reports`
-- enqueue `notification_events` with `progress_report_ready`
-
----
-
-## 5. Worker 行为（ai-coach/coach-service）
-
-- 继续处理：`attempt_insight`, `coach_reply`
-- 新增处理：`snapshot_refresh`, `progress_report`
-- 内部调度：定期扫描活跃学生并插入新 report jobs
-
-### 5.1 模型配置（环境变量）
-- `AI_COACH_MODEL_DEFAULT`：默认模型（如 `minimax/MiniMax-M2.1`）
-- `AI_COACH_MODEL_INSIGHT`
-- `AI_COACH_MODEL_CHAT`
-- `AI_COACH_MODEL_REPORT`
+处理流程：
+1) 如果 `student_reports` 已存在同 period_key，直接跳过
+2) 生成当前期 + 上期 stats
+3) LLM 生成 summary + plan（失败则 fallback 模板）
+4) 写入 `student_reports`
+5) enqueue `notification_events`（progress_report_ready）
 
 ---
 
-## 6. 客户端 API（读）
+## 5. Worker 行为
 
-- `student_snapshots`：直接 select（RLS）
-- `student_reports`：按 `student_id + period_kind` 拉取最近 N 条
+### 5.1 coach-service worker 触发与条件
+- 启动后循环轮询
+- `AI_COACH_ENABLE_SCHEDULER=true` 时，按 `AI_COACH_SCHEDULE_INTERVAL_MS` 调度
+- 领取条件：`status=queued` 且 `run_after <= now()` 且锁过期
+- 支持 `AI_COACH_JOB_KINDS` 过滤处理范围
+- 并发：最多 `AI_COACH_MAX_CONCURRENCY` 个 job 同时处理；每次 claim 不超过 `AI_COACH_CLAIM_LIMIT`
+
+### 5.2 Job 生命周期
+- claim：`queued -> running`，写入 `locked_at` / `locked_by`，`attempt_count+1`
+- success：`running -> done`，清理 error 字段，写入 `completed_at`
+- error：`running -> error`，写入 `error/last_error/last_error_code/last_error_at`
+- defer：通过 `JobDeferredError` 将 `status` 重置为 `queued`，`run_after` 延后，并清理锁
+
+### 5.3 调度器（scheduler）
+- 调用 `list_active_students` 获取近 N 天活跃学生
+- 为每位学生入队 `snapshot_refresh` + `progress_report`（weekly/monthly）
+- 使用 `dedupe_key` 去重；批量 upsert 插入
+
+### 5.4 graceful shutdown
+- 处理 SIGTERM/SIGINT：停止 claim，新任务不再进入；等待 in-flight 完成
 
 ---
 
-## 7. Notification 约定
+## 6. Notification Sender Worker
+
+- 领取 `notification_events`（queued 或超时 sending）
+- `mode=log` 时仅记录；后续可接入真实推送
+- 发送成功：`status=sent`
+- 失败：`status=error` 并记录 message
+
+---
+
+## 7. 环境变量（关键）
+
+- `AI_COACH_ENABLE_SCHEDULER`
+- `AI_COACH_POLL_INTERVAL_MS`
+- `AI_COACH_CLAIM_LIMIT`
+- `AI_COACH_MAX_CONCURRENCY`
+- `AI_COACH_JOB_KINDS`
+- `AI_COACH_MODEL_DEFAULT/INSIGHT/CHAT/REPORT`
+- `MINIMAX_API_KEY`（只有当启用的 job 需要 minimax 模型时才强制）
+
+通知发送：
+- `NOTIFICATION_SENDER_POLL_INTERVAL_MS`
+- `NOTIFICATION_SENDER_CLAIM_LIMIT`
+- `NOTIFICATION_SENDER_MAX_CONCURRENCY`
+- `NOTIFICATION_SENDER_MODE`
+
+---
+
+## 8. Notification 约定
 
 - `progress_report_ready` payload: { student_id, report_id, period_kind, period_start, period_end }
 
 ---
 
-## 8. Prompt 版本策略
+## 9. Prompt 版本策略
 
 - `attempt_insight`: `ai-coach-insight-v2`
 - `coach_reply`: `ai-coach-chat-v2`

@@ -7,7 +7,10 @@ async function main(): Promise<void> {
   const config = getConfig();
   const supabase = createSupabase(config);
 
-  logger.info({ workerId: config.workerId, mode: config.mode }, "notification sender starting");
+  logger.info(
+    { workerId: config.workerId, mode: config.mode, maxConcurrency: config.maxConcurrency, claimLimit: config.claimLimit },
+    "notification sender starting",
+  );
 
   await runWorker(config, supabase);
 }

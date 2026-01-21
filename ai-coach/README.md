@@ -6,10 +6,16 @@ North Star: one AI teacher per student, with wrong-answer coaching, followup dia
 AI Coach feature workspace.
 
 - Specs: `ai-coach/docs/README.md`
+- v2 API + Worker spec: `ai-coach/docs/api-v2.md`
+- Data model: `ai-coach/docs/data-model.md`
+- Flows: `ai-coach/docs/flows.md`
 - Coach Service (Node/TS worker): `ai-coach/coach-service/`
 - Notification Sender (Node/TS worker): `ai-coach/notification-sender/`
 
 This directory is the primary home for AI Coach docs and implementation.
+
+## Workspace
+This folder uses npm workspaces. Install dependencies from `ai-coach/` to use the shared core package.
 
 ## Testing
 
@@ -38,3 +44,5 @@ Environment variables (defaults provided for local Supabase):
 - `SUPABASE_URL` (default: `http://127.0.0.1:54321`)
 - `SUPABASE_SERVICE_ROLE_KEY` (default: local dev key)
 - `MINIMAX_API_KEY` (required for LLM integration tests)
+- `AI_COACH_MAX_CONCURRENCY` (optional, defaults to claim limit)
+- `NOTIFICATION_SENDER_MAX_CONCURRENCY` (optional, defaults to claim limit)
