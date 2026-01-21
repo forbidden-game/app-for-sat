@@ -7,14 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		61205435000D4CB2B2425E4B /* StudentApp/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E1ABE358FEE14E15A3F80EB8 /* StudentApp/Assets.xcassets */; };
 		C5924C1A2F19A6B40026A01C /* SwiftMath in Frameworks */ = {isa = PBXBuildFile; productRef = F254AA7C6B3D4661BE03404C /* SwiftMath */; };
 		C5A1F0F02F0B0001008EE419 /* StudentCore in Frameworks */ = {isa = PBXBuildFile; productRef = C5A1F1102F0B0001008EE419 /* StudentCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		C54E8FAF2F0A86A0008EE419 /* StudentApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StudentApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		E1ABE358FEE14E15A3F80EB8 /* StudentApp/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = StudentApp/Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -43,7 +41,6 @@
 			children = (
 				C54E8FB12F0A86A0008EE419 /* StudentApp */,
 				C54E8FB02F0A86A0008EE419 /* Products */,
-				C59161732F1FCB2A00315ED5 /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -53,14 +50,6 @@
 				C54E8FAF2F0A86A0008EE419 /* StudentApp.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		C59161732F1FCB2A00315ED5 /* Recovered References */ = {
-			isa = PBXGroup;
-			children = (
-				E1ABE358FEE14E15A3F80EB8 /* StudentApp/Assets.xcassets */,
-			);
-			name = "Recovered References";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -133,7 +122,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				61205435000D4CB2B2425E4B /* StudentApp/Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
