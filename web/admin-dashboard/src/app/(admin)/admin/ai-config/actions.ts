@@ -69,9 +69,13 @@ export async function publishAiPromptConfig(
     throw new Error("Prompt version, system prompt, and model are required.");
   }
 
+  const archivePayload = {
+    status: "archived",
+    updated_at: now,
+  } as unknown as never;
   const { error: archiveError } = await context.supabase
     .from("ai_prompt_configs")
-    .update({ status: "archived", updated_at: now })
+    .update(archivePayload)
     .eq("kind", input.kind)
     .eq("status", "published");
 
@@ -79,21 +83,23 @@ export async function publishAiPromptConfig(
     throw new Error("Failed to archive existing config.");
   }
 
+  const insertPayload = {
+    kind: input.kind,
+    prompt_version: promptVersion,
+    system_prompt: systemPrompt,
+    model_provider: input.model_provider,
+    model_id: modelId,
+    status: "published",
+    notes: input.notes ?? null,
+    created_by: context.admin.id,
+    created_at: now,
+    updated_at: now,
+    published_at: now,
+  } as unknown as never;
+
   const { data, error } = await context.supabase
     .from("ai_prompt_configs")
-    .insert({
-      kind: input.kind,
-      prompt_version: promptVersion,
-      system_prompt: systemPrompt,
-      model_provider: input.model_provider,
-      model_id: modelId,
-      status: "published",
-      notes: input.notes ?? null,
-      created_by: context.admin.id,
-      created_at: now,
-      updated_at: now,
-      published_at: now,
-    })
+    .insert(insertPayload)
     .select(
       "id, kind, prompt_version, system_prompt, model_provider, model_id, status, created_at, updated_at, published_at",
     )
@@ -103,10 +109,13 @@ export async function publishAiPromptConfig(
     throw new Error("Failed to publish AI prompt config.");
   }
 
+  // Supabase table typings for ai_prompt_configs are missing, so cast the selected row.
+  const publishedConfig = data as unknown as AiPromptConfig;
+
   await recordAdminEvent(context, {
     action: "ai_config.publish",
     resourceType: "ai_prompt_configs",
-    resourceId: data.id,
+    resourceId: publishedConfig.id,
     metadata: {
       kind: input.kind,
       prompt_version: promptVersion,
@@ -115,7 +124,7 @@ export async function publishAiPromptConfig(
     },
   });
 
-  return data as AiPromptConfig;
+  return publishedConfig;
 }
 
 export async function archiveAiPromptConfig(
@@ -125,9 +134,13 @@ export async function archiveAiPromptConfig(
   const context = await requireAdmin(accessToken);
   const now = new Date().toISOString();
 
+  const archivePayload = {
+    status: "archived",
+    updated_at: now,
+  } as unknown as never;
   const { data, error } = await context.supabase
     .from("ai_prompt_configs")
-    .update({ status: "archived", updated_at: now })
+    .update(archivePayload)
     .eq("id", configId)
     .select("id, kind")
     .single();
@@ -136,11 +149,13 @@ export async function archiveAiPromptConfig(
     throw new Error("Failed to archive AI prompt config.");
   }
 
+  const archivedConfig = data as unknown as Pick<AiPromptConfig, "id" | "kind">;
+
   await recordAdminEvent(context, {
     action: "ai_config.archive",
     resourceType: "ai_prompt_configs",
-    resourceId: data.id,
-    metadata: { kind: data.kind },
+    resourceId: archivedConfig.id,
+    metadata: { kind: archivedConfig.kind },
   });
 }
 
@@ -160,12 +175,13 @@ export async function getAiProviderKeyStatus(
     throw new Error("Failed to load provider key status.");
   }
 
-  const apiKey = (data?.api_key as string | undefined) ?? "";
+  const record = data as unknown as { api_key: string | null; updated_at: string | null } | null;
+  const apiKey = record?.api_key ?? "";
   return {
     provider,
     hasKey: apiKey.length > 0,
     last4: apiKey.length >= 4 ? apiKey.slice(-4) : null,
-    updatedAt: (data?.updated_at as string | null) ?? null,
+    updatedAt: record?.updated_at ?? null,
   };
 }
 
@@ -192,28 +208,32 @@ export async function upsertAiProviderKey(
     throw new Error("Failed to verify provider key.");
   }
 
-  if (existing?.id) {
+  const existingRecord = existing as unknown as { id: string } | null;
+
+  if (existingRecord?.id) {
+    const updatePayload = {
+      api_key: trimmed,
+      updated_at: now,
+      updated_by: context.admin.id,
+    } as unknown as never;
     const { error } = await context.supabase
       .from("ai_provider_keys")
-      .update({
-        api_key: trimmed,
-        updated_at: now,
-        updated_by: context.admin.id,
-      })
-      .eq("id", existing.id);
+      .update(updatePayload)
+      .eq("id", existingRecord.id);
 
     if (error) {
       throw new Error("Failed to update provider key.");
     }
   } else {
-    const { error } = await context.supabase.from("ai_provider_keys").insert({
+    const insertPayload = {
       provider,
       api_key: trimmed,
       created_at: now,
       updated_at: now,
       created_by: context.admin.id,
       updated_by: context.admin.id,
-    });
+    } as unknown as never;
+    const { error } = await context.supabase.from("ai_provider_keys").insert(insertPayload);
 
     if (error) {
       throw new Error("Failed to save provider key.");
