@@ -25,6 +25,8 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     func load() async {
+        errorMessage = nil
+
         do {
             remoteMessages = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
             messages = mergeMessages(remoteMessages)
@@ -111,6 +113,11 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     private func mergeMessages(_ messages: [CoachThreadMessage]) -> [CoachThreadMessage] {
-        messages.sorted(by: { $0.createdAt < $1.createdAt })
+        messages.sorted { lhs, rhs in
+            if lhs.createdAt != rhs.createdAt {
+                return lhs.createdAt < rhs.createdAt
+            }
+            return lhs.id < rhs.id
+        }
     }
 }
