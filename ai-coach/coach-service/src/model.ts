@@ -5,7 +5,10 @@ export type ModelSpec = {
   modelId: string;
 };
 
-const MINIMAX_BASE_URL = process.env.MINIMAX_BASE_URL?.trim();
+function getMinimaxBaseUrl(): string | undefined {
+  const raw = process.env.MINIMAX_BASE_URL?.trim();
+  return raw && raw.length > 0 ? raw : undefined;
+}
 
 export function parseModelSpec(spec: string, fallbackProvider: KnownProvider = "minimax"): ModelSpec {
   const trimmed = spec.trim();
@@ -39,8 +42,9 @@ export function resolveModel(spec: string, fallbackProvider: KnownProvider = "mi
   }
 
   const resolved = cloneModel(model);
-  if (parsed.provider === "minimax" && MINIMAX_BASE_URL) {
-    resolved.baseUrl = MINIMAX_BASE_URL;
+  const minimaxBaseUrl = getMinimaxBaseUrl();
+  if (parsed.provider === "minimax" && minimaxBaseUrl) {
+    resolved.baseUrl = minimaxBaseUrl;
   }
   return resolved;
 }
@@ -56,6 +60,6 @@ export function applyMinimaxAuth<T extends Model<any>>(model: T, apiKey?: string
   return {
     ...model,
     headers,
-    baseUrl: MINIMAX_BASE_URL || model.baseUrl,
+    baseUrl: getMinimaxBaseUrl() ?? model.baseUrl,
   };
 }
