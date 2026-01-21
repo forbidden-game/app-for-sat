@@ -109,10 +109,13 @@ export async function publishAiPromptConfig(
     throw new Error("Failed to publish AI prompt config.");
   }
 
+  // Supabase table typings for ai_prompt_configs are missing, so cast the selected row.
+  const publishedConfig = data as unknown as AiPromptConfig;
+
   await recordAdminEvent(context, {
     action: "ai_config.publish",
     resourceType: "ai_prompt_configs",
-    resourceId: data.id,
+    resourceId: publishedConfig.id,
     metadata: {
       kind: input.kind,
       prompt_version: promptVersion,
@@ -121,7 +124,7 @@ export async function publishAiPromptConfig(
     },
   });
 
-  return data as AiPromptConfig;
+  return publishedConfig;
 }
 
 export async function archiveAiPromptConfig(
@@ -146,11 +149,13 @@ export async function archiveAiPromptConfig(
     throw new Error("Failed to archive AI prompt config.");
   }
 
+  const archivedConfig = data as unknown as Pick<AiPromptConfig, "id" | "kind">;
+
   await recordAdminEvent(context, {
     action: "ai_config.archive",
     resourceType: "ai_prompt_configs",
-    resourceId: data.id,
-    metadata: { kind: data.kind },
+    resourceId: archivedConfig.id,
+    metadata: { kind: archivedConfig.kind },
   });
 }
 
