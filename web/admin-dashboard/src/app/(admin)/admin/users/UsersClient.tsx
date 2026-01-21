@@ -13,9 +13,10 @@ import {
   type UserListItem,
   type UserRole,
 } from "./actions";
-import { Skeleton, SkeletonCard } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingButton } from "@/components/Button";
+import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 const ROLE_OPTIONS: UserRole[] = ["student", "parent", "admin"];
 
@@ -42,13 +43,12 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<UserInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") ?? "");
   const [page, setPage] = useState(() => {
-    const value = searchParams.get("page");
-    const parsed = value ? Number(value) : NaN;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+    const value = Number(searchParams.get("page"));
+    return Number.isFinite(value) && value > 0 ? value : 1;
   });
   const [hasNext, setHasNext] = useState(false);
-  const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") ?? "");
 
   const getAccessToken = useCallback(async () => {
     if (!supabase) {
@@ -66,44 +66,39 @@ export default function UsersPage() {
     return session.access_token;
   }, [supabase]);
 
-  const loadUsers = useCallback(
-    async (targetPage: number) => {
-      const safePage = Math.max(1, targetPage);
-      setLoading(true);
-      setError(null);
+  const loadUsersPage = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        setLoading(false);
-        return;
-      }
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const result: ListUsersResult = await listUsers(accessToken, {
-          page: safePage,
-          pageSize: PAGE_SIZE,
-        });
-        setUsers(result.users);
-        setPage(result.page);
-        setHasNext(result.hasNext);
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Failed to load users.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getAccessToken],
-  );
+    try {
+      const result: ListUsersResult = await listUsers(accessToken, {
+        page,
+        pageSize: PAGE_SIZE,
+        role: roleFilter ? (roleFilter as UserRole) : undefined,
+      });
+      setUsers(result.users);
+      setHasNext(result.hasNext);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessToken, page, roleFilter]);
 
   useEffect(() => {
-    void loadUsers(page);
-  }, [loadUsers, page]);
+    void loadUsersPage();
+  }, [loadUsersPage]);
 
   useEffect(() => {
     setRoleFilter(searchParams.get("role") ?? "");
-    const nextPage = searchParams.get("page");
-    const parsedPage = nextPage ? Number(nextPage) : NaN;
-    setPage(Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1);
+    const value = Number(searchParams.get("page"));
+    setPage(Number.isFinite(value) && value > 0 ? value : 1);
   }, [searchParams]);
 
   useEffect(() => {
@@ -113,6 +108,7 @@ export default function UsersPage() {
     } else {
       nextParams.delete("role");
     }
+
     if (page > 1) {
       nextParams.set("page", String(page));
     } else {
@@ -124,12 +120,19 @@ export default function UsersPage() {
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [roleFilter, page, pathname, router, searchParams]);
+  }, [page, roleFilter, pathname, router, searchParams]);
 
   const filteredUsers = useMemo(() => {
     if (!roleFilter) return users;
     return users.filter((user) => user.role === roleFilter);
   }, [users, roleFilter]);
+
+  // Sortable hook for user table - sorting current page
+  const { sortedData: sortedUsers, handleSort: handleUserSort, sortConfig: userSortConfig } = useSortable(
+    filteredUsers,
+    "created_at",
+    "desc",
+  );
 
   function resetForm() {
     setForm({ ...EMPTY_FORM });
@@ -145,11 +148,11 @@ export default function UsersPage() {
 
     try {
       if (editingId) {
-        const updated = await updateUser(accessToken, editingId, form);
-        setUsers((prev) => prev.map((user) => (user.id === updated.id ? updated : user)));
+        await updateUser(accessToken, editingId, form);
+        await loadUsersPage();
       } else {
-        const created = await createUser(accessToken, form);
-        setUsers((prev) => [created, ...prev]);
+        await createUser(accessToken, form);
+        setPage(1);
       }
       resetForm();
     } catch (saveError) {
@@ -171,10 +174,10 @@ export default function UsersPage() {
 
     try {
       await deleteUser(accessToken, user.id);
-      setUsers((prev) => prev.filter((item) => item.id !== user.id));
       if (editingId === user.id) {
         resetForm();
       }
+      await loadUsersPage();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Failed to delete user.");
     } finally {
@@ -300,21 +303,24 @@ export default function UsersPage() {
             <div>
               <p className="text-sm font-semibold text-[color:var(--ink)]">User List</p>
               <p className="text-xs text-[color:var(--ink-muted)]">
-                Showing page {page}. Filters only apply to the current page.
+                Showing {sortedUsers.length} users on page {page}. Click column headers to sort.
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-xs text-[color:var(--ink-muted)]">
               <button
-                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
+                type="button"
                 onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page <= 1 || loading}
+                disabled={page <= 1}
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Prev
               </button>
+              <span className="tabular-nums">Page {page}</span>
               <button
-                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => setPage((prev) => (hasNext ? prev + 1 : prev))}
-                disabled={!hasNext || loading}
+                type="button"
+                onClick={() => setPage((prev) => prev + 1)}
+                disabled={!hasNext}
+                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Next
               </button>
@@ -324,22 +330,67 @@ export default function UsersPage() {
             <table className="min-w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[800px]">
               <thead className="sticky top-0 bg-[color:var(--surface-soft)] z-10">
                 <tr className="border-b border-[color:var(--border)] text-xs font-medium text-[color:var(--ink-muted)]">
-                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px]">Email</th>
-                  <th scope="col" className="px-4 py-3 min-w-[120px]">Name</th>
-                  <th scope="col" className="px-4 py-3 min-w-[90px]">Role</th>
-                  <th scope="col" className="px-4 py-3 min-w-[140px]">Created</th>
-                  <th scope="col" className="px-4 py-3 min-w-[140px]">Last sign-in</th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleUserSort("email" as keyof UserListItem)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Email
+                      {renderSortIcon(userSortConfig.column === "email", userSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[120px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleUserSort("display_name" as keyof UserListItem)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Name
+                      {renderSortIcon(userSortConfig.column === "display_name", userSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[90px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleUserSort("role" as keyof UserListItem)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Role
+                      {renderSortIcon(userSortConfig.column === "role", userSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[140px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleUserSort("created_at" as keyof UserListItem)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Created
+                      {renderSortIcon(userSortConfig.column === "created_at", userSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[140px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleUserSort("last_sign_in_at" as keyof UserListItem)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Last sign-in
+                      {renderSortIcon(userSortConfig.column === "last_sign_in_at", userSortConfig.direction)}
+                    </span>
+                  </th>
                   <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[120px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.length === 0 ? (
+                {sortedUsers.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}
                     >
                       <EmptyState
-                        title={roleFilter ? `No ${roleFilter} users found` : "No users found on this page"}
+                        title={roleFilter ? `No ${roleFilter} users found` : "No users found"}
                         description={roleFilter ? "Try selecting a different role filter." : "Users will appear here once they sign up."}
                         icon="users"
                         className="m-4"
@@ -347,7 +398,7 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user) => (
+                  sortedUsers.map((user) => (
                     <tr key={user.id} className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] transition-colors">
                       <td className="px-4 py-3 text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{user.email ?? "(no email)"}</td>
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.display_name ?? "—"}</td>

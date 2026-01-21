@@ -64,17 +64,10 @@ export type SearchFilters = {
 
 export async function searchAvailableQuestions(
   accessToken: string,
-  bankId: string,
+  _bankId: string,
   filters: SearchFilters,
 ): Promise<AvailableQuestion[]> {
   const { supabase } = await requireAdmin(accessToken);
-
-  const { data: existingIds } = await supabase
-    .from("question_bank_questions")
-    .select("question_id")
-    .eq("bank_id", bankId);
-
-  const excludeIds = (existingIds ?? []).map((r: { question_id: string }) => r.question_id);
 
   let query = supabase
     .from("questions")
@@ -90,9 +83,6 @@ export async function searchAvailableQuestions(
     query = query.eq("subject", filters.subject);
   }
 
-  if (excludeIds.length > 0) {
-    query = query.not("id", "in", `(${excludeIds.join(",")})`);
-  }
 
   const { data, error } = await query;
 
@@ -108,17 +98,31 @@ export async function getAvailableSubjects(
 ): Promise<string[]> {
   const { supabase } = await requireAdmin(accessToken);
 
-  const { data, error } = await supabase
-    .from("questions")
-    .select("subject")
-    .order("subject");
+  const values = new Set<string>();
+  const pageSize = 1000;
+  let offset = 0;
 
-  if (error) {
-    throw new Error("Failed to load subjects.");
+  while (true) {
+    const { data, error } = await supabase
+      .from("questions")
+      .select("subject")
+      .order("subject")
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      throw new Error("Failed to load subjects.");
+    }
+
+    const rows = (data ?? []) as Array<{ subject: string }>;
+    for (const row of rows) {
+      if (row.subject) values.add(row.subject);
+    }
+
+    if (rows.length < pageSize) break;
+    offset += pageSize;
   }
 
-  const uniqueSubjects = [...new Set((data ?? []).map((r: { subject: string }) => r.subject))];
-  return uniqueSubjects.filter(Boolean);
+  return Array.from(values);
 }
 
 export async function addQuestionToBank(
@@ -129,13 +133,17 @@ export async function addQuestionToBank(
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
 
-  const { data: maxPos } = await supabase
+  const { data: maxPos, error: maxPosError } = await supabase
     .from("question_bank_questions")
     .select("position")
     .eq("bank_id", bankId)
     .order("position", { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
+
+  if (maxPosError) {
+    throw new Error("Failed to determine next position.");
+  }
 
   const nextPosition = (maxPos?.position ?? 0) + 1;
 

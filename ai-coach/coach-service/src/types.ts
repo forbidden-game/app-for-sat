@@ -16,6 +16,11 @@ export type AiJobRow = {
   student_id: string | null;
   payload: unknown;
   error: string | null;
+  last_error: string | null;
+  last_error_at: string | null;
+  last_error_code: string | null;
+  attempt_count: number | null;
+  completed_at: string | null;
   locked_at: string | null;
   locked_by: string | null;
   run_after: string | null;

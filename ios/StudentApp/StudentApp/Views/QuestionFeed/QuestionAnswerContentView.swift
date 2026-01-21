@@ -90,16 +90,13 @@ struct QuestionAnswerContentView: View {
         let isFeedback = isCurrentQuestion && state.inputState.showFeedback && isSelected
         let selectedFill = AppTheme.boardDark.opacity(0.22)
         let selectedStroke = AppTheme.boardDark
-        let badgeFill = isSelected ? AppTheme.boardDark : AppTheme.surfaceRaised
-        let badgeStroke = isSelected ? AppTheme.boardDark : AppTheme.dividerStrong
-        let badgeText = isSelected ? AppTheme.boardLight : AppTheme.textSecondary
         let optionFill = isSelected ? selectedFill : AppTheme.surfaceRaised
         let optionStroke = isSelected ? selectedStroke : AppTheme.divider
 
         return Button {
             guard isCurrentQuestion else { return }
             triggerSelectionHaptic()
-            withAnimation(.easeInOut(duration: 0.15)) {
+            withAnimation(.easeInOut(duration: AppMetrics.animationDurationFast)) {
                 state.applySelection(.option(option.label))
             }
             recordAnswer(option.label, questionId: questionId)
@@ -107,16 +104,8 @@ struct QuestionAnswerContentView: View {
             scheduleAutoAdvance(questionId: questionId)
         } label: {
             HStack(spacing: 12) {
-                Text(option.label)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(badgeText)
-                    .frame(width: AppMetrics.badgeSize, height: AppMetrics.badgeSize)
-                    .background(badgeFill)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(badgeStroke, lineWidth: isSelected ? 2 : 1)
-                    )
+                // ✅ Using OptionBadge component
+                OptionBadge(label: option.label, isSelected: isSelected)
 
                 MathTextView(text: option.content, style: .option)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -133,13 +122,18 @@ struct QuestionAnswerContentView: View {
                 shadowY: AppMetrics.rowShadowY,
                 showShadow: isSelected
             )
+            // ✅ Unified using AppMetrics.selectionIndicatorWidth
             .overlay(alignment: .leading) {
                 if isSelected {
-                    RoundedRectangle(cornerRadius: 2, style: .continuous)
-                        .fill(AppTheme.boardDark)
-                        .frame(width: 4)
-                        .padding(.vertical, 8)
-                        .offset(x: 6)
+                    RoundedRectangle(
+                        cornerRadius: AppMetrics.selectionIndicatorCornerRadius,
+                        style: .continuous
+                    )
+                    .fill(AppTheme.boardDark)
+                    // ✅ Using AppMetrics.selectionIndicatorWidth
+                    .frame(width: AppMetrics.selectionIndicatorWidth)
+                    .padding(.vertical, 8)
+                    .offset(x: 6)
                 }
             }
             .scaleEffect(isFeedback ? 0.98 : 1.0)

@@ -106,6 +106,115 @@ async function fetchAttemptContext(
   return data as AttemptForCoach;
 }
 
+async function fetchProfileRow(supabase: SupabaseClient, studentId: string): Promise<ProfileRow | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", studentId)
+    .maybeSingle();
+  if (error) {
+    logger.warn({ err: error, studentId }, "profile lookup failed");
+    return null;
+  }
+  return (data as ProfileRow | null) ?? null;
+}
+
+async function fetchSnapshot(supabase: SupabaseClient, studentId: string): Promise<unknown | null> {
+  const { data, error } = await supabase
+    .from("student_snapshots")
+    .select("*")
+    .eq("student_id", studentId)
+    .maybeSingle();
+  if (error) {
+    logger.warn({ err: error, studentId }, "student snapshot lookup failed");
+    return null;
+  }
+  return data ?? null;
+}
+
+async function fetchReports(
+  supabase: SupabaseClient,
+  studentId: string,
+  limit: number,
+): Promise<unknown[]> {
+  const { data, error } = await supabase
+    .from("student_reports")
+    .select("id, period_kind, period_key, period_start, period_end, summary, plan, metrics, delta, created_at")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    logger.warn({ err: error, studentId }, "student reports lookup failed");
+    return [];
+  }
+  return data ?? [];
+}
+
+async function fetchInsights(
+  supabase: SupabaseClient,
+  studentId: string,
+  limit: number,
+): Promise<unknown[]> {
+  const { data, error } = await supabase
+    .from("attempt_insights")
+    .select("attempt_id, procedure_id, error_step_index, error_mode_enum, explanation_short, created_at")
+    .eq("student_id", studentId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    logger.warn({ err: error, studentId }, "recent insights lookup failed");
+    return [];
+  }
+  return data ?? [];
+}
+
+async function fetchMessages(
+  supabase: SupabaseClient,
+  studentId: string,
+  messagesBeforeCreatedAt: string | null,
+  limit: number,
+): Promise<CoachMessage[]> {
+  let query = supabase
+    .from("coach_thread_messages")
+    .select("id,student_id,role,content,created_at,linked_attempt_id,reply_to_message_id")
+    .eq("student_id", studentId);
+
+  if (messagesBeforeCreatedAt) {
+    query = query.lte("created_at", messagesBeforeCreatedAt);
+  }
+
+  const { data, error } = await query.order("created_at", { ascending: false }).limit(limit);
+  if (error) {
+    logger.warn({ err: error, studentId }, "recent messages lookup failed");
+    return [];
+  }
+
+  const chronological = (data ?? []).slice().reverse() as CoachThreadMessageRow[];
+  return chronological.map((row) => ({
+    role: row.role,
+    text: extractText(row.content),
+    created_at: row.created_at,
+    linked_attempt_id: row.linked_attempt_id,
+    reply_to_message_id: row.reply_to_message_id,
+  }));
+}
+
+async function fetchLinkedInsight(
+  supabase: SupabaseClient,
+  attemptLookupId: string,
+): Promise<unknown | null> {
+  const { data, error } = await supabase
+    .from("attempt_insights")
+    .select("attempt_id,explanation_short,followups,error_step_index,error_mode_enum,procedure_id")
+    .eq("attempt_id", attemptLookupId)
+    .maybeSingle();
+  if (error) {
+    logger.warn({ err: error, attemptId: attemptLookupId }, "linked attempt insight lookup failed");
+    return null;
+  }
+  return data ?? null;
+}
+
 export async function buildCoachContext(params: BuildCoachContextParams): Promise<CoachContextPacket> {
   const attemptLookupId = params.attemptId ?? params.linkedAttemptId ?? null;
   const attemptContext = attemptLookupId ? await fetchAttemptContext(params.supabase, attemptLookupId) : null;
@@ -114,11 +223,7 @@ export async function buildCoachContext(params: BuildCoachContextParams): Promis
     throw new Error("missing_attempt_context");
   }
 
-  const resolvedStudentId =
-    params.studentId ??
-    attemptContext?.attempt?.student_id ??
-    null;
-
+  const resolvedStudentId = params.studentId ?? attemptContext?.attempt?.student_id ?? null;
   if (!resolvedStudentId) {
     throw new Error("missing_student_id");
   }
@@ -126,104 +231,38 @@ export async function buildCoachContext(params: BuildCoachContextParams): Promis
   const now = new Date();
   const timeOfDay = resolveTimeOfDay(now);
 
-  let displayName: string | null = null;
-  const { data: profileRow, error: profileError } = await params.supabase
-    .from("profiles")
-    .select("display_name")
-    .eq("id", resolvedStudentId)
-    .maybeSingle();
-  if (profileError) {
-    logger.warn({ err: profileError, studentId: resolvedStudentId }, "profile lookup failed");
-  } else if (profileRow) {
-    displayName = (profileRow as ProfileRow).display_name ?? null;
-  }
+  const profilePromise = fetchProfileRow(params.supabase, resolvedStudentId);
+  const snapshotPromise = params.includeSnapshot === false
+    ? Promise.resolve(null)
+    : fetchSnapshot(params.supabase, resolvedStudentId);
+  const reportsPromise = params.includeReports === false
+    ? Promise.resolve([])
+    : fetchReports(params.supabase, resolvedStudentId, params.reportLimit ?? 2);
+  const insightsPromise = params.includeInsights === false
+    ? Promise.resolve([])
+    : fetchInsights(params.supabase, resolvedStudentId, params.insightLimit ?? 5);
+  const messagesPromise = params.includeMessages === false
+    ? Promise.resolve([])
+    : fetchMessages(
+        params.supabase,
+        resolvedStudentId,
+        params.messagesBeforeCreatedAt ?? null,
+        params.messageLimit ?? 30,
+      );
+  const linkedInsightPromise = attemptLookupId
+    ? fetchLinkedInsight(params.supabase, attemptLookupId)
+    : Promise.resolve(null);
 
-  let snapshot: unknown | null = null;
-  if (params.includeSnapshot !== false) {
-    const { data, error } = await params.supabase
-      .from("student_snapshots")
-      .select("*")
-      .eq("student_id", resolvedStudentId)
-      .maybeSingle();
-    if (error) {
-      logger.warn({ err: error, studentId: resolvedStudentId }, "student snapshot lookup failed");
-    } else {
-      snapshot = data ?? null;
-    }
-  }
+  const [profileRow, snapshot, reports, recentInsights, recentMessages, linkedAttemptInsight] = await Promise.all([
+    profilePromise,
+    snapshotPromise,
+    reportsPromise,
+    insightsPromise,
+    messagesPromise,
+    linkedInsightPromise,
+  ]);
 
-  let reports: unknown[] = [];
-  if (params.includeReports !== false) {
-    const { data, error } = await params.supabase
-      .from("student_reports")
-      .select("id, period_kind, period_key, period_start, period_end, summary, plan, metrics, delta, created_at")
-      .eq("student_id", resolvedStudentId)
-      .order("created_at", { ascending: false })
-      .limit(params.reportLimit ?? 2);
-    if (error) {
-      logger.warn({ err: error, studentId: resolvedStudentId }, "student reports lookup failed");
-    } else {
-      reports = data ?? [];
-    }
-  }
-
-  let recentInsights: unknown[] = [];
-  if (params.includeInsights !== false) {
-    const { data, error } = await params.supabase
-      .from("attempt_insights")
-      .select("attempt_id, procedure_id, error_step_index, error_mode_enum, explanation_short, created_at")
-      .eq("student_id", resolvedStudentId)
-      .order("created_at", { ascending: false })
-      .limit(params.insightLimit ?? 5);
-    if (error) {
-      logger.warn({ err: error, studentId: resolvedStudentId }, "recent insights lookup failed");
-    } else {
-      recentInsights = data ?? [];
-    }
-  }
-
-  let recentMessages: CoachMessage[] = [];
-  if (params.includeMessages !== false) {
-    let query = params.supabase
-      .from("coach_thread_messages")
-      .select("id,student_id,role,content,created_at,linked_attempt_id,reply_to_message_id")
-      .eq("student_id", resolvedStudentId);
-
-    if (params.messagesBeforeCreatedAt) {
-      query = query.lte("created_at", params.messagesBeforeCreatedAt);
-    }
-
-    const { data, error } = await query
-      .order("created_at", { ascending: false })
-      .limit(params.messageLimit ?? 30);
-    if (error) {
-      logger.warn({ err: error, studentId: resolvedStudentId }, "recent messages lookup failed");
-    } else {
-      const chronological = (data ?? []).slice().reverse() as CoachThreadMessageRow[];
-      recentMessages = chronological.map((row) => ({
-        role: row.role,
-        text: extractText(row.content),
-        created_at: row.created_at,
-        linked_attempt_id: row.linked_attempt_id,
-        reply_to_message_id: row.reply_to_message_id,
-      }));
-    }
-  }
-
-  let linkedAttemptInsight: unknown | null = null;
-  if (attemptLookupId) {
-    const { data, error } = await params.supabase
-      .from("attempt_insights")
-      .select("attempt_id,explanation_short,followups,error_step_index,error_mode_enum,procedure_id")
-      .eq("attempt_id", attemptLookupId)
-      .maybeSingle();
-    if (error) {
-      logger.warn({ err: error, attemptId: attemptLookupId }, "linked attempt insight lookup failed");
-    } else {
-      linkedAttemptInsight = data ?? null;
-    }
-  }
-
+  const displayName = profileRow?.display_name ?? null;
   const { recentAccuracy, accuracyDelta } = readAccuracy(reports);
 
   return {

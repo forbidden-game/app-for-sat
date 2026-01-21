@@ -4,9 +4,19 @@ import type { CoachConfig } from "./config.js";
 import { logger } from "./logger.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+const BATCH_SIZE = 200;
 
 type ActiveStudentRow = {
   student_id: string;
+};
+
+type JobInsertPayload = {
+  kind: string;
+  status: "queued";
+  student_id: string;
+  payload: Record<string, unknown>;
+  run_after: string;
+  dedupe_key: string | null;
 };
 
 function startOfDayUtc(date: Date): Date {
@@ -27,53 +37,42 @@ async function listActiveStudents(supabase: SupabaseClient, sinceIso: string): P
   return (data as ActiveStudentRow[] | null)?.map((row) => row.student_id) ?? [];
 }
 
-async function enqueueJob(
-  supabase: SupabaseClient,
-  payload: {
-    kind: string;
-    status: "queued";
-    student_id: string;
-    payload: Record<string, unknown>;
-    run_after: string;
-    dedupe_key: string | null;
-  },
-): Promise<void> {
-  const { error } = await supabase.from("ai_jobs").insert(payload);
+async function enqueueJobs(supabase: SupabaseClient, payloads: JobInsertPayload[]): Promise<void> {
+  if (payloads.length === 0) return;
+
+  const { error } = await supabase.from("ai_jobs").upsert(payloads, {
+    onConflict: "kind,dedupe_key",
+    ignoreDuplicates: true,
+  });
 
   if (error) {
-    if (error.code === "23505") return;
     throw new Error(error.message);
   }
 }
 
-async function enqueueSnapshotRefresh(
-  supabase: SupabaseClient,
-  studentId: string,
-  periodEnd: Date,
-): Promise<void> {
+function buildSnapshotRefreshJob(studentId: string, periodEnd: Date): JobInsertPayload {
   const key = `snapshot:${studentId}:${dateKey(periodEnd)}`;
-  await enqueueJob(supabase, {
+  return {
     kind: "snapshot_refresh",
     status: "queued",
     student_id: studentId,
     payload: { student_id: studentId, period_end: periodEnd.toISOString() },
     run_after: new Date().toISOString(),
     dedupe_key: key,
-  });
+  };
 }
 
-async function enqueueProgressReport(
-  supabase: SupabaseClient,
+function buildProgressReportJob(
   studentId: string,
   periodKind: "weekly" | "monthly",
   periodDays: number,
   periodEnd: Date,
-): Promise<void> {
+): JobInsertPayload {
   const periodStart = subDays(periodEnd, periodDays);
   const periodKey = `${periodKind}-${dateKey(periodEnd)}`;
   const key = `report:${studentId}:${periodKey}`;
 
-  await enqueueJob(supabase, {
+  return {
     kind: "progress_report",
     status: "queued",
     student_id: studentId,
@@ -86,7 +85,7 @@ async function enqueueProgressReport(
     },
     run_after: new Date().toISOString(),
     dedupe_key: key,
-  });
+  };
 }
 
 export async function scheduleRecurringJobs(config: CoachConfig, supabase: SupabaseClient): Promise<void> {
@@ -95,14 +94,20 @@ export async function scheduleRecurringJobs(config: CoachConfig, supabase: Supab
   if (studentIds.length === 0) return;
 
   const periodEnd = startOfDayUtc(new Date());
+  const payloads: JobInsertPayload[] = [];
 
   for (const studentId of studentIds) {
+    payloads.push(buildSnapshotRefreshJob(studentId, periodEnd));
+    payloads.push(buildProgressReportJob(studentId, "weekly", config.reportWeeklyDays, periodEnd));
+    payloads.push(buildProgressReportJob(studentId, "monthly", config.reportMonthlyDays, periodEnd));
+  }
+
+  for (let i = 0; i < payloads.length; i += BATCH_SIZE) {
+    const batch = payloads.slice(i, i + BATCH_SIZE);
     try {
-      await enqueueSnapshotRefresh(supabase, studentId, periodEnd);
-      await enqueueProgressReport(supabase, studentId, "weekly", config.reportWeeklyDays, periodEnd);
-      await enqueueProgressReport(supabase, studentId, "monthly", config.reportMonthlyDays, periodEnd);
+      await enqueueJobs(supabase, batch);
     } catch (err) {
-      logger.warn({ err, studentId }, "failed to enqueue scheduled jobs");
+      logger.warn({ err, batchSize: batch.length }, "failed to enqueue scheduled jobs");
     }
   }
 }

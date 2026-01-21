@@ -63,6 +63,9 @@ export type QuestionType = {
   is_active: boolean;
 };
 
+export type QuestionSortField = "created_at" | "subject" | "module" | "difficulty" | "question_type";
+export type SortDirection = "asc" | "desc";
+
 export type ListQuestionsParams = {
   page?: number;
   pageSize?: number;
@@ -71,6 +74,8 @@ export type ListQuestionsParams = {
   module?: string;
   difficulty?: number;
   question_type?: string;
+  sortBy?: QuestionSortField;
+  sortDirection?: SortDirection;
 };
 
 export type ListQuestionsResult = {
@@ -144,8 +149,14 @@ export async function listQuestions(
     query = query.eq("question_type", params.question_type);
   }
 
+  const sortBy =
+    params.sortBy && ["created_at", "subject", "module", "difficulty", "question_type"].includes(params.sortBy)
+      ? params.sortBy
+      : "created_at";
+  const sortDirection = params.sortDirection === "asc" ? "asc" : "desc";
+
   query = query
-    .order("created_at", { ascending: false })
+    .order(sortBy, { ascending: sortDirection === "asc" })
     .range(offset, offset + pageSize - 1);
 
   const { data, error, count } = await query;
@@ -231,35 +242,40 @@ export async function createQuestion(
     .select("id, subject, module, difficulty, question_type, stem, answer_key, metadata, created_at")
     .single();
 
-  if (questionError) {
-    throw new Error(questionError.message);
+  if (questionError || !question) {
+    throw new Error(questionError?.message ?? "Failed to create question.");
   }
 
-  if (options.length > 0) {
-    const optionPayload = options.map((opt) => ({
-      question_id: question.id,
-      label: opt.label.trim(),
-      content: opt.content.trim(),
-    }));
-    const { error: optError } = await supabase
-      .from("question_options")
-      .insert(optionPayload);
-    if (optError) {
-      throw new Error(`Failed to create options: ${optError.message}`);
+  try {
+    if (options.length > 0) {
+      const optionPayload = options.map((opt) => ({
+        question_id: question.id,
+        label: opt.label.trim(),
+        content: opt.content.trim(),
+      }));
+      const { error: optError } = await supabase
+        .from("question_options")
+        .insert(optionPayload);
+      if (optError) {
+        throw new Error(`Failed to create options: ${optError.message}`);
+      }
     }
-  }
 
-  if (tagIds.length > 0) {
-    const tagPayload = tagIds.map((tagId) => ({
-      question_id: question.id,
-      tag_id: tagId,
-    }));
-    const { error: tagError } = await supabase
-      .from("question_tags")
-      .insert(tagPayload);
-    if (tagError) {
-      throw new Error(`Failed to assign tags: ${tagError.message}`);
+    if (tagIds.length > 0) {
+      const tagPayload = tagIds.map((tagId) => ({
+        question_id: question.id,
+        tag_id: tagId,
+      }));
+      const { error: tagError } = await supabase
+        .from("question_tags")
+        .insert(tagPayload);
+      if (tagError) {
+        throw new Error(`Failed to assign tags: ${tagError.message}`);
+      }
     }
+  } catch (err) {
+    await supabase.from("questions").delete().eq("id", question.id);
+    throw err;
   }
 
   await recordAdminEvent(context, {
@@ -296,7 +312,14 @@ export async function updateQuestion(
     throw new Error(questionError.message);
   }
 
-  await supabase.from("question_options").delete().eq("question_id", id);
+  const { error: optionsDeleteError } = await supabase
+    .from("question_options")
+    .delete()
+    .eq("question_id", id);
+  if (optionsDeleteError) {
+    throw new Error(`Failed to reset options: ${optionsDeleteError.message}`);
+  }
+
   if (options.length > 0) {
     const optionPayload = options.map((opt) => ({
       question_id: id,
@@ -311,7 +334,14 @@ export async function updateQuestion(
     }
   }
 
-  await supabase.from("question_tags").delete().eq("question_id", id);
+  const { error: tagsDeleteError } = await supabase
+    .from("question_tags")
+    .delete()
+    .eq("question_id", id);
+  if (tagsDeleteError) {
+    throw new Error(`Failed to reset tags: ${tagsDeleteError.message}`);
+  }
+
   if (tagIds.length > 0) {
     const tagPayload = tagIds.map((tagId) => ({
       question_id: id,
@@ -455,15 +485,30 @@ export async function getDistinctValues(
   field: "subject" | "module",
 ): Promise<string[]> {
   const { supabase } = await requireAdmin(accessToken);
-  const { data, error } = await supabase
-    .from("questions")
-    .select(field)
-    .order(field, { ascending: true });
+  const values = new Set<string>();
+  const pageSize = 1000;
+  let offset = 0;
 
-  if (error) {
-    return [];
+  while (true) {
+    const { data, error } = await supabase
+      .from("questions")
+      .select(field)
+      .order(field, { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      return [];
+    }
+
+    const rows = (data ?? []) as Array<Record<string, string>>;
+    for (const row of rows) {
+      const value = row[field];
+      if (value) values.add(value);
+    }
+
+    if (rows.length < pageSize) break;
+    offset += pageSize;
   }
 
-  const unique = [...new Set((data ?? []).map((d: Record<string, string>) => d[field]))];
-  return unique.filter(Boolean);
+  return Array.from(values);
 }

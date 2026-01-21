@@ -27,6 +27,9 @@ function validateTagInput(input: TagInput) {
   if (name.length > 100) {
     throw new Error("Tag name must be 100 characters or less.");
   }
+  if (!VALID_CATEGORIES.includes(category as (typeof VALID_CATEGORIES)[number])) {
+    throw new Error("Tag category must be topic, skill, difficulty, source, or general.");
+  }
 
   return { name, category };
 }

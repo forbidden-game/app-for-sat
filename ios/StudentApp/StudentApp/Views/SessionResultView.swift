@@ -20,18 +20,18 @@ struct SessionResultView: View {
 
             VStack(spacing: 0) {
                 scoreHeader
-                    .padding(.top, 32)
-                    .padding(.bottom, 28)
+                    .padding(.top, AppMetrics.sectionSpacingLarge)
+                    .padding(.bottom, AppMetrics.sectionSpacingLarge)
 
                 resultsSection
 
                 doneButton
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 24)
+                    .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                    .padding(.bottom, AppMetrics.screenBottomPadding)
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(.easeOut(duration: AppMetrics.animationDurationVerySlow)) {
                 appeared = true
             }
         }
@@ -40,66 +40,92 @@ struct SessionResultView: View {
     private var scoreHeader: some View {
         VStack(spacing: 16) {
             ZStack {
+                // ✅ Unified using AppMetrics.circleStrokeWidth
                 Circle()
-                    .stroke(AppTheme.divider, lineWidth: 6)
+                    .stroke(AppTheme.divider, lineWidth: AppMetrics.circleStrokeWidth)
                     .frame(width: 140, height: 140)
 
                 Circle()
                     .trim(from: 0, to: appeared ? percentage / 100 : 0)
                     .stroke(
                         AppTheme.accentStrong,
-                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        style: StrokeStyle(
+                            lineWidth: AppMetrics.circleStrokeWidth,
+                            lineCap: .round
+                        )
                     )
                     .frame(width: 140, height: 140)
                     .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.8).delay(0.2), value: appeared)
+                    // ✅ Unified using AppMetrics.animationDurationSlow
+                    .animation(
+                        .easeOut(duration: AppMetrics.animationDurationSlow).delay(0.2),
+                        value: appeared
+                    )
 
                 VStack(spacing: 4) {
+                    // ✅ Using AppFont.scoreLarge
                     Text("\(result.correctCount)/\(result.totalQuestions)")
-                        .font(.system(size: 32, weight: .bold))
+                        .font(AppFont.scoreLarge)
                         .foregroundStyle(AppTheme.textPrimary)
 
+                    // ✅ Using AppFont.scoreMedium
                     Text(String(format: "%.0f%%", percentage))
-                        .font(.system(size: 18, weight: .medium))
+                        .font(AppFont.scoreMedium)
                         .foregroundStyle(AppTheme.textSecondary)
                 }
                 .opacity(appeared ? 1 : 0)
                 .scaleEffect(appeared ? 1 : 0.8)
-                .animation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.3), value: appeared)
+                .animation(
+                    AppMetrics.springAnimation.delay(0.3),
+                    value: appeared
+                )
             }
-            .shadow(color: AppTheme.shadowStrong, radius: 16, x: 0, y: 8)
+            // ✅ Unified using AppMetrics.shadowRadiusLarge
+            .shadow(
+                color: AppTheme.shadowStrong,
+                radius: AppMetrics.shadowRadiusLarge,
+                x: 0,
+                y: AppMetrics.shadowYLarge
+            )
 
+            // ✅ Unified using AppMetrics.animationDurationMedium
             Text("Session Complete")
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(AppTheme.textPrimary)
                 .opacity(appeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.4).delay(0.5), value: appeared)
+                .animation(
+                    .easeOut(duration: AppMetrics.animationDurationMedium).delay(0.5),
+                    value: appeared
+                )
         }
     }
 
     private var resultsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppMetrics.sectionSpacing) {
             Text("Your Results")
                 .font(.headline)
                 .foregroundStyle(AppTheme.textPrimary)
-                .padding(.horizontal, 20)
+                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
                 .opacity(appeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.4).delay(0.4), value: appeared)
+                .animation(
+                    .easeOut(duration: AppMetrics.animationDurationMedium).delay(0.4),
+                    value: appeared
+                )
 
             ScrollView {
-                VStack(spacing: 10) {
+                VStack(spacing: AppMetrics.rowSpacing) {
                     ForEach(Array(result.questions.enumerated()), id: \.element.id) { index, questionResult in
                         questionRow(questionResult, index: index)
                             .opacity(appeared ? 1 : 0)
                             .animation(
-                                .easeOut(duration: 0.3)
+                                .easeOut(duration: AppMetrics.animationDurationMedium)
                                     .delay(0.5 + Double(index) * 0.05),
                                 value: appeared
                             )
                     }
                 }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 16)
+                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                .padding(.bottom, AppMetrics.screenBottomPadding)
             }
         }
         .frame(maxHeight: .infinity)
@@ -110,20 +136,15 @@ struct SessionResultView: View {
             onSelectQuestion(questionResult)
         } label: {
             HStack(spacing: 14) {
-                Text("\(questionResult.position)")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppTheme.textMuted)
-                    .frame(width: AppMetrics.badgeSizeSmall, height: AppMetrics.badgeSizeSmall)
-                    .background(AppTheme.surfaceRaised)
-                    .clipShape(Circle())
+                // ✅ Using IndexBadge component
+                IndexBadge(index: questionResult.position, isCorrect: nil)
 
                 MathTextView(text: questionResult.stem, style: .body)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Image(systemName: questionResult.isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 22))
-                    .foregroundStyle(questionResult.isCorrect ? AppTheme.statusSuccess : AppTheme.statusDanger)
+                // ✅ Using StatusIcon component
+                StatusIcon(isSuccess: questionResult.isCorrect)
             }
             .padding(.vertical, AppMetrics.rowPaddingVertical)
             .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
@@ -136,24 +157,14 @@ struct SessionResultView: View {
     }
 
     private var doneButton: some View {
-        Button {
+        // ✅ Using SecondaryCTAButton component
+        SecondaryCTAButton(title: "Done", isLoading: false) {
             onDismiss()
-        } label: {
-            Text("Done")
-                .font(.headline)
-                .foregroundStyle(AppTheme.textOnAccent)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, AppMetrics.primaryButtonPaddingVertical)
-                .background(AppTheme.accentStrong)
-                .clipShape(RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppMetrics.rowCornerRadius, style: .continuous)
-                        .stroke(AppTheme.accent, lineWidth: 1)
-                )
-                .shadow(color: AppTheme.shadowStrong, radius: 10, x: 0, y: 6)
         }
-        .buttonStyle(.plain)
         .opacity(appeared ? 1 : 0)
-        .animation(.easeOut(duration: 0.4).delay(0.7), value: appeared)
+        .animation(
+            .easeOut(duration: AppMetrics.animationDurationMedium).delay(0.7),
+            value: appeared
+        )
     }
 }

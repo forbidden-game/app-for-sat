@@ -29,12 +29,12 @@
   - 注：Supabase Edge Functions 是 Deno 环境，不建议直接跑 `pi-agent-core`（Node 生态）。
 
 ## 文档索引
-- `ai-coach/docs/data-model.md`：建议新增表/字段（MVP）。
-- `ai-coach/docs/flows.md`：错题处理流、对话流。
+- `ai-coach/docs/data-model.md`：数据结构与字段（MVP + v2）。
+- `ai-coach/docs/flows.md`：错题/对话/快照/报告/通知完整流程。
 - `ai-coach/docs/agent-tools.md`：工具调用契约（Tool schemas）。
 - `ai-coach/docs/error-modes.md`：SAT Math 初始 `error_mode_enum`（带 Unknown）。
 - `ai-coach/docs/procedures.md`：procedure/steps 自增长规则与模板。
-- `ai-coach/docs/api-v2.md`：AI Coach v2 API / Jobs 规范。
+- `ai-coach/docs/api-v2.md`：AI Coach v2 API / Jobs / Worker 规范。
 - `ai-coach/docs/memory-v1.md`：王校长长期记忆机制（v1）。
 - `ai-coach/docs/architecture-v1.md`：AI Coach 架构设计（v1）。
 - `ai-coach/docs/test-plan-v1.md`：AI Coach 测试方案（v1）。

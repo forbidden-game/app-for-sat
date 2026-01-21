@@ -9,6 +9,7 @@ struct FriendsListView: View {
     @State private var searchText: String = ""
     @State private var profileFriend: FriendThreadSummary?
     @State private var chatFriend: FriendThreadSummary?
+    @State private var showShareSheet = false
 
     var body: some View {
         NavigationStack {
@@ -53,11 +54,11 @@ struct FriendsListView: View {
                                 .tint(AppTheme.accentStrong)
                                 .frame(maxWidth: .infinity)
                         } else if filteredFriends.isEmpty {
-                            Text("暂无好友")
-                                .font(.subheadline)
-                                .foregroundStyle(AppTheme.textMuted)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+                            // ✅ Using FriendsEmptyStateView component
+                            FriendsEmptyStateView(onInvite: {
+                                showShareSheet = true
+                            })
+                            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
                         } else {
                             ForEach(filteredFriends) { friend in
                                 FriendRowView(
@@ -83,6 +84,9 @@ struct FriendsListView: View {
             }
             .task {
                 await vm.load()
+            }
+            .sheet(isPresented: $showShareSheet) {
+                ShareSheet(activityItems: [InviteLinkBuilder.build(userId: userId)])
             }
         }
     }
@@ -194,4 +198,21 @@ private struct FriendRowView: View {
         let text = letters.map { String($0) }.joined()
         return text.isEmpty ? "?" : text.uppercased()
     }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    var applicationActivities: [UIActivity]? = nil
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(
+            activityItems: activityItems,
+            applicationActivities: applicationActivities
+        )
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

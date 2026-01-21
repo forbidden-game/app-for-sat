@@ -125,6 +125,7 @@ struct MathTextView: View {
                         payload: payload,
                         requestKey: requestKey,
                         pool: Self.webPool,
+                        width: request.width,
                         measuredHeight: $measuredHeight,
                         isRendered: $isRendered,
                         onFailure: {
@@ -248,6 +249,7 @@ private struct MathWebContainer: UIViewRepresentable {
     let payload: MathHTMLPayload
     let requestKey: String
     let pool: MathWebViewPoolProviding
+    let width: CGFloat
     @Binding var measuredHeight: CGFloat
     @Binding var isRendered: Bool
     let onFailure: () -> Void
@@ -259,10 +261,16 @@ private struct MathWebContainer: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let webView = context.coordinator.webView
         webView.isHidden = true
+        let resolvedWidth = max(1, width)
+        webView.frame = CGRect(x: 0, y: 0, width: resolvedWidth, height: 1)
         return webView
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
+        let resolvedWidth = max(1, width)
+        if abs(webView.bounds.width - resolvedWidth) > 0.5 {
+            webView.frame = CGRect(x: 0, y: 0, width: resolvedWidth, height: 1)
+        }
         guard context.coordinator.lastKey != requestKey else { return }
         context.coordinator.lastKey = requestKey
         isRendered = false

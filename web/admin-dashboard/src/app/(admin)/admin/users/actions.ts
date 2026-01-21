@@ -26,6 +26,7 @@ export type UserInput = {
 export type ListUsersParams = {
   page?: number;
   pageSize?: number;
+  role?: UserRole;
 };
 
 export type ListUsersResult = {
@@ -92,6 +93,41 @@ export async function listUsers(
   const { supabase } = await requireAdmin(accessToken);
   const page = params.page ?? 1;
   const pageSize = params.pageSize ?? 20;
+  const role = params.role ? assertRole(params.role) : null;
+
+  if (role) {
+    const offset = (page - 1) * pageSize;
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, role, display_name, created_at")
+      .eq("role", role)
+      .order("created_at", { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (profileError) {
+      throw new Error("Failed to load user profiles.");
+    }
+
+    const profiles = (profileData ?? []) as ProfileRow[];
+    const users = await Promise.all(
+      profiles.map(async (profile) => {
+        const { data: authData, error: authError } = await supabase.auth.admin.getUserById(
+          profile.id,
+        );
+        if (authError || !authData.user) {
+          throw new Error("Failed to load user auth data.");
+        }
+        return buildUserListItem(authData.user as AuthUser, profile);
+      }),
+    );
+
+    return {
+      users,
+      page,
+      pageSize,
+      hasNext: profiles.length === pageSize,
+    };
+  }
 
   const { data, error } = await supabase.auth.admin.listUsers({
     page,
