@@ -419,18 +419,18 @@ export default function QuestionBanksPage() {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+      <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm">
           <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
             <table className="w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[900px]">
               <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
-                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px]">Title</th>
+                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px] z-10">Title</th>
                   <th scope="col" className="px-4 py-3 min-w-[120px]">Slug</th>
                   <th scope="col" className="px-4 py-3 min-w-[100px]">Mode</th>
                   <th scope="col" className="px-4 py-3 min-w-[70px]">Limit</th>
                   <th scope="col" className="px-4 py-3 min-w-[80px]">Status</th>
                   <th scope="col" className="px-4 py-3 min-w-[70px]">Order</th>
-                  <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[200px]">Actions</th>
+                  <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[200px] z-10">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -523,7 +523,7 @@ export default function QuestionBanksPage() {
             onClick={closeDrawer}
             aria-label="Close drawer"
           />
-          <aside className="relative z-10 flex h-full w-full max-w-lg flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
+          <aside className="relative z-10 flex h-full w-full max-w-lg flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl border-l border-[color:var(--border)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-[color:var(--ink-muted)]">

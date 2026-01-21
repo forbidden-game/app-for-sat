@@ -188,7 +188,7 @@ export default function AdminOverviewClient({
       </section>
 
       <section id="content" className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
           <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">Question Banks</h2>
           <Link
             className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
@@ -258,7 +258,7 @@ export default function AdminOverviewClient({
       </section>
 
       <section id="users" className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
           <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">Recent Users</h2>
           <span className="text-xs text-[color:var(--ink-muted)]">Latest 12 profiles</span>
         </div>

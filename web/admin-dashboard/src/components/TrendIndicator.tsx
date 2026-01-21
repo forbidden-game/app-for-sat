@@ -205,10 +205,13 @@ export function MetricCard({
 }: MetricCardProps) {
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 transition-all hover:shadow-md ${className}`}
+      className={`group relative overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4 transition-all hover:border-[color:var(--accent)]/50 hover:shadow-lg card-hover ${className}`}
     >
       {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/3 to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[color:var(--accent)]/5 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100 pointer-events-none" />
+
+      {/* Accent border indicator */}
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[color:var(--accent)] opacity-0 transition-opacity group-hover:opacity-100" />
 
       <div className="relative flex items-start justify-between">
         <div className="flex flex-col gap-1">
@@ -228,7 +231,7 @@ export function MetricCard({
           )}
         </div>
         {icon && (
-          <div className="rounded-lg bg-[color:var(--surface-soft)] p-2 text-[color:var(--ink-muted)]">
+          <div className="rounded-lg bg-[color:var(--surface-soft)] p-2.5 text-[color:var(--ink-muted)] transition-transform group-hover:scale-110">
             {icon}
           </div>
         )}
