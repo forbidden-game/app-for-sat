@@ -443,7 +443,7 @@ private struct CoachChatImageBubble: View {
                     .frame(width: imageSize.width, height: imageSize.height)
                     .overlay(
                         Image(systemName: "photo")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(AppFont.chatBubbleIcon)
                             .foregroundStyle(foreground.opacity(0.6))
                     )
             }
