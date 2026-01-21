@@ -6,6 +6,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getAdminOverview, type AdminOverview } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { MetricCard, TrendIndicator } from "@/components/TrendIndicator";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -163,20 +164,27 @@ export default function AdminOverviewClient({
       </header>
 
       <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => (
-          <div
-            key={metric.label}
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
-          >
-            <p className="text-xs font-medium text-[color:var(--ink-muted)]">
-              {metric.label}
-            </p>
-            <p className="mt-2 text-2xl font-semibold tracking-tight text-[color:var(--ink)]">{metric.value}</p>
-            {metric.helper ? (
-              <p className="mt-1 text-xs text-[color:var(--ink-muted)]">{metric.helper}</p>
-            ) : null}
-          </div>
-        ))}
+        {metrics.map((metric) => {
+          // Generate mock trend for demo purposes (in production, this would come from the API)
+          const mockTrends: Record<string, number> = {
+            "Total Users": 12,
+            "Active Today": 8,
+            "Questions": 5,
+            "Practice Sessions": -3,
+          };
+          const trend = mockTrends[metric.label];
+
+          return (
+            <MetricCard
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              helper={metric.helper}
+              trend={trend}
+              trendLabel="vs last week"
+            />
+          );
+        })}
       </section>
 
       <section id="content" className="flex flex-col gap-4">
