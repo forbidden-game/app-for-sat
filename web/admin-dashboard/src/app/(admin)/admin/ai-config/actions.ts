@@ -175,12 +175,13 @@ export async function getAiProviderKeyStatus(
     throw new Error("Failed to load provider key status.");
   }
 
-  const apiKey = (data?.api_key as string | undefined) ?? "";
+  const record = data as unknown as { api_key: string | null; updated_at: string | null } | null;
+  const apiKey = record?.api_key ?? "";
   return {
     provider,
     hasKey: apiKey.length > 0,
     last4: apiKey.length >= 4 ? apiKey.slice(-4) : null,
-    updatedAt: (data?.updated_at as string | null) ?? null,
+    updatedAt: record?.updated_at ?? null,
   };
 }
 
@@ -207,7 +208,9 @@ export async function upsertAiProviderKey(
     throw new Error("Failed to verify provider key.");
   }
 
-  if (existing?.id) {
+  const existingRecord = existing as unknown as { id: string } | null;
+
+  if (existingRecord?.id) {
     const updatePayload = {
       api_key: trimmed,
       updated_at: now,
@@ -216,20 +219,21 @@ export async function upsertAiProviderKey(
     const { error } = await context.supabase
       .from("ai_provider_keys")
       .update(updatePayload)
-      .eq("id", existing.id);
+      .eq("id", existingRecord.id);
 
     if (error) {
       throw new Error("Failed to update provider key.");
     }
   } else {
-    const { error } = await context.supabase.from("ai_provider_keys").insert({
+    const insertPayload = {
       provider,
       api_key: trimmed,
       created_at: now,
       updated_at: now,
       created_by: context.admin.id,
       updated_by: context.admin.id,
-    });
+    } as unknown as never;
+    const { error } = await context.supabase.from("ai_provider_keys").insert(insertPayload);
 
     if (error) {
       throw new Error("Failed to save provider key.");
