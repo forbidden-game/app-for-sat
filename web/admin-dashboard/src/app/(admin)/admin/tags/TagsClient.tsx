@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { createTag, deleteTag, listTags, updateTag, type Tag, type TagInput } from "./actions";
 import { Skeleton } from "@/components/Skeleton";
+import { LoadingButton } from "@/components/Button";
 
 const TAG_CATEGORIES = ["topic", "skill", "difficulty", "source", "general"];
 
@@ -264,13 +265,9 @@ export default function TagsPage() {
               </option>
             ))}
           </select>
-          <button
-            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
-            onClick={openCreateDrawer}
-            type="button"
-          >
+          <LoadingButton onClick={openCreateDrawer}>
             Create Tag
-          </button>
+          </LoadingButton>
         </div>
       </header>
 
@@ -420,22 +417,20 @@ export default function TagsPage() {
                 </select>
               </label>
               <div className="flex flex-wrap gap-2 pt-2">
-                <button
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-                  disabled={saving || !form.name.trim()}
+                <LoadingButton
+                  loading={saving}
+                  disabled={!form.name.trim()}
                   onClick={handleSave}
-                  type="button"
                 >
                   {drawerMode === "edit" ? "Save Changes" : "Create Tag"}
-                </button>
-                <button
-                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)]"
+                </LoadingButton>
+                <LoadingButton
+                  variant="secondary"
                   onClick={closeDrawer}
-                  type="button"
                   disabled={saving}
                 >
                   Cancel
-                </button>
+                </LoadingButton>
               </div>
             </div>
           </aside>

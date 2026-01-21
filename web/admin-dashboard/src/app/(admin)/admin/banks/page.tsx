@@ -18,6 +18,7 @@ import {
 } from "./actions";
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { LoadingButton } from "@/components/Button";
 
 const EMPTY_FORM: QuestionBankInput = {
   slug: "",
@@ -368,13 +369,9 @@ export default function QuestionBanksPage() {
             Create, edit, and retire question banks for the student app.
           </p>
         </div>
-        <button
-          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
-          onClick={openCreateDrawer}
-          type="button"
-        >
+        <LoadingButton onClick={openCreateDrawer}>
           Create Bank
-        </button>
+        </LoadingButton>
       </header>
 
       {error ? (
@@ -795,28 +792,24 @@ export default function QuestionBanksPage() {
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2 pt-2">
-                <button
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                <LoadingButton
+                  loading={saving || importing}
                   disabled={
-                    saving ||
-                    importing ||
                     (drawerMode === "create" &&
                       !!importFile &&
                       (importParsing || !importPayload || importParseErrors.length > 0))
                   }
                   onClick={handleSave}
-                  type="button"
                 >
                   {drawerMode === "edit" ? "Save Changes" : "Create Bank"}
-                </button>
-                <button
-                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)]"
+                </LoadingButton>
+                <LoadingButton
+                  variant="secondary"
                   onClick={closeDrawer}
-                  type="button"
                   disabled={saving}
                 >
                   Cancel
-                </button>
+                </LoadingButton>
               </div>
             </div>
           </aside>

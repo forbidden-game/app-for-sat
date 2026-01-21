@@ -15,6 +15,7 @@ import {
 } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
+import { LoadingButton } from "@/components/Button";
 
 const ROLE_OPTIONS: UserRole[] = ["student", "parent", "admin"];
 
@@ -456,13 +457,12 @@ export default function UsersPage() {
           </div>
 
           <div className="mt-6 flex flex-col gap-2">
-            <button
-              className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:cursor-not-allowed disabled:opacity-60"
+            <LoadingButton
+              loading={saving}
               onClick={handleSave}
-              disabled={saving}
             >
               {editingId ? "Update User" : "Create & Send Invite"}
-            </button>
+            </LoadingButton>
             <p className="text-xs text-[color:var(--ink-muted)]">
               Invites use the Supabase email flow. Role changes do not edit parent/student links.
             </p>
