@@ -24,6 +24,12 @@ final class CoachChatViewModel: ObservableObject {
         self.draftText = initialDraftText ?? ""
     }
 
+    deinit {
+        pollingTask?.cancel()
+        pollingTask = nil
+        Task { await service.stopRealtime() }
+    }
+
     func load() async {
         errorMessage = nil
 
@@ -106,11 +112,14 @@ final class CoachChatViewModel: ObservableObject {
 
         pollingTask = Task { [weak self] in
             while !Task.isCancelled {
+                guard self != nil else { return }
+
                 do {
                     let latest = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
                     await MainActor.run {
-                        self?.remoteMessages = latest
-                        self?.messages = self?.mergeMessages(latest) ?? latest
+                        guard let self else { return }
+                        self.remoteMessages = latest
+                        self.messages = self.mergeMessages(latest)
                     }
                 } catch {
                     // Best-effort: keep polling silently; UI can still send.
