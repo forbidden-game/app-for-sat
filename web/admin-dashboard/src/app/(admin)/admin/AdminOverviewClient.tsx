@@ -198,60 +198,62 @@ export default function AdminOverviewClient({
           </Link>
         </div>
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-          <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
-              <tr>
-                <th scope="col" className="px-4 py-3">Title</th>
-                <th scope="col" className="px-4 py-3">Slug</th>
-                <th scope="col" className="px-4 py-3">Mode</th>
-                <th scope="col" className="px-4 py-3">Limit</th>
-                <th scope="col" className="px-4 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {questionBanks.length === 0 ? (
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
+            <table className="w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[600px]">
+              <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
-                  <td
-                    colSpan={5}
-                  >
-                    <EmptyState
-                      title="No question banks yet"
-                      description="Create your first question bank to start managing practice content."
-                      icon="banks"
-                      action={{
-                        label: "Create Bank",
-                        onClick: () => window.location.href = "/admin/banks",
-                        variant: "primary",
-                      }}
-                      className="m-4"
-                    />
-                  </td>
+                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[140px]">Title</th>
+                  <th scope="col" className="px-4 py-3 min-w-[100px]">Slug</th>
+                  <th scope="col" className="px-4 py-3 min-w-[80px]">Mode</th>
+                  <th scope="col" className="px-4 py-3 min-w-[60px]">Limit</th>
+                  <th scope="col" className="px-4 py-3 min-w-[70px]">Status</th>
                 </tr>
-              ) : (
-                questionBanks.map((bank) => (
-                  <tr key={bank.id} className="border-t border-[color:var(--border)]">
-                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">{bank.title}</td>
-                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.slug}</td>
-                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.mode}</td>
-                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
-                      {bank.question_limit ?? "N/A"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
-                          bank.is_active
-                            ? "bg-[color:var(--accent-strong)]"
-                            : "bg-[color:var(--danger-strong)]"
-                        }`}
-                      >
-                        {bank.is_active ? "Active" : "Paused"}
-                      </span>
+              </thead>
+              <tbody>
+                {questionBanks.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={5}
+                    >
+                      <EmptyState
+                        title="No question banks yet"
+                        description="Create your first question bank to start managing practice content."
+                        icon="banks"
+                        action={{
+                          label: "Create Bank",
+                          onClick: () => window.location.href = "/admin/banks",
+                          variant: "primary",
+                        }}
+                        className="m-4"
+                      />
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  questionBanks.map((bank) => (
+                    <tr key={bank.id} className="border-t border-[color:var(--border)] transition-colors hover:bg-[color:var(--surface-soft)]">
+                      <td className="px-4 py-3 font-medium text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{bank.title}</td>
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.slug}</td>
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.mode}</td>
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                        {bank.question_limit ?? "N/A"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
+                            bank.is_active
+                              ? "bg-[color:var(--accent-strong)]"
+                              : "bg-[color:var(--danger-strong)]"
+                          }`}
+                        >
+                          {bank.is_active ? "Active" : "Paused"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 

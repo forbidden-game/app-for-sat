@@ -319,16 +319,16 @@ export default function UsersPage() {
               </button>
             </div>
           </div>
-          <div className="max-h-[560px] overflow-auto">
-            <table className="min-w-full text-left text-sm text-[color:var(--ink-muted)]">
-              <thead className="sticky top-0 bg-[color:var(--surface-soft)]">
+          <div className="max-h-[560px] overflow-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
+            <table className="min-w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[800px]">
+              <thead className="sticky top-0 bg-[color:var(--surface-soft)] z-10">
                 <tr className="border-b border-[color:var(--border)] text-xs font-medium text-[color:var(--ink-muted)]">
-                  <th scope="col" className="px-4 py-3">Email</th>
-                  <th scope="col" className="px-4 py-3">Name</th>
-                  <th scope="col" className="px-4 py-3">Role</th>
-                  <th scope="col" className="px-4 py-3">Created</th>
-                  <th scope="col" className="px-4 py-3">Last sign-in</th>
-                  <th scope="col" className="px-4 py-3">Actions</th>
+                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px]">Email</th>
+                  <th scope="col" className="px-4 py-3 min-w-[120px]">Name</th>
+                  <th scope="col" className="px-4 py-3 min-w-[90px]">Role</th>
+                  <th scope="col" className="px-4 py-3 min-w-[140px]">Created</th>
+                  <th scope="col" className="px-4 py-3 min-w-[140px]">Last sign-in</th>
+                  <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[120px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -347,8 +347,8 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                   filteredUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
-                      <td className="px-4 py-3 text-[color:var(--ink)]">{user.email ?? "(no email)"}</td>
+                    <tr key={user.id} className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] transition-colors">
+                      <td className="px-4 py-3 text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{user.email ?? "(no email)"}</td>
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.display_name ?? "—"}</td>
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.role ?? "unknown"}</td>
                       <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
@@ -357,7 +357,7 @@ export default function UsersPage() {
                       <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                         {user.last_sign_in_at ? formatDateTime(user.last_sign_in_at) : "—"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 sticky right-0 bg-[color:var(--surface)]">
                         <div className="flex flex-wrap gap-2">
                           <button
                             className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"

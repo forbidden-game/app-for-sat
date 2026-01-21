@@ -423,19 +423,20 @@ export default function QuestionBanksPage() {
       ) : null}
 
       <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-          <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
-              <tr>
-                <th scope="col" className="px-4 py-3">Title</th>
-                <th scope="col" className="px-4 py-3">Slug</th>
-                <th scope="col" className="px-4 py-3">Mode</th>
-                <th scope="col" className="px-4 py-3">Limit</th>
-                <th scope="col" className="px-4 py-3">Status</th>
-                <th scope="col" className="px-4 py-3">Order</th>
-                <th scope="col" className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
+            <table className="w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[900px]">
+              <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
+                <tr>
+                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px]">Title</th>
+                  <th scope="col" className="px-4 py-3 min-w-[120px]">Slug</th>
+                  <th scope="col" className="px-4 py-3 min-w-[100px]">Mode</th>
+                  <th scope="col" className="px-4 py-3 min-w-[70px]">Limit</th>
+                  <th scope="col" className="px-4 py-3 min-w-[80px]">Status</th>
+                  <th scope="col" className="px-4 py-3 min-w-[70px]">Order</th>
+                  <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[200px]">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
               {sortedBanks.length === 0 ? (
                 <tr>
                   <td
@@ -460,7 +461,7 @@ export default function QuestionBanksPage() {
                     key={bank.id}
                     className="border-t border-[color:var(--border)] transition hover:bg-[color:var(--surface-soft)]"
                   >
-                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
+                    <td className="px-4 py-3 font-medium text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">
                       {bank.title}
                     </td>
                     <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
@@ -480,7 +481,7 @@ export default function QuestionBanksPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">{bank.sort_order}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 sticky right-0 bg-[color:var(--surface)]">
                       <div className="flex flex-wrap gap-2">
                         <Link
                           href={`/admin/banks/${bank.id}/questions`}
