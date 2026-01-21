@@ -7,28 +7,26 @@ struct HomeView: View {
     var body: some View {
         ZStack(alignment: .bottom) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: AppMetrics.sectionSpacing) {
                     Text("题库")
                         .font(.headline.weight(.semibold))
                         .foregroundStyle(AppTheme.textPrimary)
-                        .padding(.top, 8)
+                        .padding(.top, AppMetrics.headerSpacing)
 
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: AppMetrics.rowSpacing) {
                         ForEach(vm.banks) { bank in
-                            Button {
+                            BankCardRow(bank: bank) {
                                 Task { await vm.startSession(for: bank) }
-                            } label: {
-                                BankCardRow(bank: bank)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
 
                     if let error = vm.errorMessage {
-                        Text(error)
-                            .font(.footnote)
-                            .foregroundStyle(AppTheme.statusDanger)
-                            .padding(.top, 4)
+                        // ✅ Using ErrorCard component
+                        ErrorCard(message: error) {
+                            vm.dismissError()
+                        }
+                        .padding(.top, AppMetrics.rowSpacing)
                     }
                 }
                 .padding(.horizontal, AppMetrics.screenHorizontalPadding)
@@ -36,6 +34,7 @@ struct HomeView: View {
             }
 
             VStack {
+                // ✅ Using PrimaryCTAButton with unified styling
                 PrimaryCTAButton(
                     title: "练习",
                     isLoading: vm.isStartingRecommended,
@@ -46,7 +45,7 @@ struct HomeView: View {
                 )
             }
             .padding(.horizontal, AppMetrics.screenHorizontalPadding)
-            .padding(.bottom, AppMetrics.tabBarHeight + 16)
+            .padding(.bottom, AppMetrics.tabBarHeight + AppMetrics.sectionSpacing)
         }
         .overlay {
             if vm.isLoading {
@@ -61,43 +60,47 @@ struct HomeView: View {
 
 private struct BankCardRow: View {
     let bank: QuestionBank
+    let onTap: () -> Void
 
     var body: some View {
-        HStack(spacing: 14) {
-            Image(systemName: bank.icon ?? "square.grid.2x2.fill")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(AppTheme.accentStrong)
-                .frame(width: 42, height: 42)
-                .background(AppTheme.surfaceRaised)
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(AppTheme.divider, lineWidth: 1)
-                )
+        Button(action: onTap) {
+            HStack(spacing: 14) {
+                Image(systemName: bank.icon ?? "square.grid.2x2.fill")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(AppTheme.accentStrong)
+                    .frame(width: 42, height: 42)
+                    .background(AppTheme.surfaceRaised)
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(AppTheme.divider, lineWidth: 1)
+                    )
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(bank.title)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(bank.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppTheme.textPrimary)
 
-                if let subtitle = bank.subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.textSecondary)
+                    if let subtitle = bank.subtitle, !subtitle.isEmpty {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.textSecondary)
+                    }
                 }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppTheme.textMuted)
             }
-
-            Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(AppTheme.textMuted)
+            .padding(.vertical, AppMetrics.rowPaddingVertical)
+            .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
+            .appSurface(
+                fill: AppTheme.surface,
+                stroke: AppMetrics.strokeWidthThin
+            )
         }
-        .padding(.vertical, 14)
-        .padding(.horizontal, 16)
-        .appSurface(
-            fill: AppTheme.surface,
-            stroke: AppTheme.divider
-        )
+        .buttonStyle(.plain)
     }
 }
