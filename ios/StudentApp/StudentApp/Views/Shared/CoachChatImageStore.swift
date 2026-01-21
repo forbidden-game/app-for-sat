@@ -18,7 +18,6 @@ enum CoachChatImageStore {
         return directory.appendingPathComponent(fileName)
     }
 
-    @MainActor
     static func saveCompressedImage(
         _ image: UIImage,
         maxDimension: CGFloat = 1280,
