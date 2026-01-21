@@ -122,9 +122,12 @@ struct QuestionOptionSkeletonView: View {
                     .frame(height: 14)
                     .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
 
-                ShimmerView()
-                    .frame(width: "60%", height: 14)
-                    .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                GeometryReader { proxy in
+                    ShimmerView()
+                        .frame(width: proxy.size.width * 0.6, height: 14)
+                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+                }
+                .frame(height: 14)
             }
 
             Spacer()
