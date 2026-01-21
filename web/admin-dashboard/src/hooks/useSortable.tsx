@@ -11,7 +11,6 @@ export interface UseSortableReturn<T> {
   sortConfig: SortConfig<T>;
   handleSort: (column: keyof T) => void;
   sortedData: T[];
-  getSortIcon: (column: keyof T) => React.ReactNode;
 }
 
 /**
@@ -53,7 +52,7 @@ export function useSortable<T extends Record<string, unknown>>(
       const bValue = b[sortConfig.column!];
 
       // Handle null/undefined values
-      if (aValue == null && bValue == null) return 0;
+      if (aValue == null && bValue === null) return 0;
       if (aValue == null) return sortConfig.direction === "asc" ? 1 : -1;
       if (bValue == null) return sortConfig.direction === "asc" ? -1 : 1;
 
@@ -87,87 +86,32 @@ export function useSortable<T extends Record<string, unknown>>(
     });
   }, [data, sortConfig]);
 
-  const getSortIcon = useCallback(
-    (column: keyof T) => {
-      if (sortConfig.column !== column) {
-        return (
-          <svg className="inline-block h-3 w-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-          </svg>
-        );
-      }
-      if (sortConfig.direction === "asc") {
-        return (
-          <svg className="inline-block h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-          </svg>
-        );
-      }
-      return (
-        <svg className="inline-block h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      );
-    },
-    [sortConfig],
-  );
-
   return {
     sortConfig,
     handleSort,
     sortedData,
-    getSortIcon,
   };
 }
 
-/**
- * Sortable header component props
- */
-export interface SortableHeaderProps {
-  column: string;
-  label: string;
-  currentSort: SortConfig<unknown>;
-  onSort: (column: string) => void;
-  className?: string;
-}
-
-/**
- * Sortable header component - can be used with useSortable hook
- */
-export function SortableHeader({
-  column,
-  label,
-  currentSort,
-  onSort,
-  className = "",
-}: SortableHeaderProps) {
-  const isActive = currentSort.column === column;
-  const sortIcon = isActive
-    ? currentSort.direction === "asc"
-      ? " ▲"
-      : " ▼"
-    : "";
-
+// Helper function to render sort icon
+export function renderSortIcon(isActive: boolean, direction: SortDirection | undefined): React.ReactNode {
+  if (!isActive) {
+    return (
+      <svg className="inline-block h-3 w-3 opacity-30 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      </svg>
+    );
+  }
+  if (direction === "asc") {
+    return (
+      <svg className="inline-block h-3 w-3 text-[color:var(--accent-strong)] ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+      </svg>
+    );
+  }
   return (
-    <th
-      scope="col"
-      className={`cursor-pointer select-none px-4 py-3 text-left text-xs font-medium text-[color:var(--ink-muted)] hover:bg-[color:var(--surface-strong)] ${className}`}
-      onClick={() => onSort(column)}
-    >
-      {label}
-      {isActive ? (
-        <span
-          className={
-            currentSort.direction === "asc"
-              ? "text-[color:var(--accent-strong)]"
-              : "text-[color:var(--accent-strong)]"
-          }
-        >
-          {sortIcon}
-        </span>
-      ) : (
-        <span className="opacity-30">{sortIcon}</span>
-      )}
-    </th>
+    <svg className="inline-block h-3 w-3 text-[color:var(--accent-strong)] ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { listAdminAuditLogs, type AdminAuditLog } from "./actions";
-import { useSortable, SortableHeader } from "@/hooks/useSortable";
+import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -138,34 +138,46 @@ export default function AuditLogPage() {
         <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
           <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
-              <SortableHeader
-                column="created_at"
-                label="Time"
-                currentSort={auditSortConfig}
-                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
-                className="px-4 py-3"
-              />
-              <SortableHeader
-                column="actor_email"
-                label="Actor"
-                currentSort={auditSortConfig}
-                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
-                className="px-4 py-3"
-              />
-              <SortableHeader
-                column="action"
-                label="Action"
-                currentSort={auditSortConfig}
-                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
-                className="px-4 py-3"
-              />
-              <SortableHeader
-                column="resource_type"
-                label="Resource"
-                currentSort={auditSortConfig}
-                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
-                className="px-4 py-3"
-              />
+              <th
+                scope="col"
+                className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleAuditSort("created_at" as keyof AdminAuditLog)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Time
+                  {renderSortIcon(auditSortConfig.column === "created_at", auditSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleAuditSort("actor_email" as keyof AdminAuditLog)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Actor
+                  {renderSortIcon(auditSortConfig.column === "actor_email", auditSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleAuditSort("action" as keyof AdminAuditLog)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Action
+                  {renderSortIcon(auditSortConfig.column === "action", auditSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleAuditSort("resource_type" as keyof AdminAuditLog)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Resource
+                  {renderSortIcon(auditSortConfig.column === "resource_type", auditSortConfig.direction)}
+                </span>
+              </th>
               <th scope="col" className="px-4 py-3">Details</th>
             </tr>
           </thead>

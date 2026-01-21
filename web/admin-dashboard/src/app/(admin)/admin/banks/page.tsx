@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingButton } from "@/components/Button";
-import { useSortable, SortableHeader } from "@/hooks/useSortable";
+import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 const EMPTY_FORM: QuestionBankInput = {
   slug: "",
@@ -433,41 +433,56 @@ export default function QuestionBanksPage() {
               <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
                   <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px] z-10">Title</th>
-                  <SortableHeader
-                    column="slug"
-                    label="Slug"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
-                    className="px-4 py-3 min-w-[120px]"
-                  />
-                  <SortableHeader
-                    column="mode"
-                    label="Mode"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
-                    className="px-4 py-3 min-w-[100px]"
-                  />
-                  <SortableHeader
-                    column="question_limit"
-                    label="Limit"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
-                    className="px-4 py-3 min-w-[70px] text-center"
-                  />
-                  <SortableHeader
-                    column="is_active"
-                    label="Status"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
-                    className="px-4 py-3 min-w-[80px]"
-                  />
-                  <SortableHeader
-                    column="sort_order"
-                    label="Order"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
-                    className="px-4 py-3 min-w-[70px]"
-                  />
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[120px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("slug" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Slug
+                      {renderSortIcon(bankSortConfig.column === "slug", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[100px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("mode" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Mode
+                      {renderSortIcon(bankSortConfig.column === "mode", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[70px] cursor-pointer select-none hover:text-[color:var(--ink)] text-center"
+                    onClick={() => handleBankSort("question_limit" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1 justify-center">
+                      Limit
+                      {renderSortIcon(bankSortConfig.column === "question_limit", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[80px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("is_active" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Status
+                      {renderSortIcon(bankSortConfig.column === "is_active", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[70px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("sort_order" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Order
+                      {renderSortIcon(bankSortConfig.column === "sort_order", bankSortConfig.direction)}
+                    </span>
+                  </th>
                   <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[200px] z-10">Actions</th>
                 </tr>
               </thead>

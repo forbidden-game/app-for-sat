@@ -7,7 +7,7 @@ import { getAdminOverview, type AdminOverview } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { MetricCard, TrendIndicator } from "@/components/TrendIndicator";
-import { useSortable, SortableHeader } from "@/hooks/useSortable";
+import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -216,34 +216,46 @@ export default function AdminOverviewClient({
               <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
                   <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[140px]">Title</th>
-                  <SortableHeader
-                    column="slug"
-                    label="Slug"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
-                    className="px-4 py-3 min-w-[100px]"
-                  />
-                  <SortableHeader
-                    column="mode"
-                    label="Mode"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
-                    className="px-4 py-3 min-w-[80px]"
-                  />
-                  <SortableHeader
-                    column="question_limit"
-                    label="Limit"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
-                    className="px-4 py-3 min-w-[60px] text-center"
-                  />
-                  <SortableHeader
-                    column="is_active"
-                    label="Status"
-                    currentSort={bankSortConfig}
-                    onSort={(col) => handleBankSort(col as typeof questionBanks[0] extends infer T ? keyof T : never)}
-                    className="px-4 py-3 min-w-[70px]"
-                  />
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[100px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("slug")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Slug
+                      {renderSortIcon(bankSortConfig.column === "slug", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[80px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("mode")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Mode
+                      {renderSortIcon(bankSortConfig.column === "mode", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[60px] cursor-pointer select-none hover:text-[color:var(--ink)] text-center"
+                    onClick={() => handleBankSort("question_limit")}
+                  >
+                    <span className="inline-flex items-center gap-1 justify-center">
+                      Limit
+                      {renderSortIcon(bankSortConfig.column === "question_limit", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[70px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("is_active")}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Status
+                      {renderSortIcon(bankSortConfig.column === "is_active", bankSortConfig.direction)}
+                    </span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -303,27 +315,36 @@ export default function AdminOverviewClient({
           <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
             <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
               <tr>
-                <SortableHeader
-                  column="display_name"
-                  label="Name"
-                  currentSort={userSortConfig}
-                  onSort={(col) => handleUserSort(col as typeof recentUsers[0] extends infer T ? keyof T : never)}
-                  className="px-4 py-3"
-                />
-                <SortableHeader
-                  column="role"
-                  label="Role"
-                  currentSort={userSortConfig}
-                  onSort={(col) => handleUserSort(col as typeof recentUsers[0] extends infer T ? keyof T : never)}
-                  className="px-4 py-3"
-                />
-                <SortableHeader
-                  column="created_at"
-                  label="Created"
-                  currentSort={userSortConfig}
-                  onSort={(col) => handleUserSort(col as typeof recentUsers[0] extends infer T ? keyof T : never)}
-                  className="px-4 py-3"
-                />
+                <th
+                  scope="col"
+                  className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                  onClick={() => handleUserSort("display_name")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Name
+                    {renderSortIcon(userSortConfig.column === "display_name", userSortConfig.direction)}
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                  onClick={() => handleUserSort("role")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Role
+                    {renderSortIcon(userSortConfig.column === "role", userSortConfig.direction)}
+                  </span>
+                </th>
+                <th
+                  scope="col"
+                  className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                  onClick={() => handleUserSort("created_at")}
+                >
+                  <span className="inline-flex items-center gap-1">
+                    Created
+                    {renderSortIcon(userSortConfig.column === "created_at", userSortConfig.direction)}
+                  </span>
+                </th>
               </tr>
             </thead>
             <tbody>

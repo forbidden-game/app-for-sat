@@ -15,12 +15,13 @@ import {
   type ListQuestionsResult,
   type Question,
   type QuestionInput,
+  type QuestionListItem,
   type OptionInput,
   type QuestionType,
 } from "./actions";
 import { QuestionForm } from "./QuestionForm";
 import { AssetUploader } from "./AssetUploader";
-import { useSortable, SortableHeader } from "@/hooks/useSortable";
+import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -127,7 +128,7 @@ export default function QuestionsPage() {
 
   // Sortable hook for questions table
   const { sortedData: sortedQuestions, handleSort: handleQuestionSort, sortConfig: questionSortConfig } = useSortable(
-    result?.questions ?? [],
+    result?.questions ?? [] as QuestionListItem[],
     "created_at",
     "desc",
   );
@@ -446,41 +447,56 @@ export default function QuestionsPage() {
           <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
               <th scope="col" className="px-4 py-3">Stem</th>
-              <SortableHeader
-                column="subject"
-                label="Subject"
-                currentSort={questionSortConfig}
-                onSort={(col) => handleQuestionSort(col as keyof Question)}
-                className="w-24 px-4 py-3"
-              />
-              <SortableHeader
-                column="module"
-                label="Module"
-                currentSort={questionSortConfig}
-                onSort={(col) => handleQuestionSort(col as keyof Question)}
-                className="w-24 px-4 py-3"
-              />
-              <SortableHeader
-                column="difficulty"
-                label="Diff"
-                currentSort={questionSortConfig}
-                onSort={(col) => handleQuestionSort(col as keyof Question)}
-                className="w-16 px-4 py-3 text-center"
-              />
-              <SortableHeader
-                column="question_type"
-                label="Type"
-                currentSort={questionSortConfig}
-                onSort={(col) => handleQuestionSort(col as keyof Question)}
-                className="w-20 px-4 py-3"
-              />
-              <SortableHeader
-                column="created_at"
-                label="Created"
-                currentSort={questionSortConfig}
-                onSort={(col) => handleQuestionSort(col as keyof Question)}
-                className="w-24 px-4 py-3"
-              />
+              <th
+                scope="col"
+                className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleQuestionSort("subject" as keyof QuestionListItem)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Subject
+                  {renderSortIcon(questionSortConfig.column === "subject", questionSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleQuestionSort("module" as keyof QuestionListItem)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Module
+                  {renderSortIcon(questionSortConfig.column === "module", questionSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="w-16 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)] text-center"
+                onClick={() => handleQuestionSort("difficulty" as keyof QuestionListItem)}
+              >
+                <span className="inline-flex items-center gap-1 justify-center">
+                  Diff
+                  {renderSortIcon(questionSortConfig.column === "difficulty", questionSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="w-20 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleQuestionSort("question_type" as keyof QuestionListItem)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Type
+                  {renderSortIcon(questionSortConfig.column === "question_type", questionSortConfig.direction)}
+                </span>
+              </th>
+              <th
+                scope="col"
+                className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
+                onClick={() => handleQuestionSort("created_at" as keyof QuestionListItem)}
+              >
+                <span className="inline-flex items-center gap-1">
+                  Created
+                  {renderSortIcon(questionSortConfig.column === "created_at", questionSortConfig.direction)}
+                </span>
+              </th>
               <th scope="col" className="w-24 px-4 py-3">Actions</th>
             </tr>
           </thead>

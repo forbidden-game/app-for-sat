@@ -15,7 +15,7 @@ import {
   type AvailableQuestion,
   type BankQuestion,
 } from "./actions";
-import { useSortable, SortableHeader } from "@/hooks/useSortable";
+import { useSortable } from "@/hooks/useSortable";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
