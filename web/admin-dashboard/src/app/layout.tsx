@@ -17,6 +17,10 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Backside of Meng's Dream Admin Console",
   description: "Admin console for Backside of Meng's Dream operations.",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
 };
 
 export default function RootLayout({
@@ -26,7 +30,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var m = localStorage.getItem('theme');
+                  var supportDark = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+                  if (!m && supportDark) document.documentElement.classList.add('dark');
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
+      </head>
+      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`} style={{ colorScheme: "light dark" }}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>

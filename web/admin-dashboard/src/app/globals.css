@@ -89,3 +89,48 @@ table {
     scroll-behavior: auto !important;
   }
 }
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink: #f1f5f9;
+    --ink-muted: #94a3b8;
+    --surface: #0f172a;
+    --surface-soft: #1e293b;
+    --surface-strong: #334155;
+    --accent: #3b82f6;
+    --accent-strong: #60a5fa;
+    --highlight: #1e3a5f;
+    --danger: #f87171;
+    --danger-strong: #fca5a5;
+    --border: #334155;
+    --shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    background-color: #0f172a;
+    background-image:
+      radial-gradient(1200px circle at 0% -10%, rgba(59, 130, 246, 0.15), transparent 45%),
+      radial-gradient(900px circle at 90% 0%, rgba(15, 23, 42, 0.2), transparent 40%);
+    color: #f1f5f9;
+  }
+
+  .surface-soft-dark {
+    background-color: #1e293b;
+  }
+
+  .border-dark {
+    border-color: #334155;
+  }
+}
+
+/* Touch target optimization */
+@media (pointer: coarse) {
+  :where(button, [role="button"], input[type="checkbox"], input[type="radio"]) {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  :where(a) {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}
