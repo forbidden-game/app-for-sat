@@ -13,6 +13,8 @@ final class CoachChatViewModel: ObservableObject {
     private let service: SupabaseCoachService
     private var pollingTask: Task<Void, Never>?
     private var remoteMessages: [CoachThreadMessage] = []
+    private var lastSendFingerprint: String?
+    private var lastSendAt: Date = .distantPast
 
     init(
         studentId: String,
@@ -24,7 +26,15 @@ final class CoachChatViewModel: ObservableObject {
         self.draftText = initialDraftText ?? ""
     }
 
+    deinit {
+        pollingTask?.cancel()
+        pollingTask = nil
+        Task { await service.stopRealtime() }
+    }
+
     func load() async {
+        errorMessage = nil
+
         do {
             remoteMessages = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
             messages = mergeMessages(remoteMessages)
@@ -57,6 +67,14 @@ final class CoachChatViewModel: ObservableObject {
 
         let text = draftText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return false }
+
+        let fingerprint = [text, linkedAttemptId ?? "", replyToMessageId ?? ""].joined(separator: "|")
+        if fingerprint == lastSendFingerprint, Date().timeIntervalSince(lastSendAt) < 1.0 {
+            return false
+        }
+
+        lastSendFingerprint = fingerprint
+        lastSendAt = Date()
 
         isSending = true
         errorMessage = nil
@@ -95,11 +113,14 @@ final class CoachChatViewModel: ObservableObject {
 
         pollingTask = Task { [weak self] in
             while !Task.isCancelled {
+                guard self != nil else { return }
+
                 do {
                     let latest = try await service.fetchThreadMessages(studentId: studentId, limit: 80)
                     await MainActor.run {
-                        self?.remoteMessages = latest
-                        self?.messages = self?.mergeMessages(latest) ?? latest
+                        guard let self else { return }
+                        self.remoteMessages = latest
+                        self.messages = self.mergeMessages(latest)
                     }
                 } catch {
                     // Best-effort: keep polling silently; UI can still send.
@@ -111,6 +132,11 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     private func mergeMessages(_ messages: [CoachThreadMessage]) -> [CoachThreadMessage] {
-        messages.sorted(by: { $0.createdAt < $1.createdAt })
+        messages.sorted { lhs, rhs in
+            if lhs.createdAt != rhs.createdAt {
+                return lhs.createdAt < rhs.createdAt
+            }
+            return lhs.id < rhs.id
+        }
     }
 }

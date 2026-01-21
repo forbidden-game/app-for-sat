@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
 import "./globals.css";
 
@@ -19,6 +19,13 @@ export const metadata: Metadata = {
   description: "Admin console for Backside of Meng's Dream operations.",
 };
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f172a" },
+  ],
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,7 +33,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var m = localStorage.getItem('theme');
+                  var supportDark = window.matchMedia('(prefers-color-scheme: dark)').matches === true;
+                  if (!m && supportDark) document.documentElement.classList.add('dark');
+                } catch (e) {}
+              })()
+            `,
+          }}
+        />
+      </head>
+      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`} style={{ colorScheme: "light dark" }}>
         <a className="skip-link" href="#main">
           Skip to content
         </a>

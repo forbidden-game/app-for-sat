@@ -274,7 +274,9 @@ struct CoachChatView: View {
         }
 
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio)
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio)
+            try session.setActive(true)
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayerDelegate.onFinish = {
                 DispatchQueue.main.async {

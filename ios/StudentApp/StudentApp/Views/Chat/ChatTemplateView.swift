@@ -64,7 +64,15 @@ struct ChatTemplateView<
                         lastMessageCount = messages.count
                     }
                     .onChange(of: proxy.size.height) { _, newValue in
+                        // Keep the last message visible when the layout changes (keyboard, composer growth, rotation).
+                        // If the user scrolled up, we respect that and do not force-scroll.
+                        let wasPinned = isPinnedToBottom
                         scrollViewHeight = newValue
+                        guard wasPinned else { return }
+                        DispatchQueue.main.async {
+                            isPinnedToBottom = true
+                            scrollToBottom(scrollProxy, animated: false)
+                        }
                     }
                     .onChange(of: messages.count) { _, newCount in
                         let wasEmpty = lastMessageCount == 0

@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { createTag, deleteTag, listTags, updateTag, type Tag, type TagInput } from "./actions";
+import { Skeleton } from "@/components/Skeleton";
+import { LoadingButton } from "@/components/Button";
+import { EmptyState } from "@/components/EmptyState";
 
 const TAG_CATEGORIES = ["topic", "skill", "difficulty", "source", "general"];
 
@@ -200,10 +203,33 @@ export default function TagsPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1280px] px-6 py-12">
-        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
-          Loading tags…
-        </p>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton variant="text" width="80px" />
+            <Skeleton variant="text" width="200px" height="28px" />
+            <Skeleton variant="text" width="240px" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton variant="rectangular" width="120px" height="36px" />
+            <Skeleton variant="rectangular" width="120px" height="36px" />
+          </div>
+        </header>
+
+        <section className="flex flex-col gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+              <div className="border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
+                <Skeleton variant="text" width="80px" />
+              </div>
+              <div className="flex flex-wrap gap-2 p-4">
+                {Array.from({ length: 6 }).map((_, j) => (
+                  <Skeleton key={j} variant="rectangular" width="80px" height="28px" className="rounded-full" />
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
       </main>
     );
   }
@@ -240,13 +266,9 @@ export default function TagsPage() {
               </option>
             ))}
           </select>
-          <button
-            className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
-            onClick={openCreateDrawer}
-            type="button"
-          >
+          <LoadingButton onClick={openCreateDrawer}>
             Create Tag
-          </button>
+          </LoadingButton>
         </div>
       </header>
 
@@ -261,13 +283,16 @@ export default function TagsPage() {
 
       <section className="flex flex-col gap-6">
         {Object.keys(groupedTags).length === 0 ? (
-          <div
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center text-sm text-[color:var(--ink-muted)]"
-            role="status"
-            aria-live="polite"
-          >
-            No tags yet. Create one using the button above.
-          </div>
+          <EmptyState
+            title="No tags yet"
+            description="Create tags to categorize and organize questions by topic, skill, difficulty, or source."
+            icon="tags"
+            action={{
+              label: "Create Tag",
+              onClick: openCreateDrawer,
+              variant: "primary",
+            }}
+          />
         ) : (
           Object.entries(groupedTags).map(([category, categoryTags]) => (
             <div key={category} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
@@ -393,22 +418,20 @@ export default function TagsPage() {
                 </select>
               </label>
               <div className="flex flex-wrap gap-2 pt-2">
-                <button
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-                  disabled={saving || !form.name.trim()}
+                <LoadingButton
+                  loading={saving}
+                  disabled={!form.name.trim()}
                   onClick={handleSave}
-                  type="button"
                 >
                   {drawerMode === "edit" ? "Save Changes" : "Create Tag"}
-                </button>
-                <button
-                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)]"
+                </LoadingButton>
+                <LoadingButton
+                  variant="secondary"
                   onClick={closeDrawer}
-                  type="button"
                   disabled={saving}
                 >
                   Cancel
-                </button>
+                </LoadingButton>
               </div>
             </div>
           </aside>

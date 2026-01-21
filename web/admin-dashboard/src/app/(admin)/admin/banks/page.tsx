@@ -16,6 +16,10 @@ import {
   type QuestionBank,
   type QuestionBankInput,
 } from "./actions";
+import { Skeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
+import { LoadingButton } from "@/components/Button";
+import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 const EMPTY_FORM: QuestionBankInput = {
   slug: "",
@@ -131,6 +135,13 @@ export default function QuestionBanksPage() {
   const sortedBanks = useMemo(
     () => [...banks].sort((a, b) => a.sort_order - b.sort_order),
     [banks],
+  );
+
+  // Sortable hook for banks table - using all banks data for global sorting
+  const { sortedData: sortedBankList, handleSort: handleBankSort, sortConfig: bankSortConfig } = useSortable(
+    sortedBanks,
+    "sort_order",
+    "asc",
   );
 
   function formatDateTime(value: string) {
@@ -312,10 +323,36 @@ export default function QuestionBanksPage() {
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-[1280px] px-6 py-12">
-        <p className="text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
-          Loading question banks…
-        </p>
+      <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
+        <header className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Skeleton variant="text" width="80px" />
+            <Skeleton variant="text" width="200px" height="28px" />
+            <Skeleton variant="text" width="280px" />
+          </div>
+          <Skeleton variant="rectangular" width="120px" height="36px" />
+        </header>
+
+        <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+          <div className="flex items-center justify-between border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <Skeleton key={i} variant="text" width={i === 0 ? "25%" : "12%"} />
+            ))}
+          </div>
+          <div className="divide-y divide-[color:var(--border)]">
+            {Array.from({ length: 5 }).map((_, rowIndex) => (
+              <div key={rowIndex} className="flex items-center gap-4 px-4 py-4">
+                <Skeleton variant="text" width="25%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="text" width="12%" />
+                <Skeleton variant="rectangular" width="80px" height="28px" />
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     );
   }
@@ -340,13 +377,9 @@ export default function QuestionBanksPage() {
             Create, edit, and retire question banks for the student app.
           </p>
         </div>
-        <button
-          className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
-          onClick={openCreateDrawer}
-          type="button"
-        >
+        <LoadingButton onClick={openCreateDrawer}>
           Create Bank
-        </button>
+        </LoadingButton>
       </header>
 
       {error ? (
@@ -394,38 +427,91 @@ export default function QuestionBanksPage() {
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-          <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
-            <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
-              <tr>
-                <th scope="col" className="px-4 py-3">Title</th>
-                <th scope="col" className="px-4 py-3">Slug</th>
-                <th scope="col" className="px-4 py-3">Mode</th>
-                <th scope="col" className="px-4 py-3">Limit</th>
-                <th scope="col" className="px-4 py-3">Status</th>
-                <th scope="col" className="px-4 py-3">Order</th>
-                <th scope="col" className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedBanks.length === 0 ? (
+      <section className="overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] shadow-sm">
+          <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
+            <table className="w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[900px]">
+              <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
+                <tr>
+                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px] z-10">Title</th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[120px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("slug" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Slug
+                      {renderSortIcon(bankSortConfig.column === "slug", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[100px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("mode" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Mode
+                      {renderSortIcon(bankSortConfig.column === "mode", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[70px] cursor-pointer select-none hover:text-[color:var(--ink)] text-center"
+                    onClick={() => handleBankSort("question_limit" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1 justify-center">
+                      Limit
+                      {renderSortIcon(bankSortConfig.column === "question_limit", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[80px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("is_active" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Status
+                      {renderSortIcon(bankSortConfig.column === "is_active", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 min-w-[70px] cursor-pointer select-none hover:text-[color:var(--ink)]"
+                    onClick={() => handleBankSort("sort_order" as keyof QuestionBank)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Order
+                      {renderSortIcon(bankSortConfig.column === "sort_order", bankSortConfig.direction)}
+                    </span>
+                  </th>
+                  <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[200px] z-10">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+              {sortedBankList.length === 0 ? (
                 <tr>
                   <td
-                    className="px-4 py-6 text-center text-sm text-[color:var(--ink-muted)]"
                     colSpan={7}
-                    role="status"
-                    aria-live="polite"
                   >
-                    No question banks yet.
+                    <EmptyState
+                      title="No question banks yet"
+                      description="Create your first question bank to start managing practice content for students."
+                      icon="banks"
+                      action={{
+                        label: "Create Bank",
+                        onClick: openCreateDrawer,
+                        variant: "primary",
+                      }}
+                      className="m-4"
+                    />
                   </td>
                 </tr>
               ) : (
-                sortedBanks.map((bank) => (
+                sortedBankList.map((bank) => (
                   <tr
                     key={bank.id}
                     className="border-t border-[color:var(--border)] transition hover:bg-[color:var(--surface-soft)]"
                   >
-                    <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
+                    <td className="px-4 py-3 font-medium text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">
                       {bank.title}
                     </td>
                     <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
@@ -445,7 +531,7 @@ export default function QuestionBanksPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">{bank.sort_order}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 sticky right-0 bg-[color:var(--surface)]">
                       <div className="flex flex-wrap gap-2">
                         <Link
                           href={`/admin/banks/${bank.id}/questions`}
@@ -481,6 +567,7 @@ export default function QuestionBanksPage() {
               )}
             </tbody>
           </table>
+        </div>
       </section>
 
       {drawerOpen ? (
@@ -490,7 +577,7 @@ export default function QuestionBanksPage() {
             onClick={closeDrawer}
             aria-label="Close drawer"
           />
-          <aside className="relative z-10 flex h-full w-full max-w-lg flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
+          <aside className="relative z-10 flex h-full w-full max-w-lg flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl border-l border-[color:var(--border)]">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs font-medium text-[color:var(--ink-muted)]">
@@ -759,28 +846,24 @@ export default function QuestionBanksPage() {
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2 pt-2">
-                <button
-                  className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                <LoadingButton
+                  loading={saving || importing}
                   disabled={
-                    saving ||
-                    importing ||
                     (drawerMode === "create" &&
                       !!importFile &&
                       (importParsing || !importPayload || importParseErrors.length > 0))
                   }
                   onClick={handleSave}
-                  type="button"
                 >
                   {drawerMode === "edit" ? "Save Changes" : "Create Bank"}
-                </button>
-                <button
-                  className="rounded-full border border-[color:var(--border)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)]"
+                </LoadingButton>
+                <LoadingButton
+                  variant="secondary"
                   onClick={closeDrawer}
-                  type="button"
                   disabled={saving}
                 >
                   Cancel
-                </button>
+                </LoadingButton>
               </div>
             </div>
           </aside>

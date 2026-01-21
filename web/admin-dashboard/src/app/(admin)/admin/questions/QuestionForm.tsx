@@ -11,6 +11,7 @@ import {
   type OptionInput,
   type QuestionType,
 } from "./actions";
+import { LoadingButton } from "@/components/Button";
 
 type QuestionFormProps = {
   initialData?: Question;
@@ -358,20 +359,20 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
       </div>
 
       <div className="flex gap-3 border-t border-[color:var(--border)] pt-4">
-        <button
+        <LoadingButton
           type="submit"
-          disabled={saving}
-          className="rounded-full bg-[color:var(--accent)] px-6 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+          loading={saving}
+          loadingText="…"
         >
-          {saving ? "Saving…" : isEdit ? "Save Changes" : "Create Question"}
-        </button>
-        <button
+          {isEdit ? "Save Changes" : "Create Question"}
+        </LoadingButton>
+        <LoadingButton
           type="button"
+          variant="secondary"
           onClick={handleCancel}
-          className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-6 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
         >
           Cancel
-        </button>
+        </LoadingButton>
       </div>
     </form>
   );

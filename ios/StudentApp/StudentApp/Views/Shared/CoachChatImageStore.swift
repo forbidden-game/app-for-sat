@@ -18,7 +18,6 @@ enum CoachChatImageStore {
         return directory.appendingPathComponent(fileName)
     }
 
-    @MainActor
     static func saveCompressedImage(
         _ image: UIImage,
         maxDimension: CGFloat = 1280,
@@ -26,6 +25,24 @@ enum CoachChatImageStore {
         caption: String? = nil
     ) throws -> CoachChatImagePayload {
         try save(image, maxDimension: maxDimension, quality: quality, caption: caption)
+    }
+
+    static func saveCompressedImageAsync(
+        _ image: UIImage,
+        maxDimension: CGFloat = 1280,
+        quality: CGFloat = 0.78,
+        caption: String? = nil
+    ) async throws -> CoachChatImagePayload {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let payload = try save(image, maxDimension: maxDimension, quality: quality, caption: caption)
+                    continuation.resume(returning: payload)
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
     }
 
     static func loadImage(fileName: String) -> UIImage? {

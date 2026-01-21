@@ -15,6 +15,7 @@ import {
   type AvailableQuestion,
   type BankQuestion,
 } from "./actions";
+import { useSortable } from "@/hooks/useSortable";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -77,6 +78,13 @@ export default function BankQuestionsPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Sortable hook for bank questions table
+  const { sortedData: sortedBankQuestions, handleSort: handleBankQuestionSort, sortConfig: bankQuestionSortConfig } = useSortable(
+    questions,
+    "position",
+    "asc",
+  );
 
   useEffect(() => {
     setSearchQuery(searchParams.get("q") ?? "");
@@ -358,56 +366,128 @@ export default function BankQuestionsPage() {
       ) : null}
 
       <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
-        {questions.length === 0 ? (
+        {sortedBankQuestions.length === 0 ? (
           <div className="p-6 text-center text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
             No questions in this bank yet.
           </div>
         ) : (
-          <div className="divide-y divide-[color:var(--border)]">
-            {questions.map((q, index) => (
-              <div key={q.question_id} className="flex items-center gap-3 p-3 hover:bg-[color:var(--surface-soft)]">
-                <div className="flex flex-col gap-1">
+          <div>
+            <div className="flex items-center gap-3 border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs font-medium text-[color:var(--ink-muted)]">
+              <span className="w-8 text-center">#</span>
+              <button
+                type="button"
+                onClick={() => handleBankQuestionSort("position")}
+                className="flex items-center gap-1 hover:text-[color:var(--ink)]"
+              >
+                Position
+                {bankQuestionSortConfig.column === "position" ? (
+                  bankQuestionSortConfig.direction === "asc" ? (
+                    <span>▲</span>
+                  ) : (
+                    <span>▼</span>
+                  )
+                ) : (
+                  <span className="opacity-30">⇅</span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBankQuestionSort("stem")}
+                className="flex-1 text-left flex items-center gap-1 hover:text-[color:var(--ink)]"
+              >
+                Question
+                {bankQuestionSortConfig.column === "stem" ? (
+                  bankQuestionSortConfig.direction === "asc" ? (
+                    <span>▲</span>
+                  ) : (
+                    <span>▼</span>
+                  )
+                ) : (
+                  <span className="opacity-30">⇅</span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBankQuestionSort("subject")}
+                className="w-24 text-left flex items-center gap-1 hover:text-[color:var(--ink)]"
+              >
+                Subject
+                {bankQuestionSortConfig.column === "subject" ? (
+                  bankQuestionSortConfig.direction === "asc" ? (
+                    <span>▲</span>
+                  ) : (
+                    <span>▼</span>
+                  )
+                ) : (
+                  <span className="opacity-30">⇅</span>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleBankQuestionSort("difficulty")}
+                className="w-20 text-left flex items-center gap-1 hover:text-[color:var(--ink)]"
+              >
+                Diff
+                {bankQuestionSortConfig.column === "difficulty" ? (
+                  bankQuestionSortConfig.direction === "asc" ? (
+                    <span>▲</span>
+                  ) : (
+                    <span>▼</span>
+                  )
+                ) : (
+                  <span className="opacity-30">⇅</span>
+                )}
+              </button>
+              <span className="w-20 text-center">Actions</span>
+            </div>
+            <div className="divide-y divide-[color:var(--border)]">
+              {sortedBankQuestions.map((q, index) => (
+                <div key={q.question_id} className="flex items-center gap-3 p-3 hover:bg-[color:var(--surface-soft)]">
+                  <div className="flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleMoveUp(index)}
+                      disabled={index === 0 || saving}
+                      className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
+                      aria-label="Move question up"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleMoveDown(index)}
+                      disabled={index === sortedBankQuestions.length - 1 || saving}
+                      className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
+                      aria-label="Move question down"
+                    >
+                      ▼
+                    </button>
+                  </div>
+                  <span className="w-8 text-center text-sm font-medium text-[color:var(--ink-muted)]">{q.position}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-[color:var(--ink)]">{truncate(q.stem, 80)}</p>
+                    <p className="text-xs text-[color:var(--ink-muted)]">
+                      {q.question_type}
+                    </p>
+                  </div>
+                  <span className="w-24 text-xs text-[color:var(--ink-muted)]">{q.subject}</span>
+                  <span className="w-20 text-xs text-[color:var(--ink-muted)] text-center">D{q.difficulty}</span>
                   <button
                     type="button"
-                    onClick={() => handleMoveUp(index)}
-                    disabled={index === 0 || saving}
-                    className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
-                    aria-label="Move question up"
+                    onClick={() => handleRemoveQuestion(q.question_id)}
+                    disabled={saving}
+                    className="w-20 rounded-full border border-[color:var(--danger)] px-3 py-1 text-xs font-medium text-[color:var(--danger-strong)]"
                   >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleMoveDown(index)}
-                    disabled={index === questions.length - 1 || saving}
-                    className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
-                    aria-label="Move question down"
-                  >
-                    ▼
+                    Remove
                   </button>
                 </div>
-                <span className="w-8 text-center text-sm font-medium text-[color:var(--ink-muted)]">{q.position}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[color:var(--ink)]">{truncate(q.stem, 80)}</p>
-                  <p className="text-xs text-[color:var(--ink-muted)]">
-                    {q.subject} / {q.question_type} / D{q.difficulty}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleRemoveQuestion(q.question_id)}
-                  disabled={saving}
-                  className="rounded-full border border-[color:var(--danger)] px-3 py-1 text-xs font-medium text-[color:var(--danger-strong)]"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </div>
 
-      <div className="text-xs text-[color:var(--ink-muted)]">Total: {questions.length} questions</div>
+      <div className="text-xs text-[color:var(--ink-muted)]">Total: {sortedBankQuestions.length} questions</div>
     </main>
   );
 }
