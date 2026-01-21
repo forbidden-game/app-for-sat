@@ -16,6 +16,7 @@ import {
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingButton } from "@/components/Button";
+import { useSortable, SortableHeader } from "@/hooks/useSortable";
 
 const ROLE_OPTIONS: UserRole[] = ["student", "parent", "admin"];
 
@@ -130,6 +131,13 @@ export default function UsersPage() {
     if (!roleFilter) return users;
     return users.filter((user) => user.role === roleFilter);
   }, [users, roleFilter]);
+
+  // Sortable hook for user table
+  const { sortedData: sortedUsers, handleSort: handleUserSort, getSortIcon, sortConfig: userSortConfig } = useSortable(
+    filteredUsers,
+    "created_at",
+    "desc",
+  );
 
   function resetForm() {
     setForm({ ...EMPTY_FORM });
@@ -324,16 +332,46 @@ export default function UsersPage() {
             <table className="min-w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[800px]">
               <thead className="sticky top-0 bg-[color:var(--surface-soft)] z-10">
                 <tr className="border-b border-[color:var(--border)] text-xs font-medium text-[color:var(--ink-muted)]">
-                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px]">Email</th>
-                  <th scope="col" className="px-4 py-3 min-w-[120px]">Name</th>
-                  <th scope="col" className="px-4 py-3 min-w-[90px]">Role</th>
-                  <th scope="col" className="px-4 py-3 min-w-[140px]">Created</th>
-                  <th scope="col" className="px-4 py-3 min-w-[140px]">Last sign-in</th>
+                  <SortableHeader
+                    column="email"
+                    label="Email"
+                    currentSort={userSortConfig}
+                    onSort={(col) => handleUserSort(col as keyof UserListItem)}
+                    className="sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px]"
+                  />
+                  <SortableHeader
+                    column="display_name"
+                    label="Name"
+                    currentSort={userSortConfig}
+                    onSort={(col) => handleUserSort(col as keyof UserListItem)}
+                    className="min-w-[120px]"
+                  />
+                  <SortableHeader
+                    column="role"
+                    label="Role"
+                    currentSort={userSortConfig}
+                    onSort={(col) => handleUserSort(col as keyof UserListItem)}
+                    className="min-w-[90px]"
+                  />
+                  <SortableHeader
+                    column="created_at"
+                    label="Created"
+                    currentSort={userSortConfig}
+                    onSort={(col) => handleUserSort(col as keyof UserListItem)}
+                    className="min-w-[140px]"
+                  />
+                  <SortableHeader
+                    column="last_sign_in_at"
+                    label="Last sign-in"
+                    currentSort={userSortConfig}
+                    onSort={(col) => handleUserSort(col as keyof UserListItem)}
+                    className="min-w-[140px]"
+                  />
                   <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[120px]">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.length === 0 ? (
+                {sortedUsers.length === 0 ? (
                   <tr>
                     <td
                       colSpan={6}
@@ -347,7 +385,7 @@ export default function UsersPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredUsers.map((user) => (
+                  sortedUsers.map((user) => (
                     <tr key={user.id} className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] transition-colors">
                       <td className="px-4 py-3 text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{user.email ?? "(no email)"}</td>
                       <td className="px-4 py-3 text-[color:var(--ink)]">{user.display_name ?? "—"}</td>
