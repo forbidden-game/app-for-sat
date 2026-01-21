@@ -219,6 +219,8 @@ public final class SupabaseCoachService {
     ) async throws {
         await stopRealtime()
 
+        let accessToken = try await tokenProvider.accessToken()
+        await client.realtimeV2.setAuth(accessToken)
         await client.realtimeV2.connect()
 
         let decoder = JSONDecoder()
