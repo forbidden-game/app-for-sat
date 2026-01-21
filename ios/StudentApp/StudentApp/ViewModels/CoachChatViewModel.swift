@@ -65,11 +65,20 @@ final class CoachChatViewModel: ObservableObject {
         defer { isSending = false }
 
         do {
-            _ = try await service.sendMessage(
+            let messageId = try await service.sendMessage(
                 text: text,
                 linkedAttemptId: linkedAttemptId,
                 replyToMessageId: replyToMessageId
             )
+            let newMessage = CoachThreadMessage(
+                id: messageId,
+                role: .user,
+                content: CoachMessageContent(text: text),
+                linkedAttemptId: linkedAttemptId,
+                replyToMessageId: replyToMessageId,
+                createdAt: Date()
+            )
+            upsertMessage(newMessage)
             draftText = ""
             return true
         } catch {
