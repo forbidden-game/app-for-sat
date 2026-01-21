@@ -205,10 +205,12 @@ export async function reorderBankQuestions(
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
 
-  const { error } = await supabase.rpc("reorder_bank_questions", {
+  const rpcArgs = {
     p_bank_id: bankId,
     p_items: items,
-  });
+  } as unknown as never;
+
+  const { error } = await supabase.rpc("reorder_bank_questions", rpcArgs);
 
   if (error) {
     throw new Error(error.message);
