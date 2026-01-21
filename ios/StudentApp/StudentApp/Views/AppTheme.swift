@@ -207,6 +207,26 @@ enum AppTheme {
 }
 
 enum AppFont {
+    // MARK: - Score Display
+    /// 大分数（结果页主数字）
+    static let scoreLarge: Font = .system(size: 32, weight: .bold)
+    /// 中分数（百分比）
+    static let scoreMedium: Font = .system(size: 18, weight: .medium)
+
+    // MARK: - Icon Text
+    /// 聊天气泡图标
+    static let chatBubbleIcon: Font = .system(size: 16, weight: .semibold)
+    /// 时间戳胶囊文字
+    static let timestamp: Font = .caption2.weight(.medium)
+
+    // MARK: - Button Text
+    /// 次要按钮文字
+    static let buttonSecondary: Font = .headline
+
+    // MARK: - List Items
+    /// 列表序号
+    static let listIndex: Font = .system(size: 14, weight: .semibold)
+
     private static var didRegisterCoachFont = false
 
     static func registerCoachFontIfNeeded() {
@@ -291,6 +311,7 @@ enum AppMetrics {
 
     static let badgeSize: CGFloat = 32
     static let badgeSizeSmall: CGFloat = 28
+    static let badgeSizeMini: CGFloat = 24
     static let gridButtonSize: CGFloat = 48
 
     static let fieldPaddingVertical: CGFloat = 12
@@ -318,6 +339,40 @@ enum AppMetrics {
 
     static let topBarHeight: CGFloat = 52
     static let tabBarHeight: CGFloat = 64
+
+    // MARK: - Animation Config
+    /// 快速动画（按钮点击、切换）
+    static let animationDurationFast: Double = 0.15
+    /// 中等动画（列表项、卡片）
+    static let animationDurationMedium: Double = 0.25
+    /// 慢速动画（页面转场、模态框）
+    static let animationDurationSlow: Double = 0.35
+    /// 非常慢动画（结果页加载）
+    static let animationDurationVerySlow: Double = 0.5
+
+    /// 默认弹簧动画配置
+    static let springAnimation: Animation = .spring(
+        response: 0.4,
+        dampingFraction: 0.75
+    )
+
+    // MARK: - Stroke Width
+    static let strokeWidthThin: CGFloat = 1
+    static let strokeWidthMedium: CGFloat = 1.2
+    static let strokeWidthThick: CGFloat = 2
+    static let circleStrokeWidth: CGFloat = 6
+
+    // MARK: - Selection Indicator
+    static let selectionIndicatorWidth: CGFloat = 4
+    static let selectionIndicatorCornerRadius: CGFloat = 2
+
+    // MARK: - Shadow Config
+    static let shadowRadiusButton: CGFloat = 6
+    static let shadowYButton: CGFloat = 3
+    static let shadowRadiusCard: CGFloat = 10
+    static let shadowYCard: CGFloat = 6
+    static let shadowRadiusLarge: CGFloat = 16
+    static let shadowYLarge: CGFloat = 8
 }
 
 extension View {
