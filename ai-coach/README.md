@@ -6,6 +6,9 @@ North Star: one AI teacher per student, with wrong-answer coaching, followup dia
 AI Coach feature workspace.
 
 - Specs: `ai-coach/docs/README.md`
+- v2 API + Worker spec: `ai-coach/docs/api-v2.md`
+- Data model: `ai-coach/docs/data-model.md`
+- Flows: `ai-coach/docs/flows.md`
 - Coach Service (Node/TS worker): `ai-coach/coach-service/`
 - Notification Sender (Node/TS worker): `ai-coach/notification-sender/`
 
