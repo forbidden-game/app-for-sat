@@ -105,26 +105,29 @@ export async function createQuestionBank(accessToken: string, input: QuestionBan
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
   const payload = validateBankInput(input);
+  const insertPayload = payload as unknown as never;
   const { data, error } = await supabase
     .from("question_banks")
-    .insert(payload)
+    .insert(insertPayload)
     .select(
       "id, slug, title, subtitle, icon, mode, question_limit, rule_json, is_active, sort_order, created_at",
     )
     .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to create question bank.");
   }
+
+  const createdBank = data as unknown as QuestionBank;
 
   await recordAdminEvent(context, {
     action: "bank.create",
     resourceType: "question_banks",
-    resourceId: data.id,
+    resourceId: createdBank.id,
     metadata: { slug: payload.slug, mode: payload.mode },
   });
 
-  return data as QuestionBank;
+  return createdBank;
 }
 
 export async function updateQuestionBank(
@@ -135,18 +138,21 @@ export async function updateQuestionBank(
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
   const payload = validateBankInput(input);
+  const updatePayload = payload as unknown as never;
   const { data, error } = await supabase
     .from("question_banks")
-    .update(payload)
+    .update(updatePayload)
     .eq("id", id)
     .select(
       "id, slug, title, subtitle, icon, mode, question_limit, rule_json, is_active, sort_order, created_at",
     )
     .single();
 
-  if (error) {
-    throw new Error(error.message);
+  if (error || !data) {
+    throw new Error(error?.message ?? "Failed to update question bank.");
   }
+
+  const updatedBank = data as unknown as QuestionBank;
 
   await recordAdminEvent(context, {
     action: "bank.update",
@@ -155,7 +161,7 @@ export async function updateQuestionBank(
     metadata: { slug: payload.slug, mode: payload.mode, is_active: payload.is_active },
   });
 
-  return data as QuestionBank;
+  return updatedBank;
 }
 
 export async function deleteQuestionBank(accessToken: string, id: string) {
