@@ -11,6 +11,9 @@ AI Coach feature workspace.
 
 This directory is the primary home for AI Coach docs and implementation.
 
+## Workspace
+This folder uses npm workspaces. Install dependencies from `ai-coach/` to use the shared core package.
+
 ## Testing
 
 All test suites assume a local Supabase stack.
@@ -38,3 +41,5 @@ Environment variables (defaults provided for local Supabase):
 - `SUPABASE_URL` (default: `http://127.0.0.1:54321`)
 - `SUPABASE_SERVICE_ROLE_KEY` (default: local dev key)
 - `MINIMAX_API_KEY` (required for LLM integration tests)
+- `AI_COACH_MAX_CONCURRENCY` (optional, defaults to claim limit)
+- `NOTIFICATION_SENDER_MAX_CONCURRENCY` (optional, defaults to claim limit)
