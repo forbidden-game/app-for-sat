@@ -29,19 +29,47 @@ async function resolveProviderKey(
   return getEnvApiKey(provider);
 }
 
+function extractErrorCode(err: unknown): string | null {
+  if (err && typeof err === "object") {
+    const code = (err as { code?: unknown }).code;
+    if (typeof code === "string" && code.length > 0) return code;
+  }
+
+  if (err instanceof Error && err.name) return err.name;
+  return null;
+}
+
 async function markJobDone(supabase: SupabaseClient, jobId: string): Promise<void> {
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("ai_jobs")
-    .update({ status: "done", error: null, updated_at: new Date().toISOString() })
+    .update({
+      status: "done",
+      error: null,
+      last_error: null,
+      last_error_at: null,
+      last_error_code: null,
+      completed_at: now,
+      updated_at: now,
+    })
     .eq("id", jobId);
   if (error) throw new Error(error.message);
 }
 
 async function markJobError(supabase: SupabaseClient, jobId: string, err: unknown): Promise<void> {
   const message = err instanceof Error ? err.message : String(err);
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("ai_jobs")
-    .update({ status: "error", error: message, updated_at: new Date().toISOString() })
+    .update({
+      status: "error",
+      error: message,
+      last_error: message,
+      last_error_at: now,
+      last_error_code: extractErrorCode(err),
+      completed_at: null,
+      updated_at: now,
+    })
     .eq("id", jobId);
   if (error) throw new Error(error.message);
 }
@@ -54,6 +82,9 @@ async function deferJob(supabase: SupabaseClient, jobId: string, delayMs: number
       status: "queued",
       run_after: runAfter,
       error: null,
+      last_error: null,
+      last_error_at: null,
+      last_error_code: null,
       locked_at: null,
       locked_by: null,
       updated_at: new Date().toISOString(),
