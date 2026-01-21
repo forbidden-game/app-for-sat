@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { listAdminAuditLogs, type AdminAuditLog } from "./actions";
+import { useSortable, SortableHeader } from "@/hooks/useSortable";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -78,6 +79,13 @@ export default function AuditLogPage() {
 
   const csv = useMemo(() => buildCsv(logs), [logs]);
 
+  // Sortable hook for audit log table
+  const { sortedData: sortedLogs, handleSort: handleAuditSort, sortConfig: auditSortConfig } = useSortable(
+    logs,
+    "created_at",
+    "desc",
+  );
+
   function downloadCsv() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -130,15 +138,39 @@ export default function AuditLogPage() {
         <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
           <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
-              <th scope="col" className="px-4 py-3">Time</th>
-              <th scope="col" className="px-4 py-3">Actor</th>
-              <th scope="col" className="px-4 py-3">Action</th>
-              <th scope="col" className="px-4 py-3">Resource</th>
+              <SortableHeader
+                column="created_at"
+                label="Time"
+                currentSort={auditSortConfig}
+                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
+                className="px-4 py-3"
+              />
+              <SortableHeader
+                column="actor_email"
+                label="Actor"
+                currentSort={auditSortConfig}
+                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
+                className="px-4 py-3"
+              />
+              <SortableHeader
+                column="action"
+                label="Action"
+                currentSort={auditSortConfig}
+                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
+                className="px-4 py-3"
+              />
+              <SortableHeader
+                column="resource_type"
+                label="Resource"
+                currentSort={auditSortConfig}
+                onSort={(col) => handleAuditSort(col as keyof AdminAuditLog)}
+                className="px-4 py-3"
+              />
               <th scope="col" className="px-4 py-3">Details</th>
             </tr>
           </thead>
           <tbody>
-            {logs.length === 0 ? (
+            {sortedLogs.length === 0 ? (
               <tr>
                 <td
                   colSpan={5}
@@ -150,7 +182,7 @@ export default function AuditLogPage() {
                 </td>
               </tr>
             ) : (
-              logs.map((log) => (
+              sortedLogs.map((log) => (
                 <tr key={log.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
                   <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                     {formatDateTime(log.created_at)}
