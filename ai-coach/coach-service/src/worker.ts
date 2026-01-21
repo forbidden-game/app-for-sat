@@ -106,10 +106,51 @@ async function runJob(
   await handler({ config, supabase, job, promptOverrides, resolveApiKey });
 }
 
+async function processJob(
+  config: CoachConfig,
+  supabase: SupabaseClient,
+  job: AiJobRow,
+): Promise<void> {
+  logger.info({ jobId: job.id, kind: job.kind, attemptId: job.attempt_id }, "processing ai job");
+
+  try {
+    await runJob(config, supabase, job);
+    await markJobDone(supabase, job.id);
+  } catch (err) {
+    if (err instanceof JobDeferredError) {
+      logger.info({ jobId: job.id, delayMs: err.delayMs }, "job deferred");
+      try {
+        await deferJob(supabase, job.id, err.delayMs);
+      } catch (markErr) {
+        logger.error({ err: markErr, jobId: job.id }, "failed to defer job");
+      }
+      return;
+    }
+
+    logger.error({ err, jobId: job.id }, "job failed");
+    try {
+      await markJobError(supabase, job.id, err);
+    } catch (markErr) {
+      logger.error({ err: markErr, jobId: job.id }, "failed to mark job error");
+    }
+  }
+}
+
 export async function runWorker(config: CoachConfig, supabase: SupabaseClient): Promise<void> {
   let lastScheduleAt = 0;
+  let shuttingDown = false;
+  const inFlight = new Set<Promise<void>>();
 
-  for (;;) {
+  const requestShutdown = (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info({ signal }, "shutdown requested");
+  };
+
+  process.on("SIGTERM", () => requestShutdown("SIGTERM"));
+  process.on("SIGINT", () => requestShutdown("SIGINT"));
+
+  while (!shuttingDown) {
     const now = Date.now();
     if (config.enableScheduler && now - lastScheduleAt >= config.scheduleIntervalMs) {
       try {
@@ -120,10 +161,21 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
       lastScheduleAt = now;
     }
 
+    if (inFlight.size >= config.maxConcurrency) {
+      await Promise.race(inFlight);
+      continue;
+    }
+
+    const capacity = Math.max(1, config.maxConcurrency - inFlight.size);
     let jobs: AiJobRow[] = [];
 
     try {
-      jobs = await claimJobs(supabase, config.workerId, config.claimLimit, config.jobKinds);
+      jobs = await claimJobs(
+        supabase,
+        config.workerId,
+        Math.min(config.claimLimit, capacity),
+        config.jobKinds,
+      );
     } catch (err) {
       logger.error({ err }, "failed to claim jobs");
       await sleep(config.pollIntervalMs);
@@ -136,29 +188,15 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
     }
 
     for (const job of jobs) {
-      logger.info({ jobId: job.id, kind: job.kind, attemptId: job.attempt_id }, "processing ai job");
-
-      try {
-        await runJob(config, supabase, job);
-        await markJobDone(supabase, job.id);
-      } catch (err) {
-        if (err instanceof JobDeferredError) {
-          logger.info({ jobId: job.id, delayMs: err.delayMs }, "job deferred");
-          try {
-            await deferJob(supabase, job.id, err.delayMs);
-          } catch (markErr) {
-            logger.error({ err: markErr, jobId: job.id }, "failed to defer job");
-          }
-          continue;
-        }
-
-        logger.error({ err, jobId: job.id }, "job failed");
-        try {
-          await markJobError(supabase, job.id, err);
-        } catch (markErr) {
-          logger.error({ err: markErr, jobId: job.id }, "failed to mark job error");
-        }
-      }
+      const task = processJob(config, supabase, job).finally(() => {
+        inFlight.delete(task);
+      });
+      inFlight.add(task);
     }
+  }
+
+  if (inFlight.size > 0) {
+    logger.info({ pending: inFlight.size }, "draining in-flight jobs");
+    await Promise.allSettled(inFlight);
   }
 }

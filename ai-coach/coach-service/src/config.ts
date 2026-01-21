@@ -14,6 +14,7 @@ export type CoachConfig = {
   workerId: string;
   pollIntervalMs: number;
   claimLimit: number;
+  maxConcurrency: number;
   minimaxApiKey: string | null;
   scheduleIntervalMs: number;
   activeLookbackDays: number;
@@ -69,6 +70,9 @@ export function getConfig(): CoachConfig {
   const defaultModel = readStringEnv("AI_COACH_MODEL_DEFAULT", "minimax/MiniMax-M2.1");
   const jobKinds = parseJobKinds();
 
+  const claimLimit = readIntEnv("AI_COACH_CLAIM_LIMIT", 2);
+  const maxConcurrency = readIntEnv("AI_COACH_MAX_CONCURRENCY", Math.max(1, claimLimit));
+
   const modelInsight = readStringEnv("AI_COACH_MODEL_INSIGHT", defaultModel);
   const modelChat = readStringEnv("AI_COACH_MODEL_CHAT", defaultModel);
   const modelReport = readStringEnv("AI_COACH_MODEL_REPORT", defaultModel);
@@ -92,7 +96,8 @@ export function getConfig(): CoachConfig {
     supabaseServiceRoleKey: requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
     workerId: process.env["AI_COACH_WORKER_ID"] ?? "worker",
     pollIntervalMs: readIntEnv("AI_COACH_POLL_INTERVAL_MS", 2000),
-    claimLimit: readIntEnv("AI_COACH_CLAIM_LIMIT", 2),
+    claimLimit,
+    maxConcurrency,
     minimaxApiKey,
     scheduleIntervalMs: readIntEnv("AI_COACH_SCHEDULE_INTERVAL_MS", 6 * 60 * 60 * 1000),
     activeLookbackDays: readIntEnv("AI_COACH_ACTIVE_LOOKBACK_DAYS", 90),

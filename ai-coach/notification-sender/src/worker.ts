@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sleep } from "@ai-coach/shared";
 
 import type { SenderConfig } from "./config.js";
 import { logger } from "./logger.js";
@@ -8,10 +9,6 @@ type PushTokenRow = {
   device_token: string;
   platform: string;
 };
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 export async function claimEvents(
   supabase: SupabaseClient,
@@ -84,35 +81,69 @@ export async function handleEvent(
   await markSent(supabase, event.id);
 }
 
+async function processEvent(
+  config: SenderConfig,
+  supabase: SupabaseClient,
+  event: NotificationEventRow,
+): Promise<void> {
+  try {
+    await handleEvent(supabase, config, event);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "unknown_error";
+    logger.error({ err, eventId: event.id }, "notification send failed");
+    try {
+      await markError(supabase, event.id, message);
+    } catch (markErr) {
+      logger.error({ err: markErr, eventId: event.id }, "failed to mark notification error");
+    }
+  }
+}
+
 export async function runWorker(config: SenderConfig, supabase: SupabaseClient): Promise<void> {
-  for (;;) {
+  let shuttingDown = false;
+  const inFlight = new Set<Promise<void>>();
+
+  const requestShutdown = (signal: string) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+    logger.info({ signal }, "shutdown requested");
+  };
+
+  process.on("SIGTERM", () => requestShutdown("SIGTERM"));
+  process.on("SIGINT", () => requestShutdown("SIGINT"));
+
+  while (!shuttingDown) {
+    if (inFlight.size >= config.maxConcurrency) {
+      await Promise.race(inFlight);
+      continue;
+    }
+
     let events: NotificationEventRow[] = [];
 
     try {
-      events = await claimEvents(supabase, config.workerId, config.claimLimit);
+      const capacity = Math.max(1, config.maxConcurrency - inFlight.size);
+      events = await claimEvents(supabase, config.workerId, Math.min(config.claimLimit, capacity));
     } catch (err) {
       logger.error({ err }, "failed to claim notification events");
       await sleep(config.pollIntervalMs);
       continue;
     }
 
-    if (events.length == 0) {
+    if (events.length === 0) {
       await sleep(config.pollIntervalMs);
       continue;
     }
 
     for (const event of events) {
-      try {
-        await handleEvent(supabase, config, event);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "unknown_error";
-        logger.error({ err, eventId: event.id }, "notification send failed");
-        try {
-          await markError(supabase, event.id, message);
-        } catch (markErr) {
-          logger.error({ err: markErr, eventId: event.id }, "failed to mark notification error");
-        }
-      }
+      const task = processEvent(config, supabase, event).finally(() => {
+        inFlight.delete(task);
+      });
+      inFlight.add(task);
     }
+  }
+
+  if (inFlight.size > 0) {
+    logger.info({ pending: inFlight.size }, "draining in-flight notifications");
+    await Promise.allSettled(inFlight);
   }
 }
