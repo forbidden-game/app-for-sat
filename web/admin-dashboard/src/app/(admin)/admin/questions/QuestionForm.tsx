@@ -112,7 +112,13 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   }, [isDirty]);
 
   function handleOptionChange(index: number, field: "label" | "content", value: string) {
-    setOptions((prev) => prev.map((opt, i) => (i === index ? { ...opt, [field]: value } : opt)));
+    setOptions((prev) => {
+      const next = prev.map((opt, i) => (i === index ? { ...opt, [field]: value } : opt));
+      if (field === "label" && prev[index]?.label === answerKey.correct) {
+        setAnswerKey({ correct: value });
+      }
+      return next;
+    });
   }
 
   function addOption() {
@@ -121,7 +127,14 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   }
 
   function removeOption(index: number) {
-    setOptions((prev) => prev.filter((_, i) => i !== index));
+    setOptions((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      const removed = prev[index];
+      if (removed && removed.label === answerKey.correct) {
+        setAnswerKey({ correct: next[0]?.label ?? "" });
+      }
+      return next;
+    });
   }
 
   function toggleTag(tagId: string) {

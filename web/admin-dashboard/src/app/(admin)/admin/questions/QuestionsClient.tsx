@@ -15,13 +15,14 @@ import {
   type ListQuestionsResult,
   type Question,
   type QuestionInput,
-  type QuestionListItem,
   type OptionInput,
+  type QuestionSortField,
   type QuestionType,
+  type SortDirection,
 } from "./actions";
 import { QuestionForm } from "./QuestionForm";
 import { AssetUploader } from "./AssetUploader";
-import { useSortable, renderSortIcon } from "@/hooks/useSortable";
+import { renderSortIcon } from "@/hooks/useSortable";
 
 function truncate(text: string, maxLength: number) {
   if (text.length <= maxLength) return text;
@@ -37,6 +38,8 @@ function formatDate(value: string) {
     year: "numeric",
   }).format(date);
 }
+
+const PAGE_SIZE = 50;
 
 export default function QuestionsPage() {
   const supabase = getSupabaseClient();
@@ -65,6 +68,26 @@ export default function QuestionsPage() {
     return Number.isFinite(parsed) ? parsed : "";
   });
   const [questionType, setQuestionType] = useState(() => searchParams.get("type") ?? "");
+  const [page, setPage] = useState(() => {
+    const value = Number(searchParams.get("page"));
+    return Number.isFinite(value) && value > 0 ? value : 1;
+  });
+  const [sortBy, setSortBy] = useState<QuestionSortField>(() => {
+    const value = searchParams.get("sort");
+    if (
+      value === "subject" ||
+      value === "module" ||
+      value === "difficulty" ||
+      value === "question_type" ||
+      value === "created_at"
+    ) {
+      return value;
+    }
+    return "created_at";
+  });
+  const [sortDirection, setSortDirection] = useState<SortDirection>(() =>
+    searchParams.get("dir") === "asc" ? "asc" : "desc",
+  );
 
   const [subjects, setSubjects] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
@@ -97,13 +120,15 @@ export default function QuestionsPage() {
       setLoading(true);
       // Fetch all questions at once for global sorting
       const data = await listQuestions(accessToken, {
-        page: 1,
-        pageSize: 10000, // Get all questions
+        page,
+        pageSize: PAGE_SIZE,
         search: search || undefined,
         subject: subject || undefined,
         module: module || undefined,
         difficulty: difficulty || undefined,
         question_type: questionType || undefined,
+        sortBy,
+        sortDirection,
       });
       if (requestId !== requestIdRef.current) return;
       setResult(data);
@@ -116,18 +141,17 @@ export default function QuestionsPage() {
         setLoading(false);
       }
     }
-  }, [getAccessToken, search, subject, module, difficulty, questionType]);
+  }, [getAccessToken, search, subject, module, difficulty, questionType, page, sortBy, sortDirection]);
 
   useEffect(() => {
     loadQuestions();
   }, [loadQuestions]);
 
-  // Sortable hook for questions table
-  const { sortedData: sortedQuestions, handleSort: handleQuestionSort, sortConfig: questionSortConfig } = useSortable(
-    result?.questions ?? [] as QuestionListItem[],
-    "created_at",
-    "desc",
-  );
+  const questions = result?.questions ?? [];
+  const totalPages = result?.totalPages ?? 1;
+  const totalQuestions = result?.total ?? 0;
+  const canPrevPage = page > 1;
+  const canNextPage = page < totalPages;
 
   useEffect(() => {
     setSearch(searchParams.get("q") ?? "");
@@ -137,6 +161,24 @@ export default function QuestionsPage() {
     const nextDifficulty = searchParams.get("difficulty");
     const parsedDifficulty = nextDifficulty ? Number(nextDifficulty) : NaN;
     setDifficulty(Number.isFinite(parsedDifficulty) ? parsedDifficulty : "");
+
+    const nextPage = Number(searchParams.get("page"));
+    setPage(Number.isFinite(nextPage) && nextPage > 0 ? nextPage : 1);
+
+    const sortParam = searchParams.get("sort");
+    if (
+      sortParam === "subject" ||
+      sortParam === "module" ||
+      sortParam === "difficulty" ||
+      sortParam === "question_type" ||
+      sortParam === "created_at"
+    ) {
+      setSortBy(sortParam);
+    } else {
+      setSortBy("created_at");
+    }
+
+    setSortDirection(searchParams.get("dir") === "asc" ? "asc" : "desc");
   }, [searchParams]);
 
   useEffect(() => {
@@ -166,13 +208,28 @@ export default function QuestionsPage() {
     } else {
       nextParams.delete("difficulty");
     }
+    if (page > 1) {
+      nextParams.set("page", String(page));
+    } else {
+      nextParams.delete("page");
+    }
+    if (sortBy !== "created_at") {
+      nextParams.set("sort", sortBy);
+    } else {
+      nextParams.delete("sort");
+    }
+    if (sortDirection !== "desc") {
+      nextParams.set("dir", sortDirection);
+    } else {
+      nextParams.delete("dir");
+    }
 
     const nextQuery = nextParams.toString();
     const currentQuery = searchParams.toString();
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [search, subject, module, difficulty, questionType, pathname, router, searchParams]);
+  }, [search, subject, module, difficulty, questionType, page, sortBy, sortDirection, pathname, router, searchParams]);
 
   useEffect(() => {
     async function loadFilters() {
@@ -277,6 +334,10 @@ export default function QuestionsPage() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
+    if (page !== 1) {
+      setPage(1);
+      return;
+    }
     loadQuestions();
   }
 
@@ -286,6 +347,17 @@ export default function QuestionsPage() {
     setModule("");
     setDifficulty("");
     setQuestionType("");
+    setPage(1);
+  }
+
+  function handleSort(field: QuestionSortField) {
+    setPage(1);
+    if (sortBy === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortBy(field);
+    setSortDirection("asc");
   }
 
   if (error && !result) {
@@ -345,7 +417,10 @@ export default function QuestionsPage() {
             className="w-48 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             placeholder="Search stem…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             autoComplete="off"
           />
         </label>
@@ -355,7 +430,10 @@ export default function QuestionsPage() {
             name="subject"
             className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={subject}
-            onChange={(e) => setSubject(e.target.value)}
+            onChange={(e) => {
+              setSubject(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All</option>
             {subjects.map((s) => (
@@ -371,7 +449,10 @@ export default function QuestionsPage() {
             name="module"
             className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={module}
-            onChange={(e) => setModule(e.target.value)}
+            onChange={(e) => {
+              setModule(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All</option>
             {modules.map((m) => (
@@ -387,7 +468,10 @@ export default function QuestionsPage() {
             name="difficulty"
             className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value ? Number(e.target.value) : "")}
+            onChange={(e) => {
+              setDifficulty(e.target.value ? Number(e.target.value) : "");
+              setPage(1);
+            }}
           >
             <option value="">All</option>
             {[1, 2, 3, 4, 5].map((d) => (
@@ -403,7 +487,10 @@ export default function QuestionsPage() {
             name="questionType"
             className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
             value={questionType}
-            onChange={(e) => setQuestionType(e.target.value)}
+            onChange={(e) => {
+              setQuestionType(e.target.value);
+              setPage(1);
+            }}
           >
             <option value="">All</option>
             {questionTypes.map((qt) => (
@@ -436,51 +523,51 @@ export default function QuestionsPage() {
               <th
                 scope="col"
                 className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
-                onClick={() => handleQuestionSort("subject" as keyof QuestionListItem)}
+                onClick={() => handleSort("subject")}
               >
                 <span className="inline-flex items-center gap-1">
                   Subject
-                  {renderSortIcon(questionSortConfig.column === "subject", questionSortConfig.direction)}
+                  {renderSortIcon(sortBy === "subject", sortDirection)}
                 </span>
               </th>
               <th
                 scope="col"
                 className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
-                onClick={() => handleQuestionSort("module" as keyof QuestionListItem)}
+                onClick={() => handleSort("module")}
               >
                 <span className="inline-flex items-center gap-1">
                   Module
-                  {renderSortIcon(questionSortConfig.column === "module", questionSortConfig.direction)}
+                  {renderSortIcon(sortBy === "module", sortDirection)}
                 </span>
               </th>
               <th
                 scope="col"
                 className="w-16 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)] text-center"
-                onClick={() => handleQuestionSort("difficulty" as keyof QuestionListItem)}
+                onClick={() => handleSort("difficulty")}
               >
                 <span className="inline-flex items-center gap-1 justify-center">
                   Diff
-                  {renderSortIcon(questionSortConfig.column === "difficulty", questionSortConfig.direction)}
+                  {renderSortIcon(sortBy === "difficulty", sortDirection)}
                 </span>
               </th>
               <th
                 scope="col"
                 className="w-20 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
-                onClick={() => handleQuestionSort("question_type" as keyof QuestionListItem)}
+                onClick={() => handleSort("question_type")}
               >
                 <span className="inline-flex items-center gap-1">
                   Type
-                  {renderSortIcon(questionSortConfig.column === "question_type", questionSortConfig.direction)}
+                  {renderSortIcon(sortBy === "question_type", sortDirection)}
                 </span>
               </th>
               <th
                 scope="col"
                 className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
-                onClick={() => handleQuestionSort("created_at" as keyof QuestionListItem)}
+                onClick={() => handleSort("created_at")}
               >
                 <span className="inline-flex items-center gap-1">
                   Created
-                  {renderSortIcon(questionSortConfig.column === "created_at", questionSortConfig.direction)}
+                  {renderSortIcon(sortBy === "created_at", sortDirection)}
                 </span>
               </th>
               <th scope="col" className="w-24 px-4 py-3">Actions</th>
@@ -498,7 +585,7 @@ export default function QuestionsPage() {
                   Loading…
                 </td>
               </tr>
-            ) : sortedQuestions.length === 0 ? (
+            ) : questions.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}
@@ -510,7 +597,7 @@ export default function QuestionsPage() {
                 </td>
               </tr>
             ) : (
-              sortedQuestions.map((q) => (
+              questions.map((q) => (
                 <tr key={q.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
                   <td className="px-4 py-3">
                     <button
@@ -574,9 +661,33 @@ export default function QuestionsPage() {
         </table>
       </div>
 
-      {sortedQuestions.length > 0 && (
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[color:var(--ink-muted)]">
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+            disabled={!canPrevPage}
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Prev
+          </button>
+          <button
+            type="button"
+            onClick={() => setPage((prev) => prev + 1)}
+            disabled={!canNextPage}
+            className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      {totalQuestions > 0 && (
         <div className="text-sm text-[color:var(--ink-muted)]">
-          {sortedQuestions.length} questions total. Click column headers to sort.
+          {totalQuestions} questions total · Page {page} of {totalPages}
         </div>
       )}
 
