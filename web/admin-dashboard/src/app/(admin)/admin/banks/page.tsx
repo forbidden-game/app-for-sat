@@ -137,7 +137,7 @@ export default function QuestionBanksPage() {
     [banks],
   );
 
-  // Sortable hook for banks table
+  // Sortable hook for banks table - using all banks data for global sorting
   const { sortedData: sortedBankList, handleSort: handleBankSort, sortConfig: bankSortConfig } = useSortable(
     sortedBanks,
     "sort_order",

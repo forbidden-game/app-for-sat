@@ -43,12 +43,6 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<UserInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [page, setPage] = useState(() => {
-    const value = searchParams.get("page");
-    const parsed = value ? Number(value) : NaN;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-  });
-  const [hasNext, setHasNext] = useState(false);
   const [roleFilter, setRoleFilter] = useState<string>(() => searchParams.get("role") ?? "");
 
   const getAccessToken = useCallback(async () => {
@@ -67,44 +61,36 @@ export default function UsersPage() {
     return session.access_token;
   }, [supabase]);
 
-  const loadUsers = useCallback(
-    async (targetPage: number) => {
-      const safePage = Math.max(1, targetPage);
-      setLoading(true);
-      setError(null);
+  const loadAllUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      const accessToken = await getAccessToken();
-      if (!accessToken) {
-        setLoading(false);
-        return;
-      }
+    const accessToken = await getAccessToken();
+    if (!accessToken) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        const result: ListUsersResult = await listUsers(accessToken, {
-          page: safePage,
-          pageSize: PAGE_SIZE,
-        });
-        setUsers(result.users);
-        setPage(result.page);
-        setHasNext(result.hasNext);
-      } catch (loadError) {
-        setError(loadError instanceof Error ? loadError.message : "Failed to load users.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [getAccessToken],
-  );
+    try {
+      // Fetch all users at once for global sorting
+      const result: ListUsersResult = await listUsers(accessToken, {
+        page: 1,
+        pageSize: 10000, // Get all users
+      });
+      setUsers(result.users);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Failed to load users.");
+    } finally {
+      setLoading(false);
+    }
+  }, [getAccessToken]);
 
   useEffect(() => {
-    void loadUsers(page);
-  }, [loadUsers, page]);
+    void loadAllUsers();
+  }, [loadAllUsers]);
 
   useEffect(() => {
     setRoleFilter(searchParams.get("role") ?? "");
-    const nextPage = searchParams.get("page");
-    const parsedPage = nextPage ? Number(nextPage) : NaN;
-    setPage(Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1);
   }, [searchParams]);
 
   useEffect(() => {
@@ -114,25 +100,20 @@ export default function UsersPage() {
     } else {
       nextParams.delete("role");
     }
-    if (page > 1) {
-      nextParams.set("page", String(page));
-    } else {
-      nextParams.delete("page");
-    }
 
     const nextQuery = nextParams.toString();
     const currentQuery = searchParams.toString();
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [roleFilter, page, pathname, router, searchParams]);
+  }, [roleFilter, pathname, router, searchParams]);
 
   const filteredUsers = useMemo(() => {
     if (!roleFilter) return users;
     return users.filter((user) => user.role === roleFilter);
   }, [users, roleFilter]);
 
-  // Sortable hook for user table
+  // Sortable hook for user table - using all users data for global sorting
   const { sortedData: sortedUsers, handleSort: handleUserSort, sortConfig: userSortConfig } = useSortable(
     filteredUsers,
     "created_at",
@@ -283,7 +264,6 @@ export default function UsersPage() {
             value={roleFilter}
             onChange={(event) => {
               setRoleFilter(event.target.value);
-              setPage(1);
             }}
           >
             <option value="">All</option>
@@ -308,24 +288,8 @@ export default function UsersPage() {
             <div>
               <p className="text-sm font-semibold text-[color:var(--ink)]">User List</p>
               <p className="text-xs text-[color:var(--ink-muted)]">
-                Showing page {page}. Filters only apply to the current page.
+                {sortedUsers.length} users total. Click column headers to sort.
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                disabled={page <= 1 || loading}
-              >
-                Prev
-              </button>
-              <button
-                className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => setPage((prev) => (hasNext ? prev + 1 : prev))}
-                disabled={!hasNext || loading}
-              >
-                Next
-              </button>
             </div>
           </div>
           <div className="max-h-[560px] overflow-auto scrollbar-thin scrollbar-thumb-[color:var(--border)] scrollbar-track-transparent">
@@ -392,7 +356,7 @@ export default function UsersPage() {
                       colSpan={6}
                     >
                       <EmptyState
-                        title={roleFilter ? `No ${roleFilter} users found` : "No users found on this page"}
+                        title={roleFilter ? `No ${roleFilter} users found` : "No users found"}
                         description={roleFilter ? "Try selecting a different role filter." : "Users will appear here once they sign up."}
                         icon="users"
                         className="m-4"

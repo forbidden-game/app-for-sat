@@ -65,11 +65,6 @@ export default function QuestionsPage() {
     return Number.isFinite(parsed) ? parsed : "";
   });
   const [questionType, setQuestionType] = useState(() => searchParams.get("type") ?? "");
-  const [page, setPage] = useState(() => {
-    const value = searchParams.get("page");
-    const parsed = value ? Number(value) : NaN;
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
-  });
 
   const [subjects, setSubjects] = useState<string[]>([]);
   const [modules, setModules] = useState<string[]>([]);
@@ -100,9 +95,10 @@ export default function QuestionsPage() {
 
     try {
       setLoading(true);
+      // Fetch all questions at once for global sorting
       const data = await listQuestions(accessToken, {
-        page,
-        pageSize: 20,
+        page: 1,
+        pageSize: 10000, // Get all questions
         search: search || undefined,
         subject: subject || undefined,
         module: module || undefined,
@@ -120,7 +116,7 @@ export default function QuestionsPage() {
         setLoading(false);
       }
     }
-  }, [getAccessToken, page, search, subject, module, difficulty, questionType]);
+  }, [getAccessToken, search, subject, module, difficulty, questionType]);
 
   useEffect(() => {
     loadQuestions();
@@ -141,9 +137,6 @@ export default function QuestionsPage() {
     const nextDifficulty = searchParams.get("difficulty");
     const parsedDifficulty = nextDifficulty ? Number(nextDifficulty) : NaN;
     setDifficulty(Number.isFinite(parsedDifficulty) ? parsedDifficulty : "");
-    const nextPage = searchParams.get("page");
-    const parsedPage = nextPage ? Number(nextPage) : NaN;
-    setPage(Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1);
   }, [searchParams]);
 
   useEffect(() => {
@@ -173,18 +166,13 @@ export default function QuestionsPage() {
     } else {
       nextParams.delete("difficulty");
     }
-    if (page > 1) {
-      nextParams.set("page", String(page));
-    } else {
-      nextParams.delete("page");
-    }
 
     const nextQuery = nextParams.toString();
     const currentQuery = searchParams.toString();
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [search, subject, module, difficulty, questionType, page, pathname, router, searchParams]);
+  }, [search, subject, module, difficulty, questionType, pathname, router, searchParams]);
 
   useEffect(() => {
     async function loadFilters() {
@@ -289,7 +277,6 @@ export default function QuestionsPage() {
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
-    setPage(1);
     loadQuestions();
   }
 
@@ -299,7 +286,6 @@ export default function QuestionsPage() {
     setModule("");
     setDifficulty("");
     setQuestionType("");
-    setPage(1);
   }
 
   if (error && !result) {
@@ -588,35 +574,11 @@ export default function QuestionsPage() {
         </table>
       </div>
 
-      {result && result.totalPages > 1 ? (
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[color:var(--ink-muted)]">
-            Showing {(result.page - 1) * result.pageSize + 1}-{Math.min(result.page * result.pageSize, result.total)} of{" "}
-            {result.total}
-          </span>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <span className="px-2 py-1 text-[color:var(--ink-muted)]">
-              Page {result.page} of {result.totalPages}
-            </span>
-            <button
-              type="button"
-              onClick={() => setPage((p) => Math.min(result.totalPages, p + 1))}
-              disabled={page >= result.totalPages}
-              className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1 text-xs font-medium text-[color:var(--ink-muted)] disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
+      {sortedQuestions.length > 0 && (
+        <div className="text-sm text-[color:var(--ink-muted)]">
+          {sortedQuestions.length} questions total. Click column headers to sort.
         </div>
-      ) : null}
+      )}
 
       {drawerOpen ? (
         <div className="fixed inset-0 z-40 flex justify-end">

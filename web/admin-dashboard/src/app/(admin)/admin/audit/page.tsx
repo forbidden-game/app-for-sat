@@ -79,7 +79,7 @@ export default function AuditLogPage() {
 
   const csv = useMemo(() => buildCsv(logs), [logs]);
 
-  // Sortable hook for audit log table
+  // Sortable hook for audit log table - using all logs data for global sorting
   const { sortedData: sortedLogs, handleSort: handleAuditSort, sortConfig: auditSortConfig } = useSortable(
     logs,
     "created_at",
