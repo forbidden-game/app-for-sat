@@ -44,7 +44,6 @@ export function TrendIndicator({
 }: TrendIndicatorProps) {
   const isPositive = invert ? value < 0 : value > 0;
   const isNegative = invert ? value > 0 : value < 0;
-  const isNeutral = value === 0;
 
   const getColor = () => {
     if (color !== "default") {
@@ -72,12 +71,6 @@ export function TrendIndicator({
     sm: "text-xs px-1.5 py-0.5",
     md: "text-sm px-2 py-0.5",
     lg: "text-base px-2.5 py-1",
-  };
-
-  const iconSizeClasses = {
-    sm: "w-3 h-3",
-    md: "w-4 h-4",
-    lg: "w-5 h-5",
   };
 
   const formattedValue = showSign

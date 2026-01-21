@@ -6,7 +6,7 @@ import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getAdminOverview, type AdminOverview } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
-import { MetricCard, TrendIndicator } from "@/components/TrendIndicator";
+import { MetricCard } from "@/components/TrendIndicator";
 import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
 function formatDateTime(value: string) {

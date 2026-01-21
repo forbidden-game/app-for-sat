@@ -60,9 +60,6 @@ export function Skeleton({
     inline: "inline-block h-4 align-middle",
   };
 
-  const customStyles = width ? `width: ${width};` : "";
-  const customHeight = height ? `height: ${height};` : "";
-
   if (variant === "text" && lines > 1) {
     return (
       <div className={`space-y-3 ${className}`}>

@@ -170,7 +170,7 @@ export default function AiLogsWorkbench({
     if (!stillVisible) {
       setSelectedId(sortedLogs[0].id);
     }
-  }, [sortedLogs, selectedId]);
+  }, [filteredLogs, sortedLogs, selectedId]);
 
   const selectedLog = useMemo(() => {
     return sortedLogs.find((log) => log.id === selectedId) ?? null;

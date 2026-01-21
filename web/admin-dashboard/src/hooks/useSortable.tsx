@@ -52,7 +52,7 @@ export function useSortable<T extends Record<string, unknown>>(
       const bValue = b[sortConfig.column!];
 
       // Handle null/undefined values
-      if (aValue == null && bValue === null) return 0;
+      if (aValue == null && bValue == null) return 0;
       if (aValue == null) return sortConfig.direction === "asc" ? 1 : -1;
       if (bValue == null) return sortConfig.direction === "asc" ? -1 : 1;
 
