@@ -19,6 +19,7 @@ import {
 import { Skeleton } from "@/components/Skeleton";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingButton } from "@/components/Button";
+import { useSortable, SortableHeader } from "@/hooks/useSortable";
 
 const EMPTY_FORM: QuestionBankInput = {
   slug: "",
@@ -134,6 +135,13 @@ export default function QuestionBanksPage() {
   const sortedBanks = useMemo(
     () => [...banks].sort((a, b) => a.sort_order - b.sort_order),
     [banks],
+  );
+
+  // Sortable hook for banks table
+  const { sortedData: sortedBankList, handleSort: handleBankSort, sortConfig: bankSortConfig } = useSortable(
+    sortedBanks,
+    "sort_order",
+    "asc",
   );
 
   function formatDateTime(value: string) {
@@ -425,16 +433,46 @@ export default function QuestionBanksPage() {
               <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
                   <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[180px] z-10">Title</th>
-                  <th scope="col" className="px-4 py-3 min-w-[120px]">Slug</th>
-                  <th scope="col" className="px-4 py-3 min-w-[100px]">Mode</th>
-                  <th scope="col" className="px-4 py-3 min-w-[70px]">Limit</th>
-                  <th scope="col" className="px-4 py-3 min-w-[80px]">Status</th>
-                  <th scope="col" className="px-4 py-3 min-w-[70px]">Order</th>
+                  <SortableHeader
+                    column="slug"
+                    label="Slug"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
+                    className="px-4 py-3 min-w-[120px]"
+                  />
+                  <SortableHeader
+                    column="mode"
+                    label="Mode"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
+                    className="px-4 py-3 min-w-[100px]"
+                  />
+                  <SortableHeader
+                    column="question_limit"
+                    label="Limit"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
+                    className="px-4 py-3 min-w-[70px] text-center"
+                  />
+                  <SortableHeader
+                    column="is_active"
+                    label="Status"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
+                    className="px-4 py-3 min-w-[80px]"
+                  />
+                  <SortableHeader
+                    column="sort_order"
+                    label="Order"
+                    currentSort={bankSortConfig}
+                    onSort={(col) => handleBankSort(col as keyof QuestionBank)}
+                    className="px-4 py-3 min-w-[70px]"
+                  />
                   <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[200px] z-10">Actions</th>
                 </tr>
               </thead>
               <tbody>
-              {sortedBanks.length === 0 ? (
+              {sortedBankList.length === 0 ? (
                 <tr>
                   <td
                     colSpan={7}
@@ -453,7 +491,7 @@ export default function QuestionBanksPage() {
                   </td>
                 </tr>
               ) : (
-                sortedBanks.map((bank) => (
+                sortedBankList.map((bank) => (
                   <tr
                     key={bank.id}
                     className="border-t border-[color:var(--border)] transition hover:bg-[color:var(--surface-soft)]"
