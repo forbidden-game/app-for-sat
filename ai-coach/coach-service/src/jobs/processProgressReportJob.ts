@@ -123,6 +123,7 @@ export async function processProgressReportJob(
   payload: ReportPayload,
   systemPrompt: string = "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
   promptVersion: string = "ai-coach-report-v1",
+  apiKeyResolver?: (provider: string) => Promise<string | undefined>,
 ): Promise<void> {
   const studentId = payload.student_id;
   const periodKind = payload.period_kind === "monthly" ? "monthly" : "weekly";
@@ -179,10 +180,16 @@ export async function processProgressReportJob(
   let output: ReportOutput | null = null;
   let costUsd: number | null = null;
   try {
-    const apiKey =
-      (await getProviderApiKey(supabase, model.provider)) ??
-      (model.provider === "minimax" ? config.minimaxApiKey : getEnvApiKey(model.provider));
-    const modelWithAuth = applyMinimaxAuth(model, apiKey);
+    const apiKey = apiKeyResolver
+      ? await apiKeyResolver(model.provider)
+      : (await getProviderApiKey(supabase, model.provider)) ??
+        (model.provider === "minimax" ? config.minimaxApiKey ?? undefined : getEnvApiKey(model.provider));
+
+    if (model.provider === "minimax" && !apiKey) {
+      throw new Error("missing_minimax_api_key");
+    }
+
+    const modelWithAuth = applyMinimaxAuth(model, apiKey ?? undefined);
     const response = await completeSimple(
       modelWithAuth,
       {

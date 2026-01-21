@@ -17,5 +17,6 @@ export async function handleProgressReportJob(ctx: JobHandlerContext): Promise<v
     (job.payload ?? {}) as Record<string, unknown>,
     promptOverrides?.systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.progress_report,
     promptOverrides?.promptVersion ?? DEFAULT_PROMPT_VERSIONS.progress_report,
+    ctx.resolveApiKey,
   );
 }
