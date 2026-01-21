@@ -12,6 +12,8 @@ async function main(): Promise<void> {
       workerId: config.workerId,
       jobKinds: config.jobKinds ?? "all",
       scheduler: config.enableScheduler,
+      maxConcurrency: config.maxConcurrency,
+      claimLimit: config.claimLimit,
     },
     "ai-coach worker starting",
   );
