@@ -17,6 +17,7 @@ import {
   type QuestionBankInput,
 } from "./actions";
 import { Skeleton } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 const EMPTY_FORM: QuestionBankInput = {
   slug: "",
@@ -438,12 +439,19 @@ export default function QuestionBanksPage() {
               {sortedBanks.length === 0 ? (
                 <tr>
                   <td
-                    className="px-4 py-6 text-center text-sm text-[color:var(--ink-muted)]"
                     colSpan={7}
-                    role="status"
-                    aria-live="polite"
                   >
-                    No question banks yet.
+                    <EmptyState
+                      title="No question banks yet"
+                      description="Create your first question bank to start managing practice content for students."
+                      icon="banks"
+                      action={{
+                        label: "Create Bank",
+                        onClick: openCreateDrawer,
+                        variant: "primary",
+                      }}
+                      className="m-4"
+                    />
                   </td>
                 </tr>
               ) : (

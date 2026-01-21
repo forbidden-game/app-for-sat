@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { getAdminOverview, type AdminOverview } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 function formatDateTime(value: string) {
   const date = new Date(value);
@@ -203,12 +204,19 @@ export default function AdminOverviewClient({
               {questionBanks.length === 0 ? (
                 <tr>
                   <td
-                    className="px-4 py-6 text-center text-sm text-[color:var(--ink-muted)]"
                     colSpan={5}
-                    role="status"
-                    aria-live="polite"
                   >
-                    No question banks yet.
+                    <EmptyState
+                      title="No question banks yet"
+                      description="Create your first question bank to start managing practice content."
+                      icon="banks"
+                      action={{
+                        label: "Create Bank",
+                        onClick: () => window.location.href = "/admin/banks",
+                        variant: "primary",
+                      }}
+                      className="m-4"
+                    />
                   </td>
                 </tr>
               ) : (
@@ -257,12 +265,14 @@ export default function AdminOverviewClient({
               {recentUsers.length === 0 ? (
                 <tr>
                   <td
-                    className="px-4 py-6 text-center text-sm text-[color:var(--ink-muted)]"
                     colSpan={3}
-                    role="status"
-                    aria-live="polite"
                   >
-                    No users yet.
+                    <EmptyState
+                      title="No users yet"
+                      description="Users will appear here once students sign up for the platform."
+                      icon="users"
+                      className="m-4"
+                    />
                   </td>
                 </tr>
               ) : (

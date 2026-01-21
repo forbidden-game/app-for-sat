@@ -285,13 +285,16 @@ export default function TagsPage() {
 
       <section className="flex flex-col gap-6">
         {Object.keys(groupedTags).length === 0 ? (
-          <div
-            className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 text-center text-sm text-[color:var(--ink-muted)]"
-            role="status"
-            aria-live="polite"
-          >
-            No tags yet. Create one using the button above.
-          </div>
+          <EmptyState
+            title="No tags yet"
+            description="Create tags to categorize and organize questions by topic, skill, difficulty, or source."
+            icon="tags"
+            action={{
+              label: "Create Tag",
+              onClick: openCreateDrawer,
+              variant: "primary",
+            }}
+          />
         ) : (
           Object.entries(groupedTags).map(([category, categoryTags]) => (
             <div key={category} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">

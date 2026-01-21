@@ -14,6 +14,7 @@ import {
   type UserRole,
 } from "./actions";
 import { Skeleton, SkeletonCard } from "@/components/Skeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 const ROLE_OPTIONS: UserRole[] = ["student", "parent", "admin"];
 
@@ -334,12 +335,14 @@ export default function UsersPage() {
                 {filteredUsers.length === 0 ? (
                   <tr>
                     <td
-                      className="px-4 py-6 text-sm text-[color:var(--ink-muted)]"
                       colSpan={6}
-                      role="status"
-                      aria-live="polite"
                     >
-                      No users found on this page.
+                      <EmptyState
+                        title={roleFilter ? `No ${roleFilter} users found` : "No users found on this page"}
+                        description={roleFilter ? "Try selecting a different role filter." : "Users will appear here once they sign up."}
+                        icon="users"
+                        className="m-4"
+                      />
                     </td>
                   </tr>
                 ) : (
