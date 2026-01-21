@@ -79,7 +79,7 @@ final class CoachChatViewModel: ObservableObject {
             let newMessage = CoachThreadMessage(
                 id: messageId,
                 role: .user,
-                content: CoachMessageContent(text: text),
+                content: CoachMessageContent(text: text, status: "sending"),
                 linkedAttemptId: linkedAttemptId,
                 replyToMessageId: replyToMessageId,
                 createdAt: Date()
@@ -94,6 +94,18 @@ final class CoachChatViewModel: ObservableObject {
     }
 
     private func upsertMessage(_ msg: CoachThreadMessage) {
+        if msg.role == .user {
+            if let pendingIndex = remoteMessages.firstIndex(where: { candidate in
+                candidate.role == .user
+                    && candidate.content.status == "sending"
+                    && candidate.content.text == msg.content.text
+                    && candidate.linkedAttemptId == msg.linkedAttemptId
+                    && candidate.replyToMessageId == msg.replyToMessageId
+            }) {
+                remoteMessages.remove(at: pendingIndex)
+            }
+        }
+
         if let idx = remoteMessages.firstIndex(where: { $0.id == msg.id }) {
             remoteMessages[idx] = msg
         } else {
