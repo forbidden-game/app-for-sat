@@ -11,7 +11,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@ai-coach/shared": "workspace:*",
+    "@ai-coach/shared": "file:../shared",
     "@mariozechner/pi-agent-core": "^0.45.3",
     "@mariozechner/pi-ai": "^0.45.3",
     "@sinclair/typebox": "^0.34.41",

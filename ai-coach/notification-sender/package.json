@@ -11,7 +11,7 @@
     "test": "vitest --run"
   },
   "dependencies": {
-    "@ai-coach/shared": "workspace:*",
+    "@ai-coach/shared": "file:../shared",
     "@supabase/supabase-js": "^2.49.0",
     "apn": "^2.2.0",
     "dotenv": "^16.4.5",
