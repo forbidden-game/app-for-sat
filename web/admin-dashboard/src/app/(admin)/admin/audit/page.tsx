@@ -23,14 +23,14 @@ function csvEscape(value: string) {
 }
 
 function buildCsv(logs: AdminAuditLog[]) {
-  const header = ["created_at", "actor_email", "action", "resource_type", "resource_id", "metadata"];
+  const header = ["created_at", "actor_id", "action", "entity_type", "entity_id", "payload"];
   const rows = logs.map((log) => [
     log.created_at,
-    log.actor_email ?? "",
+    log.actor_id ?? "",
     log.action,
-    log.resource_type,
-    log.resource_id ?? "",
-    JSON.stringify(log.metadata ?? {}),
+    log.entity_type,
+    log.entity_id ?? "",
+    JSON.stringify(log.payload ?? {}),
   ]);
   return [header, ...rows]
     .map((row) => row.map((col) => csvEscape(String(col ?? ""))).join(","))
@@ -151,11 +151,11 @@ export default function AuditLogPage() {
               <th
                 scope="col"
                 className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
-                onClick={() => handleAuditSort("actor_email" as keyof AdminAuditLog)}
+                onClick={() => handleAuditSort("actor_id" as keyof AdminAuditLog)}
               >
                 <span className="inline-flex items-center gap-1">
                   Actor
-                  {renderSortIcon(auditSortConfig.column === "actor_email", auditSortConfig.direction)}
+                  {renderSortIcon(auditSortConfig.column === "actor_id", auditSortConfig.direction)}
                 </span>
               </th>
               <th
@@ -171,11 +171,11 @@ export default function AuditLogPage() {
               <th
                 scope="col"
                 className="px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
-                onClick={() => handleAuditSort("resource_type" as keyof AdminAuditLog)}
+                onClick={() => handleAuditSort("entity_type" as keyof AdminAuditLog)}
               >
                 <span className="inline-flex items-center gap-1">
-                  Resource
-                  {renderSortIcon(auditSortConfig.column === "resource_type", auditSortConfig.direction)}
+                  Entity
+                  {renderSortIcon(auditSortConfig.column === "entity_type", auditSortConfig.direction)}
                 </span>
               </th>
               <th scope="col" className="px-4 py-3">Details</th>
@@ -199,14 +199,16 @@ export default function AuditLogPage() {
                   <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                     {formatDateTime(log.created_at)}
                   </td>
-                  <td className="px-4 py-3 text-xs text-[color:var(--ink)]">{log.actor_email ?? "unknown"}</td>
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink)]">
+                    {log.actor_id ? log.actor_id.slice(0, 8) : "unknown"}
+                  </td>
                   <td className="px-4 py-3 text-xs text-[color:var(--ink)]">{log.action}</td>
                   <td className="px-4 py-3 text-xs text-[color:var(--ink)]">
-                    {log.resource_type}
-                    {log.resource_id ? ` · ${log.resource_id.slice(0, 8)}` : ""}
+                    {log.entity_type}
+                    {log.entity_id ? ` · ${log.entity_id.slice(0, 8)}` : ""}
                   </td>
                   <td className="px-4 py-3 text-[11px] text-[color:var(--ink-muted)]">
-                    {JSON.stringify(log.metadata ?? {})}
+                    {JSON.stringify(log.payload ?? {})}
                   </td>
                 </tr>
               ))

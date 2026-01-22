@@ -3,6 +3,7 @@
 import "server-only";
 import { requireAdmin } from "@/lib/adminAuth";
 import { recordAdminEvent } from "@/lib/adminAudit";
+import type { Database } from "../../../../../../../supabase/database.types";
 
 export type QuestionOption = {
   id: string;
@@ -204,23 +205,36 @@ export async function getQuestion(accessToken: string, id: string): Promise<Ques
     .eq("id", id)
     .single();
 
-  if (error) {
+  if (error || !data) {
     throw new Error("Question not found.");
   }
 
-  const rawOptions = data.question_options as unknown as Array<{ id: string; label: string; content: string }> | null;
-  const rawTags = data.question_tags as unknown as Array<{ tag_id: string; tags: { id: string; name: string; category: string } | null }> | null;
+  const record = data as unknown as {
+    id: string;
+    subject: string;
+    module: string;
+    difficulty: number;
+    question_type: string;
+    stem: string;
+    answer_key: Record<string, unknown> | null;
+    metadata: Record<string, unknown> | null;
+    created_at: string;
+    question_options: Array<{ id: string; label: string; content: string }> | null;
+    question_tags: Array<{ tag_id: string; tags: { id: string; name: string; category: string } | null }> | null;
+  };
+  const rawOptions = record.question_options;
+  const rawTags = record.question_tags;
 
   return {
-    id: data.id,
-    subject: data.subject,
-    module: data.module,
-    difficulty: data.difficulty,
-    question_type: data.question_type,
-    stem: data.stem,
-    answer_key: data.answer_key,
-    metadata: data.metadata,
-    created_at: data.created_at,
+    id: record.id,
+    subject: record.subject,
+    module: record.module,
+    difficulty: record.difficulty,
+    question_type: record.question_type,
+    stem: record.stem,
+    answer_key: record.answer_key ?? {},
+    metadata: record.metadata ?? {},
+    created_at: record.created_at,
     options: (rawOptions ?? []).sort((a, b) => a.label.localeCompare(b.label)),
     tags: (rawTags ?? []).filter((qt) => qt.tags !== null).map((qt) => qt.tags as QuestionTag),
   };
@@ -235,10 +249,11 @@ export async function createQuestion(
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
   const payload = validateQuestionInput(input);
+  const insertPayload = payload as unknown as Database["public"]["Tables"]["questions"]["Insert"];
 
   const { data: question, error: questionError } = await supabase
     .from("questions")
-    .insert(payload)
+    .insert(insertPayload)
     .select("id, subject, module, difficulty, question_type, stem, answer_key, metadata, created_at")
     .single();
 
@@ -302,10 +317,11 @@ export async function updateQuestion(
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
   const payload = validateQuestionInput(input);
+  const updatePayload = payload as unknown as Database["public"]["Tables"]["questions"]["Update"];
 
   const { error: questionError } = await supabase
     .from("questions")
-    .update(payload)
+    .update(updatePayload)
     .eq("id", id);
 
   if (questionError) {

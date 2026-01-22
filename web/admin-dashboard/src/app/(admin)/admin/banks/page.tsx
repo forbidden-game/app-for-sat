@@ -8,6 +8,7 @@ import {
   type ImportParseError,
   type ImportPayload,
 } from "@/lib/questionImport";
+import type { Json } from "../../../../../../../supabase/database.types";
 import {
   createQuestionBank,
   deleteQuestionBank,
@@ -254,8 +255,9 @@ export default function QuestionBanksPage() {
         setBanks((prev) => [created, ...prev]);
         if (importPayload) {
           setImporting(true);
+          const payload = importPayload as unknown as Json;
           const { data, error: importError } = await supabase.rpc("import_questions_to_bank", {
-            p_payload: importPayload,
+            p_payload: payload,
             p_partial: importPartial,
             p_bank_id: created.id,
           });

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ChangeEvent } from "react";
 import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { parseImportText, type ImportParseError, type ImportPayload } from "@/lib/questionImport";
+import type { Json } from "../../../../../../../../supabase/database.types";
 
 type ImportResult = {
   inserted_count: number;
@@ -98,11 +99,12 @@ export default function ImportQuestionsPage() {
     }
 
     try {
-      const { data, error: rpcError } = await supabase.rpc("import_questions_to_bank", {
-        p_payload: payload,
+      const payloadJson = payload as unknown as Json;
+      const rpcArgs: { p_payload: Json; p_partial?: boolean; p_bank_id?: string } = {
+        p_payload: payloadJson,
         p_partial: partial,
-        p_bank_id: null,
-      });
+      };
+      const { data, error: rpcError } = await supabase.rpc("import_questions_to_bank", rpcArgs);
 
       if (rpcError) {
         throw new Error(rpcError.message);

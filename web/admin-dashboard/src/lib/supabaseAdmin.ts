@@ -1,10 +1,11 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../../../../supabase/database.types";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-let cachedAdminClient: ReturnType<typeof createClient> | null | undefined;
+let cachedAdminClient: ReturnType<typeof createClient<Database>> | null | undefined;
 
 export function getSupabaseAdminClient() {
   if (cachedAdminClient !== undefined) return cachedAdminClient;
@@ -12,7 +13,7 @@ export function getSupabaseAdminClient() {
     cachedAdminClient = null;
     return cachedAdminClient;
   }
-  cachedAdminClient = createClient(url, serviceRoleKey, {
+  cachedAdminClient = createClient<Database>(url, serviceRoleKey, {
     auth: {
       persistSession: false,
     },
