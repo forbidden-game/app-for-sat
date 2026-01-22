@@ -3,6 +3,7 @@ import StudentCore
 
 struct FriendsListView: View {
     let userId: String
+    @Binding var openThreadId: String?
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var vm = FriendsListViewModel()
@@ -10,6 +11,11 @@ struct FriendsListView: View {
     @State private var profileFriend: FriendThreadSummary?
     @State private var chatFriend: FriendThreadSummary?
     @State private var showShareSheet = false
+
+    init(userId: String, openThreadId: Binding<String?> = .constant(nil)) {
+        self.userId = userId
+        self._openThreadId = openThreadId
+    }
 
     var body: some View {
         NavigationStack {
@@ -84,9 +90,14 @@ struct FriendsListView: View {
             }
             .task {
                 await vm.load()
+                await vm.loadInviteCode()
+                openThreadIfNeeded()
+            }
+            .onChange(of: openThreadId) { _, _ in
+                openThreadIfNeeded()
             }
             .sheet(isPresented: $showShareSheet) {
-                ShareSheet(activityItems: [InviteLinkBuilder.build(userId: userId)])
+                ShareSheet(activityItems: [InviteLinkBuilder.build(inviteCode: vm.inviteCode)])
             }
         }
     }
@@ -102,7 +113,7 @@ struct FriendsListView: View {
     }
 
     private var shareLink: some View {
-        let inviteURL = InviteLinkBuilder.build(userId: userId)
+        let inviteURL = InviteLinkBuilder.build(inviteCode: vm.inviteCode)
         return ShareLink(item: inviteURL) {
             Image(systemName: "square.and.arrow.up")
                 .font(.system(size: 16, weight: .semibold))
@@ -115,6 +126,13 @@ struct FriendsListView: View {
                         .stroke(AppTheme.divider, lineWidth: 1)
                 )
         }
+    }
+
+    private func openThreadIfNeeded() {
+        guard let openThreadId else { return }
+        guard let friend = vm.friends.first(where: { $0.threadId == openThreadId }) else { return }
+        chatFriend = friend
+        self.openThreadId = nil
     }
 
     private var searchField: some View {
