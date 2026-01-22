@@ -50,7 +50,7 @@ private final class HorizontalCollectionView: UICollectionView {
             let dx = abs(translation.x) > 0 ? translation.x : velocity.x
 
             // Only allow horizontal paging when the gesture is clearly horizontal.
-            if abs(dx) <= abs(dy) * 1.05 {
+            if abs(dx) <= abs(dy) * 0.8 {
                 return false
             }
         }

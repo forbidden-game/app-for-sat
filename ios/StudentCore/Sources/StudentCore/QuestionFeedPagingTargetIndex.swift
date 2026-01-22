@@ -4,6 +4,7 @@ public enum QuestionFeedPagingTargetIndex {
     public static func verticalTargetIndex(
         currentIndex: Int,
         maxIndex: Int,
+        proposedIndex: Int,
         translationY: CGFloat,
         velocityY: CGFloat,
         pageHeight: CGFloat,
@@ -16,28 +17,10 @@ public enum QuestionFeedPagingTargetIndex {
         let meetsTranslation = abs(translationY) > minTranslation
         let meetsVelocity = abs(velocityY) > minVelocity
 
-        var targetIndex = currentIndex
-
-        if meetsTranslation || meetsVelocity {
-            let translationSign = translationY.sign
-            let velocitySign = velocityY.sign
-            let direction: CGFloat
-
-            if meetsVelocity && meetsTranslation && translationSign != velocitySign {
-                direction = velocityY
-            } else if meetsVelocity {
-                direction = velocityY
-            } else {
-                direction = translationY
-            }
-
-            if direction > 0 {
-                targetIndex = min(currentIndex + 1, maxIndex)
-            } else if direction < 0 {
-                targetIndex = max(currentIndex - 1, 0)
-            }
+        guard meetsTranslation || meetsVelocity else {
+            return currentIndex
         }
 
-        return targetIndex
+        return max(0, min(proposedIndex, maxIndex))
     }
 }

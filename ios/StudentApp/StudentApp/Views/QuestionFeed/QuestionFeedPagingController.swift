@@ -24,7 +24,7 @@ private final class QuestionFeedCollectionView: UICollectionView {
             let dx = abs(translation.x) > 0 ? translation.x : velocity.x
 
             let hasHorizontalPages = (gestureGate?.horizontalPageCount ?? 1) > 1
-            let horizontalBias: CGFloat = hasHorizontalPages ? 1.2 : 1.4
+            let horizontalBias: CGFloat = hasHorizontalPages ? 1.6 : 1.4
 
             // Let vertical paging begin unless the gesture is clearly horizontal.
             if abs(dx) > abs(dy) * horizontalBias {
@@ -245,6 +245,7 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
         let pageHeight = scrollView.bounds.height
         guard pageHeight > 0 else { return }
 
+        let proposedIndex = Int(round(targetContentOffset.pointee.y / pageHeight))
         let translation = lastDragTranslation == .zero
             ? collectionView.panGestureRecognizer.translation(in: collectionView)
             : lastDragTranslation
@@ -252,6 +253,7 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
         let targetIndex = QuestionFeedPagingTargetIndex.verticalTargetIndex(
             currentIndex: currentPageIndex,
             maxIndex: session.questions.count,
+            proposedIndex: proposedIndex,
             translationY: translation.y,
             velocityY: velocity.y,
             pageHeight: pageHeight
