@@ -6,6 +6,7 @@ import UserNotifications
 
 extension Notification.Name {
     static let pushTokenUpdated = Notification.Name("pushTokenUpdated")
+    static let openFriendThread = Notification.Name("openFriendThread")
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
@@ -37,6 +38,16 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
         [.banner, .badge, .sound]
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        let userInfo = response.notification.request.content.userInfo
+        if let threadId = userInfo["thread_id"] as? String, !threadId.isEmpty {
+            NotificationCenter.default.post(name: .openFriendThread, object: threadId)
+        }
     }
 }
 

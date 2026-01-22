@@ -48,6 +48,13 @@ struct ContentView: View {
         .onOpenURL { url in
             handleInviteURL(url)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .openFriendThread)) { note in
+            guard let threadId = note.object as? String, !threadId.isEmpty else { return }
+            UserDefaults.standard.set(threadId, forKey: pendingThreadKey)
+            if vm.user?.id != nil {
+                pendingOpenFriendThreadId = threadId
+            }
+        }
         .onChange(of: pendingOpenFriendThreadId) { _, newValue in
             if newValue == nil {
                 UserDefaults.standard.removeObject(forKey: pendingThreadKey)
