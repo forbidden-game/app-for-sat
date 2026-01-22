@@ -4,10 +4,16 @@ import StudentCore
 
 struct AppShellView: View {
     @ObservedObject var vm: AppViewModel
+    @Binding var pendingOpenFriendThreadId: String?
     @State private var selectedTab: MainTab = .home
     @State private var showFriends = false
     @State private var showProfile = false
     @State private var isKeyboardVisible = false
+
+    init(vm: AppViewModel, pendingOpenFriendThreadId: Binding<String?> = .constant(nil)) {
+        self.vm = vm
+        self._pendingOpenFriendThreadId = pendingOpenFriendThreadId
+    }
 
     var body: some View {
         ZStack {
@@ -40,13 +46,18 @@ struct AppShellView: View {
         }
         .sheet(isPresented: $showFriends) {
             if let userId = vm.user?.id {
-                FriendsListView(userId: userId)
+                FriendsListView(userId: userId, openThreadId: $pendingOpenFriendThreadId)
             }
         }
         .sheet(isPresented: $showProfile) {
             ProfileSheetView(displayName: displayName, onSignOut: {
                 Task { await vm.signOut() }
             })
+        }
+        .onChange(of: pendingOpenFriendThreadId) { _, newValue in
+            if newValue != nil {
+                showFriends = true
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             setKeyboardVisible(true)
