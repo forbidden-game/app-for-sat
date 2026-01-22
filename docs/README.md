@@ -13,6 +13,7 @@ read_when: adding or updating docs, changing doc conventions
 docs/
   README.md               # 本文档索引与规范
   project-overview.md     # 产品与系统总览
+  ios/question-feed-paging.md # iOS QuestionFeed 滑动规则（重要）
   ai-coach/README.md      # AI Coach 入口（指向 ai-coach/docs）
 ```
 
