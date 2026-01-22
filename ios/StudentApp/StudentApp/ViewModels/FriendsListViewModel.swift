@@ -35,4 +35,8 @@ final class FriendsListViewModel: ObservableObject {
             inviteCode = nil
         }
     }
+
+    func redeemInvite(code: String) async throws -> FriendInviteRedeemResult {
+        try await service.redeemFriendInvite(code: code)
+    }
 }

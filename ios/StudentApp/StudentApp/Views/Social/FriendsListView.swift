@@ -1,5 +1,6 @@
 import SwiftUI
 import StudentCore
+import UIKit
 
 struct FriendsListView: View {
     let userId: String
@@ -10,7 +11,11 @@ struct FriendsListView: View {
     @State private var searchText: String = ""
     @State private var profileFriend: FriendThreadSummary?
     @State private var chatFriend: FriendThreadSummary?
-    @State private var showShareSheet = false
+    @State private var inviteInput = ""
+    @State private var inviteError: String?
+    @State private var isRedeeming = false
+    @State private var showInviteSheet = false
+    @State private var showCopiedAlert = false
 
     init(userId: String, openThreadId: Binding<String?> = .constant(nil)) {
         self.userId = userId
@@ -25,7 +30,7 @@ struct FriendsListView: View {
                     showsClose: true,
                     leadingSystemImage: "xmark",
                     onClose: { dismiss() },
-                    trailing: AnyView(shareLink)
+                    trailing: AnyView(trailingActions)
                 )
 
                 searchField
@@ -62,7 +67,7 @@ struct FriendsListView: View {
                         } else if filteredFriends.isEmpty {
                             // ✅ Using FriendsEmptyStateView component
                             FriendsEmptyStateView(onInvite: {
-                                showShareSheet = true
+                                showInviteSheet = true
                             })
                             .padding(.horizontal, AppMetrics.screenHorizontalPadding)
                         } else {
@@ -96,8 +101,17 @@ struct FriendsListView: View {
             .onChange(of: openThreadId) { _, _ in
                 openThreadIfNeeded()
             }
-            .sheet(isPresented: $showShareSheet) {
-                ShareSheet(activityItems: [InviteLinkBuilder.build(inviteCode: vm.inviteCode)])
+            .alert("已复制邀请码", isPresented: $showCopiedAlert) {
+                Button("好", role: .cancel) {}
+            }
+            .sheet(isPresented: $showInviteSheet) {
+                InviteCodeSheet(
+                    code: $inviteInput,
+                    errorMessage: inviteError,
+                    isSubmitting: isRedeeming,
+                    onCancel: { showInviteSheet = false },
+                    onSubmit: { Task { await redeemInvite() } }
+                )
             }
         }
     }
@@ -112,20 +126,43 @@ struct FriendsListView: View {
         }
     }
 
-    private var shareLink: some View {
-        let inviteURL = InviteLinkBuilder.build(inviteCode: vm.inviteCode)
-        return ShareLink(item: inviteURL) {
-            Image(systemName: "square.and.arrow.up")
-                .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(AppTheme.textPrimary)
-                .frame(width: 32, height: 32)
-                .background(AppTheme.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(AppTheme.divider, lineWidth: 1)
-                )
+    private var trailingActions: some View {
+        HStack(spacing: 8) {
+            Button(action: copyInviteCode) {
+                Image(systemName: "doc.on.doc")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .frame(width: 32, height: 32)
+                    .background(AppTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(AppTheme.divider, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
+            .disabled(vm.inviteCode == nil)
+
+            Button(action: { showInviteSheet = true }) {
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+                    .frame(width: 32, height: 32)
+                    .background(AppTheme.surface)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(AppTheme.divider, lineWidth: 1)
+                    )
+            }
+            .buttonStyle(.plain)
         }
+    }
+
+    private func copyInviteCode() {
+        guard let code = vm.inviteCode, !code.isEmpty else { return }
+        UIPasteboard.general.string = code
+        showCopiedAlert = true
     }
 
     private func openThreadIfNeeded() {
@@ -133,6 +170,25 @@ struct FriendsListView: View {
         guard let friend = vm.friends.first(where: { $0.threadId == openThreadId }) else { return }
         chatFriend = friend
         self.openThreadId = nil
+    }
+
+    private func redeemInvite() async {
+        let trimmed = inviteInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            inviteError = "请输入邀请码"
+            return
+        }
+        isRedeeming = true
+        inviteError = nil
+        do {
+            let result = try await vm.redeemInvite(code: trimmed)
+            inviteInput = ""
+            showInviteSheet = false
+            openThreadId = result.threadId
+        } catch {
+            inviteError = error.localizedDescription
+        }
+        isRedeeming = false
     }
 
     private var searchField: some View {
