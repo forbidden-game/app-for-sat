@@ -161,6 +161,10 @@ jobs:
         working-directory: ai-coach
         run: npm ci --workspaces --include-workspace-root
 
+      - name: Build Shared
+        working-directory: ai-coach
+        run: npm run build -w @ai-coach/shared
+
       - name: Typecheck
         working-directory: ai-coach
         run: npm run check -w ai-coach-service
@@ -214,6 +218,10 @@ jobs:
       - name: Install dependencies
         working-directory: ai-coach
         run: npm ci --workspaces --include-workspace-root
+
+      - name: Build Shared
+        working-directory: ai-coach
+        run: npm run build -w @ai-coach/shared
 
       - name: Typecheck
         working-directory: ai-coach
