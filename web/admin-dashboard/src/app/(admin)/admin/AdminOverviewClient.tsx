@@ -9,7 +9,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { MetricCard } from "@/components/TrendIndicator";
 import { useSortable, renderSortIcon } from "@/hooks/useSortable";
 
-function formatDateTime(value: string) {
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
   return new Intl.DateTimeFormat(undefined, {

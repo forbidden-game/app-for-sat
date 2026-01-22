@@ -32,7 +32,7 @@ export type AdminOverview = {
     id: string;
     display_name: string | null;
     role: string | null;
-    created_at: string;
+    created_at: string | null;
   }>;
 };
 

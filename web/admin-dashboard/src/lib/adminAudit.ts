@@ -1,5 +1,6 @@
 import "server-only";
 import type { AdminContext } from "./adminAuth";
+import type { Database } from "../../../../supabase/database.types";
 
 export type AdminAuditEvent = {
   action: string;
@@ -21,14 +22,14 @@ export async function recordAdminEvent(
 ): Promise<void> {
   try {
     await purgeOldAdminAuditLogs(context.supabase);
-    const { error } = await context.supabase.from("admin_audit_logs").insert({
+    const insertPayload = {
       actor_id: context.admin.id,
-      actor_email: context.admin.email,
       action: event.action,
-      resource_type: event.resourceType,
-      resource_id: event.resourceId ?? null,
-      metadata: event.metadata ?? {},
-    });
+      entity_type: event.resourceType,
+      entity_id: event.resourceId ?? null,
+      payload: event.metadata ?? {},
+    } as unknown as Database["public"]["Tables"]["admin_audit_logs"]["Insert"];
+    const { error } = await context.supabase.from("admin_audit_logs").insert(insertPayload);
     if (error) {
       console.warn("admin_audit_log_failed", error.message);
     }
