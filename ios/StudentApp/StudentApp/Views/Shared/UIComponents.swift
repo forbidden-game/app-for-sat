@@ -285,6 +285,25 @@ private struct PracticeTopBarIconButtonStyle: ButtonStyle {
     }
 }
 
+private struct PracticeTopBarPillButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(AppTheme.textPrimary)
+            .padding(.vertical, 7)
+            .padding(.horizontal, 12)
+            .background(
+                Capsule()
+                    .fill(AppTheme.surfaceRaised.opacity(configuration.isPressed ? 0.92 : 1.0))
+            )
+            .overlay(
+                Capsule().stroke(AppTheme.divider, lineWidth: 1)
+            )
+            .contentShape(Capsule())
+            .animation(.easeInOut(duration: AppMetrics.animationDurationFast), value: configuration.isPressed)
+    }
+}
+
 private struct PracticeProgressBar: View {
     let progress: Double
 
@@ -295,16 +314,20 @@ private struct PracticeProgressBar: View {
 
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(AppTheme.divider.opacity(0.35))
+                    .fill(AppTheme.surfaceRaised)
+                    .overlay(
+                        Capsule().stroke(AppTheme.divider.opacity(0.6), lineWidth: 1)
+                    )
 
                 Capsule()
                     .fill(
                         LinearGradient(
-                            colors: [AppTheme.accent, AppTheme.accentStrong],
+                            colors: [AppTheme.accentStrong, AppTheme.accent],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
                     )
+                    .shadow(color: AppTheme.accentStrong.opacity(0.35), radius: 6, x: 0, y: 2)
                     .frame(width: width)
             }
         }
@@ -323,29 +346,33 @@ struct PracticeTopBar: View {
         VStack(spacing: 10) {
             HStack(spacing: 12) {
                 Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .semibold))
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
                 }
-                .buttonStyle(PracticeTopBarIconButtonStyle())
+                    .buttonStyle(PracticeTopBarPillButtonStyle())
 
                 Spacer()
 
-                Text("\(index)")
-                    .font(.title3.weight(.heavy))
-                    .foregroundStyle(AppTheme.textPrimary)
+                Spacer()
 
-                Text("/\(total)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.textSecondary)
-                    .padding(.top, 4)
+                HStack(spacing: 4) {
+                    Text("\(index)")
+                        .font(.title3.weight(.heavy))
+                        .foregroundStyle(AppTheme.textPrimary)
+
+                    Text("/\(total)")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppTheme.textSecondary)
+                        .padding(.top, 4)
+                }
+                .frame(maxWidth: .infinity)
 
                 Spacer()
 
-                Button(action: onOverview) {
-                    Image(systemName: "list.bullet.rectangle")
-                        .font(.system(size: 18, weight: .semibold))
-                }
-                .buttonStyle(PracticeTopBarIconButtonStyle())
+                Button("Overview", action: onOverview)
+                    .buttonStyle(PracticeTopBarPillButtonStyle())
             }
 
             PracticeProgressBar(progress: progress)
