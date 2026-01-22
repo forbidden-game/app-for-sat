@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sleep } from "@ai-coach/shared";
 
 import type { SenderConfig } from "./config.js";
+import { buildFriendMessageNotification, type ApnsProvider } from "./apns.js";
 import { logger } from "./logger.js";
 import type { NotificationEventRow } from "./types.js";
 
@@ -63,6 +64,7 @@ export async function handleEvent(
   supabase: SupabaseClient,
   config: SenderConfig,
   event: NotificationEventRow,
+  apnsProvider?: ApnsProvider,
 ): Promise<void> {
   const tokens = await loadPushTokens(supabase, event.student_id);
 
@@ -76,6 +78,57 @@ export async function handleEvent(
       },
       "notification event claimed",
     );
+    await markSent(supabase, event.id);
+    return;
+  }
+
+  if (config.mode === "noop") {
+    await markSent(supabase, event.id);
+    return;
+  }
+
+  if (config.mode !== "apns") {
+    await markSent(supabase, event.id);
+    return;
+  }
+
+  if (!apnsProvider || !config.apnsBundleId) {
+    throw new Error("apns_not_configured");
+  }
+
+  if (event.event_type !== "friend_message_received") {
+    await markSent(supabase, event.id);
+    return;
+  }
+
+  const threadId = String(event.payload.thread_id ?? "");
+  const senderId = String(event.payload.sender_id ?? "");
+  const preview = String(event.payload.preview ?? "").trim();
+
+  const apnsTokens = tokens.filter((t) => t.platform === "apns");
+  if (apnsTokens.length === 0) {
+    await markSent(supabase, event.id);
+    return;
+  }
+
+  const notification = buildFriendMessageNotification({
+    bundleId: config.apnsBundleId,
+    preview,
+    threadId,
+    senderId,
+  });
+
+  const results = await Promise.all(
+    apnsTokens.map((token) => apnsProvider.send(notification, token.device_token)),
+  );
+
+  const hasSuccess = results.some((result) => result.sent.length > 0);
+  const errors = results.flatMap((result) =>
+    result.failed.map((failure) => failure.response?.reason ?? failure.error?.message ?? "unknown"),
+  );
+
+  if (!hasSuccess && errors.length > 0) {
+    throw new Error(errors.join("; "));
   }
 
   await markSent(supabase, event.id);
@@ -85,9 +138,10 @@ async function processEvent(
   config: SenderConfig,
   supabase: SupabaseClient,
   event: NotificationEventRow,
+  apnsProvider?: ApnsProvider,
 ): Promise<void> {
   try {
-    await handleEvent(supabase, config, event);
+    await handleEvent(supabase, config, event, apnsProvider);
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown_error";
     logger.error({ err, eventId: event.id }, "notification send failed");
@@ -99,7 +153,11 @@ async function processEvent(
   }
 }
 
-export async function runWorker(config: SenderConfig, supabase: SupabaseClient): Promise<void> {
+export async function runWorker(
+  config: SenderConfig,
+  supabase: SupabaseClient,
+  apnsProvider?: ApnsProvider,
+): Promise<void> {
   let shuttingDown = false;
   const inFlight = new Set<Promise<void>>();
 
@@ -135,7 +193,7 @@ export async function runWorker(config: SenderConfig, supabase: SupabaseClient):
     }
 
     for (const event of events) {
-      const task = processEvent(config, supabase, event).finally(() => {
+      const task = processEvent(config, supabase, event, apnsProvider).finally(() => {
         inFlight.delete(task);
       });
       inFlight.add(task);
@@ -145,5 +203,9 @@ export async function runWorker(config: SenderConfig, supabase: SupabaseClient):
   if (inFlight.size > 0) {
     logger.info({ pending: inFlight.size }, "draining in-flight notifications");
     await Promise.allSettled(inFlight);
+  }
+
+  if (apnsProvider) {
+    apnsProvider.shutdown();
   }
 }
