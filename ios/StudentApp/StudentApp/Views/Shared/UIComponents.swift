@@ -320,30 +320,40 @@ struct PracticeTopBar: View {
     let onOverview: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 20, weight: .semibold))
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.system(size: 20, weight: .semibold))
+                }
+                .buttonStyle(PracticeTopBarIconButtonStyle())
+
+                Spacer()
+
+                Text("\(index)")
+                    .font(.title3.weight(.heavy))
+                    .foregroundStyle(AppTheme.textPrimary)
+
+                Text("/\(total)")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.textSecondary)
+                    .padding(.top, 4)
+
+                Spacer()
+
+                Button(action: onOverview) {
+                    Image(systemName: "list.bullet.rectangle")
+                        .font(.system(size: 18, weight: .semibold))
+                }
+                .buttonStyle(PracticeTopBarIconButtonStyle())
             }
-            .buttonStyle(PracticeTopBarIconButtonStyle())
 
             PracticeProgressBar(progress: progress)
-                .frame(maxWidth: .infinity)
-
-            Text("\(index)/\(total)")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppTheme.textSecondary)
-
-            Spacer()
-
-            Button(action: onOverview) {
-                Image(systemName: "list.bullet.rectangle")
-                    .font(.system(size: 18, weight: .semibold))
-            }
-            .buttonStyle(PracticeTopBarIconButtonStyle())
+                .frame(height: 4)
         }
-        .frame(height: AppMetrics.topBarHeight)
         .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+        .padding(.top, 6)
+        .padding(.bottom, 10)
         .background(.ultraThinMaterial)
         .overlay(alignment: .bottom) {
             LinearGradient(
