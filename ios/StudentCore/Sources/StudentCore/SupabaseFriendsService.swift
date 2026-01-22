@@ -8,6 +8,41 @@ public final class SupabaseFriendsService {
         self.client = client
     }
 
+    public func getMyFriendInviteCode() async throws -> String {
+        struct EmptyParams: Encodable {}
+        let response: String = try await client
+            .rpc("get_my_friend_invite_code", params: EmptyParams())
+            .execute()
+            .value
+        return response
+    }
+
+    public func redeemFriendInvite(code: String) async throws -> FriendInviteRedeemResult {
+        struct Params: Encodable {
+            let invite_code: String
+        }
+
+        struct Response: Decodable {
+            let thread_id: UUID
+            let friend_id: UUID
+        }
+
+        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            throw NSError(domain: "SupabaseFriendsService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Empty invite code"])
+        }
+
+        let response: Response = try await client
+            .rpc("redeem_friend_invite", params: Params(invite_code: trimmed))
+            .execute()
+            .value
+
+        return FriendInviteRedeemResult(
+            threadId: response.thread_id.uuidString,
+            friendId: response.friend_id.uuidString
+        )
+    }
+
     public func fetchFriendThreads() async throws -> [FriendThreadSummary] {
         struct Row: Decodable {
             let thread_id: UUID

@@ -45,3 +45,13 @@ public struct FriendMessage: Codable, Identifiable, Hashable {
         self.createdAt = createdAt
     }
 }
+
+public struct FriendInviteRedeemResult: Codable, Hashable {
+    public let threadId: String
+    public let friendId: String
+
+    public init(threadId: String, friendId: String) {
+        self.threadId = threadId
+        self.friendId = friendId
+    }
+}
