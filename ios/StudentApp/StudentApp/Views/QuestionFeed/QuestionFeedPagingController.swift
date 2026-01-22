@@ -249,33 +249,13 @@ extension QuestionFeedPagingController: UICollectionViewDelegate, UIScrollViewDe
             ? collectionView.panGestureRecognizer.translation(in: collectionView)
             : lastDragTranslation
 
-        let minTranslation = pageHeight * 0.1
-        let minVelocity: CGFloat = 0.3
-
-        var targetIndex = currentPageIndex
-        let meetsTranslation = abs(translation.y) > minTranslation
-        let meetsVelocity = abs(velocity.y) > minVelocity
-
-        if meetsTranslation || meetsVelocity {
-            let maxIndex = session.questions.count
-            let translationSign = translation.y.sign
-            let velocitySign = velocity.y.sign
-            let direction: CGFloat
-
-            if meetsVelocity && meetsTranslation && translationSign != velocitySign {
-                direction = velocity.y
-            } else if meetsVelocity {
-                direction = velocity.y
-            } else {
-                direction = translation.y
-            }
-
-            if direction > 0 {
-                targetIndex = min(currentPageIndex + 1, maxIndex)
-            } else if direction < 0 {
-                targetIndex = max(currentPageIndex - 1, 0)
-            }
-        }
+        let targetIndex = QuestionFeedPagingTargetIndex.verticalTargetIndex(
+            currentIndex: currentPageIndex,
+            maxIndex: session.questions.count,
+            translationY: translation.y,
+            velocityY: velocity.y,
+            pageHeight: pageHeight
+        )
 
         targetContentOffset.pointee = CGPoint(x: 0, y: CGFloat(targetIndex) * pageHeight)
     }
@@ -347,7 +327,10 @@ private extension QuestionFeedPagingController {
 
     func finalizePageChange() {
         let signpostId = PerformanceSignpost.begin("QuestionFeedFinalize")
-        defer { PerformanceSignpost.end("QuestionFeedFinalize", id: signpostId) }
+        defer {
+            PerformanceSignpost.end("QuestionFeedFinalize", id: signpostId)
+            isProgrammaticScroll = false
+        }
         guard let pageIndex = centeredIndexPath()?.item else { return }
         let totalQuestions = session.questions.count
         currentPageIndex = pageIndex
@@ -369,8 +352,6 @@ private extension QuestionFeedPagingController {
             loadAnswer(for: session.questions[pageIndex])
             lastFinalizedPageIndex = pageIndex
         }
-
-        isProgrammaticScroll = false
     }
 
     func centeredIndexPath() -> IndexPath? {
