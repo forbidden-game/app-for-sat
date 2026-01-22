@@ -278,7 +278,7 @@ BEGIN
 
   ALTER TABLE public.notification_events
     ADD CONSTRAINT notification_events_event_type_check
-    CHECK (event_type IN ('attempt_insight_ready','coach_reply_ready','friend_message_received'));
+    CHECK (event_type IN ('attempt_insight_ready','coach_reply_ready','progress_report_ready','friend_message_received'));
 EXCEPTION
   WHEN undefined_table THEN
     NULL;
