@@ -53,7 +53,7 @@ struct FriendsEmptyStateView: View {
             icon: "person.2.slash",
             title: "暂无好友",
             message: "开始添加好友一起学习吧",
-            actionTitle: "邀请好友",
+            actionTitle: "输入邀请码",
             action: onInvite
         )
     }
