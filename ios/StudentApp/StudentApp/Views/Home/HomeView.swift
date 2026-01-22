@@ -98,7 +98,7 @@ private struct BankCardRow: View {
             .padding(.horizontal, AppMetrics.rowPaddingHorizontal)
             .appSurface(
                 fill: AppTheme.surface,
-                stroke: AppMetrics.strokeWidthThin
+                stroke: AppTheme.divider
             )
         }
         .buttonStyle(.plain)

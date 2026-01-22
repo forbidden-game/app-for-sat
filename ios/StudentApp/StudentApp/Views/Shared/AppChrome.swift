@@ -158,19 +158,3 @@ struct AppTabBar: View {
     }
 }
 
-struct ProfileAvatarView: View {
-    let initials: String
-
-    var body: some View {
-        Text(initials)
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(AppTheme.textPrimary)
-            .frame(width: 32, height: 32)
-            .background(AppTheme.surface)
-            .clipShape(Circle())
-            .overlay(
-                Circle()
-                    .stroke(AppTheme.divider, lineWidth: 1)
-            )
-    }
-}

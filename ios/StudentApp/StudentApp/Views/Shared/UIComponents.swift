@@ -270,6 +270,48 @@ struct ModalTopBar: View {
 
 // MARK: - Practice Top Bar
 
+private struct PracticeTopBarIconButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(AppTheme.textPrimary)
+            .padding(.vertical, 8)
+            .padding(.horizontal, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(AppTheme.textPrimary.opacity(configuration.isPressed ? 0.14 : 0.0))
+            )
+            .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .animation(.easeInOut(duration: AppMetrics.animationDurationFast), value: configuration.isPressed)
+    }
+}
+
+private struct PracticeProgressBar: View {
+    let progress: Double
+
+    var body: some View {
+        GeometryReader { proxy in
+            let clamped = min(max(progress, 0), 1)
+            let width = proxy.size.width * clamped
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppTheme.divider.opacity(0.35))
+
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [AppTheme.accent, AppTheme.accentStrong],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: width)
+            }
+        }
+        .frame(height: 6)
+    }
+}
+
 struct PracticeTopBar: View {
     let progress: Double
     let index: Int
@@ -278,37 +320,39 @@ struct PracticeTopBar: View {
     let onOverview: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                }
-                .buttonStyle(.plain)
-
-                ProgressView(value: progress)
-                    .tint(AppTheme.accentStrong)
-                    .background(AppTheme.divider)
-                    .frame(height: 4)
-                    .clipShape(Capsule())
-
-                Text("\(index)/\(total)")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.textSecondary)
-
-                Spacer()
-
-                Button(action: onOverview) {
-                    Image(systemName: "list.bullet.rectangle")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(AppTheme.textPrimary)
-                }
-                .buttonStyle(.plain)
+        HStack(spacing: 12) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.system(size: 20, weight: .semibold))
             }
-            .frame(height: AppMetrics.topBarHeight)
-            .padding(.horizontal, AppMetrics.screenHorizontalPadding)
-            .background(AppTheme.chromeBackground)
+            .buttonStyle(PracticeTopBarIconButtonStyle())
+
+            PracticeProgressBar(progress: progress)
+                .frame(maxWidth: .infinity)
+
+            Text("\(index)/\(total)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppTheme.textSecondary)
+
+            Spacer()
+
+            Button(action: onOverview) {
+                Image(systemName: "list.bullet.rectangle")
+                    .font(.system(size: 18, weight: .semibold))
+            }
+            .buttonStyle(PracticeTopBarIconButtonStyle())
+        }
+        .frame(height: AppMetrics.topBarHeight)
+        .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .bottom) {
+            LinearGradient(
+                colors: [Color.black.opacity(0.22), Color.clear],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: 12)
+            .allowsHitTesting(false)
         }
     }
 }

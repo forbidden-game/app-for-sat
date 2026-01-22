@@ -28,12 +28,57 @@ struct BoardTextureView: View {
     }
 }
 
+private struct PracticeNoiseView: View {
+    private let step: CGFloat = 4
+
+    var body: some View {
+        GeometryReader { _ in
+            Canvas { context, size in
+                let cols = Int(size.width / step) + 1
+                let rows = Int(size.height / step) + 1
+
+                for row in 0..<rows {
+                    for col in 0..<cols {
+                        let value = noiseValue(x: col, y: row)
+                        let rect = CGRect(
+                            x: CGFloat(col) * step,
+                            y: CGFloat(row) * step,
+                            width: step,
+                            height: step
+                        )
+                        context.fill(Path(rect), with: .color(Color(white: value)))
+                    }
+                }
+            }
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func noiseValue(x: Int, y: Int) -> Double {
+        var value = UInt64(x) &* 374761393 &+ UInt64(y) &* 668265263
+        value = (value ^ (value >> 13)) &* 1274126177
+        return Double(value & 0xFF) / 255.0
+    }
+}
+
 struct PracticeBackgroundView: View {
     var body: some View {
-        ZStack {
-            AppTheme.backgroundGradient
-            BoardTextureView()
+        GeometryReader { proxy in
+            let radius = max(proxy.size.width, proxy.size.height) * 0.75
+
+            ZStack {
+                RadialGradient(
+                    colors: [AppTheme.backgroundPrimary, AppTheme.backgroundSecondary],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: radius
+                )
+
+                PracticeNoiseView()
+                    .blendMode(.overlay)
+                    .opacity(0.025)
+            }
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
     }
 }
