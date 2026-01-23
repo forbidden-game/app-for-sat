@@ -12,6 +12,16 @@ export default defineConfig({
     exclude: ["node_modules", ".next", "e2e"],
     testTimeout: 30000,
     hookTimeout: 30000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary"],
+      thresholds: {
+        lines: 10,
+        functions: 10,
+        branches: 5,
+        statements: 10,
+      },
+    },
   },
   resolve: {
     alias: {
