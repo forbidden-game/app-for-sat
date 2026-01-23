@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "check": "tsc -p tsconfig.json --noEmit",
     "test": "vitest --run",
+    "test:coverage": "vitest --run --coverage",
     "lint": "eslint ."
   },
   "dependencies": {
@@ -21,8 +22,9 @@
   "devDependencies": {
     "@types/apn": "^2.0.3",
     "@types/node": "^22.10.5",
+    "@vitest/coverage-v8": "^4.0.16",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.9"
+    "vitest": "^4.0.16"
   }
 }
