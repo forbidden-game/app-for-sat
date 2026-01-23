@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sleep } from "@ai-coach/shared";
+import { captureError, runWithRequestContext, sleep } from "@ai-coach/shared";
 
 import type { SenderConfig } from "./config.js";
 import { buildFriendMessageNotification, type ApnsProvider } from "./apns.js";
@@ -74,7 +74,10 @@ export async function handleEvent(
         eventId: event.id,
         eventType: event.event_type,
         studentId: event.student_id,
-        tokens: tokens.map((t) => ({ platform: t.platform, tokenSuffix: t.device_token.slice(-6) })),
+        tokens: tokens.map((t) => ({
+          platform: t.platform,
+          tokenSuffix: t.device_token.slice(-6),
+        })),
       },
       "notification event claimed",
     );
@@ -145,6 +148,11 @@ async function processEvent(
   } catch (err) {
     const message = err instanceof Error ? err.message : "unknown_error";
     logger.error({ err, eventId: event.id }, "notification send failed");
+    captureError(err, {
+      eventId: event.id,
+      eventType: event.event_type,
+      studentId: event.student_id,
+    });
     try {
       await markError(supabase, event.id, message);
     } catch (markErr) {
@@ -183,6 +191,7 @@ export async function runWorker(
       events = await claimEvents(supabase, config.workerId, Math.min(config.claimLimit, capacity));
     } catch (err) {
       logger.error({ err }, "failed to claim notification events");
+      captureError(err, { area: "claim_events" });
       await sleep(config.pollIntervalMs);
       continue;
     }
@@ -193,7 +202,15 @@ export async function runWorker(
     }
 
     for (const event of events) {
-      const task = processEvent(config, supabase, event, apnsProvider).finally(() => {
+      const task = runWithRequestContext(
+        {
+          traceId: event.id,
+          requestId: event.id,
+          eventId: event.id,
+          workerId: config.workerId,
+        },
+        () => processEvent(config, supabase, event, apnsProvider),
+      ).finally(() => {
         inFlight.delete(task);
       });
       inFlight.add(task);

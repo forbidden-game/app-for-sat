@@ -1,3 +1,5 @@
+import { captureError, initErrorReporting } from "@ai-coach/shared";
+
 import { getConfig } from "./config.js";
 import { logger } from "./logger.js";
 import { createSupabase } from "./supabase.js";
@@ -5,6 +7,7 @@ import { runWorker } from "./worker.js";
 
 async function main(): Promise<void> {
   const config = getConfig();
+  initErrorReporting({ service: "ai-coach-service" });
   const supabase = createSupabase(config);
 
   logger.info(
@@ -23,5 +26,6 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   logger.error({ err }, "fatal");
+  captureError(err, { area: "startup" });
   process.exitCode = 1;
 });

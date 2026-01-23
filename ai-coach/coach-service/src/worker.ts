@@ -1,6 +1,6 @@
 import { getEnvApiKey } from "@mariozechner/pi-ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { sleep } from "@ai-coach/shared";
+import { captureError, runWithRequestContext, sleep } from "@ai-coach/shared";
 
 import type { CoachConfig } from "./config.js";
 import { getPublishedAiPromptConfigs } from "./aiConfig.js";
@@ -113,11 +113,7 @@ async function claimJobs(
   return (data ?? []) as AiJobRow[];
 }
 
-async function runJob(
-  config: CoachConfig,
-  supabase: SupabaseClient,
-  job: AiJobRow,
-): Promise<void> {
+async function runJob(config: CoachConfig, supabase: SupabaseClient, job: AiJobRow): Promise<void> {
   const promptConfigs = await getPublishedAiPromptConfigs(supabase);
   const promptOverrides = resolvePromptOverrides(job.kind, promptConfigs);
   const providerKeyCache = new Map<string, string | undefined>();
@@ -159,6 +155,7 @@ async function processJob(
     }
 
     logger.error({ err, jobId: job.id }, "job failed");
+    captureError(err, { jobId: job.id, kind: job.kind, attemptId: job.attempt_id });
     try {
       await markJobError(supabase, job.id, err);
     } catch (markErr) {
@@ -188,6 +185,7 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
         await scheduleRecurringJobs(config, supabase);
       } catch (err) {
         logger.warn({ err }, "scheduler failed");
+        captureError(err, { area: "scheduler" });
       }
       lastScheduleAt = now;
     }
@@ -209,6 +207,7 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
       );
     } catch (err) {
       logger.error({ err }, "failed to claim jobs");
+      captureError(err, { area: "claim_jobs" });
       await sleep(config.pollIntervalMs);
       continue;
     }
@@ -219,7 +218,15 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
     }
 
     for (const job of jobs) {
-      const task = processJob(config, supabase, job).finally(() => {
+      const task = runWithRequestContext(
+        {
+          traceId: job.id,
+          requestId: job.id,
+          jobId: job.id,
+          workerId: config.workerId,
+        },
+        () => processJob(config, supabase, job),
+      ).finally(() => {
         inFlight.delete(task);
       });
       inFlight.add(task);

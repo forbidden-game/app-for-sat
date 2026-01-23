@@ -1,3 +1,5 @@
+import { captureError, initErrorReporting } from "@ai-coach/shared";
+
 import { createApnsProvider } from "./apns.js";
 import { getConfig } from "./config.js";
 import { logger } from "./logger.js";
@@ -6,11 +8,17 @@ import { runWorker } from "./worker.js";
 
 async function main(): Promise<void> {
   const config = getConfig();
+  initErrorReporting({ service: "ai-coach-notification-sender" });
   const supabase = createSupabase(config);
   const apnsProvider = config.mode === "apns" ? createApnsProvider(config) : undefined;
 
   logger.info(
-    { workerId: config.workerId, mode: config.mode, maxConcurrency: config.maxConcurrency, claimLimit: config.claimLimit },
+    {
+      workerId: config.workerId,
+      mode: config.mode,
+      maxConcurrency: config.maxConcurrency,
+      claimLimit: config.claimLimit,
+    },
     "notification sender starting",
   );
 
@@ -19,5 +27,6 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   logger.error({ err }, "fatal");
+  captureError(err, { area: "startup" });
   process.exitCode = 1;
 });

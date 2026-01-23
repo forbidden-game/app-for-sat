@@ -9,6 +9,13 @@
   "scripts": {
     "build": "npm run build -w @ai-coach/shared && npm run build -w ai-coach-service && npm run build -w ai-coach-notification-sender",
     "check": "npm run check -w @ai-coach/shared && npm run check -w ai-coach-service && npm run check -w ai-coach-notification-sender",
-    "test": "npm run test -w ai-coach-service && npm run test -w ai-coach-notification-sender"
+    "test": "npm run test -w ai-coach-service && npm run test -w ai-coach-notification-sender",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.12.0",
+    "@typescript-eslint/eslint-plugin": "^8.19.0",
+    "@typescript-eslint/parser": "^8.19.0",
+    "eslint": "^9.12.0"
   }
 }
