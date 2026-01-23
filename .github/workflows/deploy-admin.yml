@@ -67,5 +67,5 @@ jobs:
             else
               echo "Dependencies unchanged; skipping npm ci."
             fi
-            NODE_OPTIONS=--max-old-space-size=512 npm run build
+            NPM_CONFIG_WORKSPACES=false NODE_OPTIONS=--max-old-space-size=512 npm run build
             systemctl restart admin-dashboard
