@@ -115,7 +115,7 @@ jobs:
           version: 1.200.3
 
       - name: Cache Supabase
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.supabase
           key: supabase-${{ runner.os }}-${{ hashFiles('supabase/migrations/*', 'supabase/seed.sql', 'supabase/config.toml') }}
@@ -220,7 +220,7 @@ jobs:
           version: 1.200.3
 
       - name: Cache Supabase
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.supabase
           key: supabase-${{ runner.os }}-${{ hashFiles('supabase/migrations/*', 'supabase/seed.sql', 'supabase/config.toml') }}
@@ -282,7 +282,7 @@ jobs:
           version: 1.200.3
 
       - name: Cache Supabase
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.supabase
           key: supabase-${{ runner.os }}-${{ hashFiles('supabase/migrations/*', 'supabase/seed.sql', 'supabase/config.toml') }}
