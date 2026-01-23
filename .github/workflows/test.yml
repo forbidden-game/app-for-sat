@@ -23,7 +23,7 @@ jobs:
       ai_coach_notification_sender: ${{ steps.filter.outputs.ai_coach_notification_sender }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -70,7 +70,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.repo_root == 'true' || needs.changes.outputs.admin_dashboard == 'true' || needs.changes.outputs.parent_dashboard == 'true' || needs.changes.outputs.ai_coach_worker == 'true' || needs.changes.outputs.ai_coach_notification_sender == 'true' || needs.changes.outputs.edge_functions == 'true' || needs.changes.outputs.supabase_db == 'true' || needs.changes.outputs.ios == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -117,7 +117,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.admin_dashboard == 'true' || needs.changes.outputs.supabase_db == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -169,7 +169,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.parent_dashboard == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -197,7 +197,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.edge_functions == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Deno
         uses: denoland/setup-deno@v1
@@ -214,7 +214,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.ai_coach_worker == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -276,7 +276,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.ai_coach_notification_sender == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -337,7 +337,7 @@ jobs:
     if: needs.changes.outputs.ci == 'true' || needs.changes.outputs.ios == 'true'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run Swift Tests
         run: swift test --package-path ios/StudentCore
