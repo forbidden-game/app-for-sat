@@ -16,7 +16,7 @@
     "@ai-coach/shared": "file:../shared",
     "@supabase/supabase-js": "^2.49.0",
     "apn": "^2.2.0",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.2.3",
     "pino": "^9.6.0"
   },
   "devDependencies": {

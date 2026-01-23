@@ -18,7 +18,7 @@
     "@mariozechner/pi-ai": "^0.45.3",
     "@sinclair/typebox": "^0.34.41",
     "@supabase/supabase-js": "^2.49.0",
-    "dotenv": "^16.4.5",
+    "dotenv": "^17.2.3",
     "pino": "^9.6.0"
   },
   "devDependencies": {
