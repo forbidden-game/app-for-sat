@@ -1,0 +1,10 @@
+.next/
+dist/
+build/
+coverage/
+node_modules/
+.turbo/
+.cache/
+.DS_Store
+ios/**/*.xcodeproj/
+ios/**/*.xcworkspace/

@@ -1,0 +1,26 @@
+{
+  "name": "app-for-sat",
+  "private": true,
+  "scripts": {
+    "prepare": "husky install",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "setup": "npm install && npm --prefix web/admin-dashboard install && npm --prefix web/parent-dashboard install && npm --prefix ai-coach install --workspaces --include-workspace-root",
+    "infra:start": "supabase start",
+    "infra:stop": "supabase stop",
+    "dev:admin": "npm --prefix web/admin-dashboard run dev",
+    "dev:parent": "npm --prefix web/parent-dashboard run dev",
+    "dev:coach": "npm --prefix ai-coach/coach-service run dev",
+    "dev:notification": "npm --prefix ai-coach/notification-sender run dev",
+    "dev": "concurrently -k \"npm run dev:admin\" \"npm run dev:parent\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.12",
+    "prettier": "^3.4.2"
+  },
+  "lint-staged": {
+    "**/*.{js,jsx,ts,tsx,css,scss,json,md,mdx,yml,yaml}": "prettier --write"
+  }
+}

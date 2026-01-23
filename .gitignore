@@ -1,5 +1,17 @@
 .worktrees/
 
+# Node
+node_modules/
+
+# Build artifacts
+build/
+dist/
+coverage/
+.next/
+.turbo/
+.cache/
+.DS_Store
+
 # Xcode user data
 **/xcuserdata/
 supabase/.temp/
