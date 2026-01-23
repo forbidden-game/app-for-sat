@@ -483,14 +483,13 @@ describe("processProgressReportJob", () => {
 
   const minimaxKey = process.env.MINIMAX_API_KEY;
   if (!minimaxKey) {
-    it("requires MINIMAX_API_KEY for LLM integration tests", () => {
-      throw new Error("MINIMAX_API_KEY is required for LLM integration tests");
-    });
+    it.skip("requires MINIMAX_API_KEY for LLM integration tests", () => {});
     return;
   }
 
   it(
     "minimax integration: generates non-empty summary and plan (weekly)",
+    { timeout: 120_000 },
     async () => {
       const current = makeStats({ attempts: { total: 10, correct: 6, accuracy: 0.6 } });
       const previous = makeStats({ attempts: { total: 8, correct: 4, accuracy: 0.5 } });
@@ -528,11 +527,11 @@ describe("processProgressReportJob", () => {
       expect(summary.length).toBeGreaterThan(0);
       expect(focus.length + steps.length > 0 || pace.length > 0).toBe(true);
     },
-    { timeout: 120_000 },
   );
 
   it(
     "minimax integration: generates non-empty summary and plan (monthly)",
+    { timeout: 120_000 },
     async () => {
       const current = makeStats({ attempts: { total: 18, correct: 12, accuracy: 0.67 } });
       const previous = makeStats({ attempts: { total: 15, correct: 9, accuracy: 0.6 } });
@@ -571,7 +570,6 @@ describe("processProgressReportJob", () => {
       expect(summary.length).toBeGreaterThan(0);
       expect(focus.length + steps.length > 0 || pace.length > 0).toBe(true);
     },
-    { timeout: 120_000 },
   );
 
   it("stores model id in report", async () => {
