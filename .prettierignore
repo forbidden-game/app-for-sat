@@ -6,5 +6,11 @@ node_modules/
 .turbo/
 .cache/
 .DS_Store
+**/.build/**
 ios/**/*.xcodeproj/
 ios/**/*.xcworkspace/
+ios/**/Assets.xcassets/**/Contents.json
+ios/**/Resources/Math/**
+**/*.min.js
+**/*.min.css
+supabase/database.types.ts

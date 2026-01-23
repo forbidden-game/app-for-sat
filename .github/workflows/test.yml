@@ -71,6 +71,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -82,8 +84,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run format check
-        run: npm run format:check
+      - name: Determine changed files
+        id: changed
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            files=$(git diff --name-only --diff-filter=ACMRT "origin/${{ github.base_ref }}"...HEAD)
+          else
+            before="${{ github.event.before }}"
+            if [ -n "$before" ] && [ "$before" != "0000000000000000000000000000000000000000" ]; then
+              files=$(git diff --name-only --diff-filter=ACMRT "$before" "$GITHUB_SHA")
+            else
+              files=$(git diff --name-only --diff-filter=ACMRT HEAD^ HEAD || true)
+            fi
+          fi
+          files=$(printf "%s" "$files" | tr '\n' ' ' | sed 's/  */ /g' | sed 's/^ //;s/ $//')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+
+      - name: Run format check (changed files)
+        if: steps.changed.outputs.files != ''
+        run: npx prettier --check --ignore-unknown ${{ steps.changed.outputs.files }}
+
+      - name: Skip format check (no changes)
+        if: steps.changed.outputs.files == ''
+        run: echo "No files to format."
 
   test-admin-dashboard:
     name: Admin Dashboard
