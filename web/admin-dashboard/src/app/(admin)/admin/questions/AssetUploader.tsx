@@ -3,7 +3,12 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { createQuestionAsset, deleteQuestionAsset, listQuestionAssets, type QuestionAsset } from "./actions";
+import {
+  createQuestionAsset,
+  deleteQuestionAsset,
+  listQuestionAssets,
+  type QuestionAsset,
+} from "./actions";
 
 type AssetUploaderProps = {
   questionId: string;
@@ -51,18 +56,21 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
     setError(null);
 
     try {
-      const signResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sign-asset-upload`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
+      const signResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/sign-asset-upload`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            question_id: questionId,
+            file_name: file.name,
+            content_type: file.type,
+          }),
         },
-        body: JSON.stringify({
-          question_id: questionId,
-          file_name: file.name,
-          content_type: file.type,
-        }),
-      });
+      );
 
       if (!signResponse.ok) {
         const err = await signResponse.json();
@@ -81,7 +89,13 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
         throw new Error("Failed to upload file.");
       }
 
-      const asset = await createQuestionAsset(session.access_token, questionId, public_url, file.type, storage_path);
+      const asset = await createQuestionAsset(
+        session.access_token,
+        questionId,
+        public_url,
+        file.type,
+        storage_path,
+      );
 
       setAssets((prev) => [...prev, asset]);
     } catch (err) {
@@ -164,8 +178,19 @@ export function AssetUploader({ questionId }: AssetUploaderProps) {
                 title="Delete"
                 aria-label="Delete asset"
               >
-                <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="h-3 w-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
               </button>
             </div>

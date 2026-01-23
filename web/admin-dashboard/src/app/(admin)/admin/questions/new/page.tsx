@@ -42,8 +42,12 @@ export default function NewQuestionPage() {
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
         <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">New Question</h1>
-        <p className="text-sm text-[color:var(--ink-muted)]">Create a new question in the question bank.</p>
+        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+          New Question
+        </h1>
+        <p className="text-sm text-[color:var(--ink-muted)]">
+          Create a new question in the question bank.
+        </p>
       </header>
 
       {error ? (

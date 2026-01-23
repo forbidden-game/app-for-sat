@@ -41,7 +41,13 @@ describe("RPC and stats", () => {
         get_student_period_stats: [
           {
             data: {
-              attempts: { total: "5", correct: "3", accuracy: "0.6", avg_duration_ms: "12000", skipped: "1" },
+              attempts: {
+                total: "5",
+                correct: "3",
+                accuracy: "0.6",
+                avg_duration_ms: "12000",
+                skipped: "1",
+              },
               mistakes: { top_procedures: [], top_steps: [], top_error_modes: [] },
               coverage: { subjects: [], tags: [] },
             },
@@ -104,7 +110,9 @@ describe("RPC and stats", () => {
       },
     });
 
-    await expect(fetchPeriodStats(supabase, "student", "2025-01-01", "2025-01-02")).rejects.toThrow(/rpc_failed/);
+    await expect(fetchPeriodStats(supabase, "student", "2025-01-01", "2025-01-02")).rejects.toThrow(
+      /rpc_failed/,
+    );
   });
 
   it("fetchPeriodStats tolerates non-object coverage", async () => {
@@ -258,7 +266,10 @@ describeIntegration("RPC integration", () => {
   });
 
   it("claim_notification_events does not return sent", async () => {
-    await supabase.from("notification_events").update({ status: "sent" }).eq("id", notificationIds[0]);
+    await supabase
+      .from("notification_events")
+      .update({ status: "sent" })
+      .eq("id", notificationIds[0]);
 
     const { data } = await supabase.rpc("claim_notification_events", {
       p_worker_id: "worker-2",

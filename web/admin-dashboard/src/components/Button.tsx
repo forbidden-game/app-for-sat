@@ -34,10 +34,14 @@ interface LoadingButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantStyles = {
-  primary: "bg-[color:var(--accent)] text-white hover:bg-[color:var(--accent-strong)] focus:ring-[color:var(--accent)]",
-  secondary: "border border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--ink)] hover:bg-[color:var(--surface-soft)] focus:ring-[color:var(--border)]",
-  danger: "border border-[color:var(--danger)] text-[color:var(--danger-strong)] hover:bg-[color:var(--danger)]/10 focus:ring-[color:var(--danger)]",
-  ghost: "text-[color:var(--ink-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)] focus:ring-[color:var(--border)]",
+  primary:
+    "bg-[color:var(--accent)] text-white hover:bg-[color:var(--accent-strong)] focus:ring-[color:var(--accent)]",
+  secondary:
+    "border border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--ink)] hover:bg-[color:var(--surface-soft)] focus:ring-[color:var(--border)]",
+  danger:
+    "border border-[color:var(--danger)] text-[color:var(--danger-strong)] hover:bg-[color:var(--danger)]/10 focus:ring-[color:var(--danger)]",
+  ghost:
+    "text-[color:var(--ink-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)] focus:ring-[color:var(--border)]",
 };
 
 const sizeStyles = {
@@ -139,8 +143,10 @@ interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const iconButtonVariantStyles = {
   primary: "bg-[color:var(--accent)] text-white hover:bg-[color:var(--accent-strong)]",
-  secondary: "bg-[color:var(--surface)] text-[color:var(--ink-muted)] border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)]",
-  ghost: "text-[color:var(--ink-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)]",
+  secondary:
+    "bg-[color:var(--surface)] text-[color:var(--ink-muted)] border border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)]",
+  ghost:
+    "text-[color:var(--ink-muted)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--ink)]",
   danger: "text-[color:var(--danger-strong)] hover:bg-[color:var(--danger)]/10",
 };
 

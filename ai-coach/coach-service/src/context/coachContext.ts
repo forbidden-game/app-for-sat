@@ -75,7 +75,10 @@ function resolveTimeOfDay(date: Date): "morning" | "afternoon" | "evening" | "ni
   return "night";
 }
 
-function readAccuracy(reports: unknown[]): { recentAccuracy: number | null; accuracyDelta: number | null } {
+function readAccuracy(reports: unknown[]): {
+  recentAccuracy: number | null;
+  accuracyDelta: number | null;
+} {
   const latest = reports[0] as Record<string, unknown> | undefined;
   const metrics = (latest?.metrics as Record<string, unknown> | undefined) ?? undefined;
   const attempts = (metrics?.attempts as Record<string, unknown> | undefined) ?? undefined;
@@ -106,7 +109,10 @@ async function fetchAttemptContext(
   return data as AttemptForCoach;
 }
 
-async function fetchProfileRow(supabase: SupabaseClient, studentId: string): Promise<ProfileRow | null> {
+async function fetchProfileRow(
+  supabase: SupabaseClient,
+  studentId: string,
+): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from("profiles")
     .select("display_name")
@@ -139,7 +145,9 @@ async function fetchReports(
 ): Promise<unknown[]> {
   const { data, error } = await supabase
     .from("student_reports")
-    .select("id, period_kind, period_key, period_start, period_end, summary, plan, metrics, delta, created_at")
+    .select(
+      "id, period_kind, period_key, period_start, period_end, summary, plan, metrics, delta, created_at",
+    )
     .eq("student_id", studentId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -157,7 +165,9 @@ async function fetchInsights(
 ): Promise<unknown[]> {
   const { data, error } = await supabase
     .from("attempt_insights")
-    .select("attempt_id, procedure_id, error_step_index, error_mode_enum, explanation_short, created_at")
+    .select(
+      "attempt_id, procedure_id, error_step_index, error_mode_enum, explanation_short, created_at",
+    )
     .eq("student_id", studentId)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -215,9 +225,13 @@ async function fetchLinkedInsight(
   return data ?? null;
 }
 
-export async function buildCoachContext(params: BuildCoachContextParams): Promise<CoachContextPacket> {
+export async function buildCoachContext(
+  params: BuildCoachContextParams,
+): Promise<CoachContextPacket> {
   const attemptLookupId = params.attemptId ?? params.linkedAttemptId ?? null;
-  const attemptContext = attemptLookupId ? await fetchAttemptContext(params.supabase, attemptLookupId) : null;
+  const attemptContext = attemptLookupId
+    ? await fetchAttemptContext(params.supabase, attemptLookupId)
+    : null;
 
   if (params.requireAttempt && !attemptContext?.attempt?.id) {
     throw new Error("missing_attempt_context");
@@ -232,35 +246,40 @@ export async function buildCoachContext(params: BuildCoachContextParams): Promis
   const timeOfDay = resolveTimeOfDay(now);
 
   const profilePromise = fetchProfileRow(params.supabase, resolvedStudentId);
-  const snapshotPromise = params.includeSnapshot === false
-    ? Promise.resolve(null)
-    : fetchSnapshot(params.supabase, resolvedStudentId);
-  const reportsPromise = params.includeReports === false
-    ? Promise.resolve([])
-    : fetchReports(params.supabase, resolvedStudentId, params.reportLimit ?? 2);
-  const insightsPromise = params.includeInsights === false
-    ? Promise.resolve([])
-    : fetchInsights(params.supabase, resolvedStudentId, params.insightLimit ?? 5);
-  const messagesPromise = params.includeMessages === false
-    ? Promise.resolve([])
-    : fetchMessages(
-        params.supabase,
-        resolvedStudentId,
-        params.messagesBeforeCreatedAt ?? null,
-        params.messageLimit ?? 30,
-      );
+  const snapshotPromise =
+    params.includeSnapshot === false
+      ? Promise.resolve(null)
+      : fetchSnapshot(params.supabase, resolvedStudentId);
+  const reportsPromise =
+    params.includeReports === false
+      ? Promise.resolve([])
+      : fetchReports(params.supabase, resolvedStudentId, params.reportLimit ?? 2);
+  const insightsPromise =
+    params.includeInsights === false
+      ? Promise.resolve([])
+      : fetchInsights(params.supabase, resolvedStudentId, params.insightLimit ?? 5);
+  const messagesPromise =
+    params.includeMessages === false
+      ? Promise.resolve([])
+      : fetchMessages(
+          params.supabase,
+          resolvedStudentId,
+          params.messagesBeforeCreatedAt ?? null,
+          params.messageLimit ?? 30,
+        );
   const linkedInsightPromise = attemptLookupId
     ? fetchLinkedInsight(params.supabase, attemptLookupId)
     : Promise.resolve(null);
 
-  const [profileRow, snapshot, reports, recentInsights, recentMessages, linkedAttemptInsight] = await Promise.all([
-    profilePromise,
-    snapshotPromise,
-    reportsPromise,
-    insightsPromise,
-    messagesPromise,
-    linkedInsightPromise,
-  ]);
+  const [profileRow, snapshot, reports, recentInsights, recentMessages, linkedAttemptInsight] =
+    await Promise.all([
+      profilePromise,
+      snapshotPromise,
+      reportsPromise,
+      insightsPromise,
+      messagesPromise,
+      linkedInsightPromise,
+    ]);
 
   const displayName = profileRow?.display_name ?? null;
   const { recentAccuracy, accuracyDelta } = readAccuracy(reports);

@@ -7,7 +7,10 @@ import { logger } from "../logger.js";
 import { JobDeferredError } from "./jobErrors.js";
 import type { AiJobRow } from "../types.js";
 
-export type AttemptInsightJob = Pick<AiJobRow, "id" | "attempt_id" | "created_at" | "student_id" | "kind">;
+export type AttemptInsightJob = Pick<
+  AiJobRow,
+  "id" | "attempt_id" | "created_at" | "student_id" | "kind"
+>;
 
 export type AttemptInsightLogSink = {
   recordPrompt?: (prompt: string) => void;
@@ -35,7 +38,10 @@ export async function processAttemptInsightJob(
   if (!context.attempt?.id) throw new Error("invalid attempt context");
 
   if (context.attempt.is_correct !== false) {
-    logger.info({ attemptId, isCorrect: context.attempt.is_correct }, "skip attempt insight job (not wrong)");
+    logger.info(
+      { attemptId, isCorrect: context.attempt.is_correct },
+      "skip attempt insight job (not wrong)",
+    );
     return;
   }
 

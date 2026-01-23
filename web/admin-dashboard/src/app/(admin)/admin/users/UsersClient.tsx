@@ -128,11 +128,11 @@ export default function UsersPage() {
   }, [users, roleFilter]);
 
   // Sortable hook for user table - sorting current page
-  const { sortedData: sortedUsers, handleSort: handleUserSort, sortConfig: userSortConfig } = useSortable(
-    filteredUsers,
-    "created_at",
-    "desc",
-  );
+  const {
+    sortedData: sortedUsers,
+    handleSort: handleUserSort,
+    sortConfig: userSortConfig,
+  } = useSortable(filteredUsers, "created_at", "desc");
 
   function resetForm() {
     setForm({ ...EMPTY_FORM });
@@ -166,7 +166,9 @@ export default function UsersPage() {
     const accessToken = await getAccessToken();
     if (!accessToken) return;
 
-    const confirmed = window.confirm(`Delete user ${user.email ?? user.id}? This removes auth and profile data.`);
+    const confirmed = window.confirm(
+      `Delete user ${user.email ?? user.id}? This removes auth and profile data.`,
+    );
     if (!confirmed) return;
 
     setSaving(true);
@@ -222,7 +224,10 @@ export default function UsersPage() {
                   ))}
                 </div>
                 {Array.from({ length: 5 }).map((_, rowIndex) => (
-                  <div key={rowIndex} className="flex items-center gap-4 border-t border-[color:var(--border)] px-4 py-3">
+                  <div
+                    key={rowIndex}
+                    className="flex items-center gap-4 border-t border-[color:var(--border)] px-4 py-3"
+                  >
                     {Array.from({ length: 6 }).map((_, colIndex) => (
                       <Skeleton key={colIndex} variant="text" width="16%" />
                     ))}
@@ -264,11 +269,15 @@ export default function UsersPage() {
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
           <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Users</h1>
           <p className="mt-1 text-sm text-[color:var(--ink-muted)]">
-            Create users via email invite and manage roles across student, parent, and admin accounts.
+            Create users via email invite and manage roles across student, parent, and admin
+            accounts.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="text-xs font-medium text-[color:var(--ink-muted)]" htmlFor="role-filter">
+          <label
+            className="text-xs font-medium text-[color:var(--ink-muted)]"
+            htmlFor="role-filter"
+          >
             Filter role
           </label>
           <select
@@ -347,7 +356,10 @@ export default function UsersPage() {
                   >
                     <span className="inline-flex items-center gap-1">
                       Name
-                      {renderSortIcon(userSortConfig.column === "display_name", userSortConfig.direction)}
+                      {renderSortIcon(
+                        userSortConfig.column === "display_name",
+                        userSortConfig.direction,
+                      )}
                     </span>
                   </th>
                   <th
@@ -367,7 +379,10 @@ export default function UsersPage() {
                   >
                     <span className="inline-flex items-center gap-1">
                       Created
-                      {renderSortIcon(userSortConfig.column === "created_at", userSortConfig.direction)}
+                      {renderSortIcon(
+                        userSortConfig.column === "created_at",
+                        userSortConfig.direction,
+                      )}
                     </span>
                   </th>
                   <th
@@ -377,21 +392,31 @@ export default function UsersPage() {
                   >
                     <span className="inline-flex items-center gap-1">
                       Last sign-in
-                      {renderSortIcon(userSortConfig.column === "last_sign_in_at", userSortConfig.direction)}
+                      {renderSortIcon(
+                        userSortConfig.column === "last_sign_in_at",
+                        userSortConfig.direction,
+                      )}
                     </span>
                   </th>
-                  <th scope="col" className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[120px]">Actions</th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 sticky right-0 bg-[color:var(--surface-soft)] min-w-[120px]"
+                  >
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {sortedUsers.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={6}
-                    >
+                    <td colSpan={6}>
                       <EmptyState
                         title={roleFilter ? `No ${roleFilter} users found` : "No users found"}
-                        description={roleFilter ? "Try selecting a different role filter." : "Users will appear here once they sign up."}
+                        description={
+                          roleFilter
+                            ? "Try selecting a different role filter."
+                            : "Users will appear here once they sign up."
+                        }
                         icon="users"
                         className="m-4"
                       />
@@ -399,10 +424,19 @@ export default function UsersPage() {
                   </tr>
                 ) : (
                   sortedUsers.map((user) => (
-                    <tr key={user.id} className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] transition-colors">
-                      <td className="px-4 py-3 text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{user.email ?? "(no email)"}</td>
-                      <td className="px-4 py-3 text-[color:var(--ink)]">{user.display_name ?? "—"}</td>
-                      <td className="px-4 py-3 text-[color:var(--ink)]">{user.role ?? "unknown"}</td>
+                    <tr
+                      key={user.id}
+                      className="border-b border-[color:var(--border)] hover:bg-[color:var(--surface-soft)] transition-colors"
+                    >
+                      <td className="px-4 py-3 text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">
+                        {user.email ?? "(no email)"}
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--ink)]">
+                        {user.display_name ?? "—"}
+                      </td>
+                      <td className="px-4 py-3 text-[color:var(--ink)]">
+                        {user.role ?? "unknown"}
+                      </td>
                       <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                         {formatDateTime(user.created_at)}
                       </td>
@@ -508,10 +542,7 @@ export default function UsersPage() {
           </div>
 
           <div className="mt-6 flex flex-col gap-2">
-            <LoadingButton
-              loading={saving}
-              onClick={handleSave}
-            >
+            <LoadingButton loading={saving} onClick={handleSave}>
               {editingId ? "Update User" : "Create & Send Invite"}
             </LoadingButton>
             <p className="text-xs text-[color:var(--ink-muted)]">

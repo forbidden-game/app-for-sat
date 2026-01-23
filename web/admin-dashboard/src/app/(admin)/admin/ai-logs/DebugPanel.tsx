@@ -73,20 +73,34 @@ function Section({
   );
 }
 
-export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onToggleMask }: DebugPanelProps) {
-  const contextEntries = useMemo(() => extractContextStack(selectedLog?.events ?? []), [selectedLog]);
+export function DebugPanel({
+  selectedLog,
+  previousSuccessLog,
+  maskEnabled,
+  onToggleMask,
+}: DebugPanelProps) {
+  const contextEntries = useMemo(
+    () => extractContextStack(selectedLog?.events ?? []),
+    [selectedLog],
+  );
   const provenance = useMemo(() => extractProvenance(selectedLog?.events ?? []), [selectedLog]);
-  const promptPack = useMemo(() => (selectedLog ? buildPromptPack(selectedLog) : null), [selectedLog]);
+  const promptPack = useMemo(
+    () => (selectedLog ? buildPromptPack(selectedLog) : null),
+    [selectedLog],
+  );
   const previousPromptPack = useMemo(
     () => (previousSuccessLog ? buildPromptPack(previousSuccessLog) : null),
     [previousSuccessLog],
   );
   const defaultPinned = useMemo(
     () =>
-      CONTEXT_KEYS.reduce((acc, key) => {
-        acc[key] = contextEntries.some((entry) => entry.key === key);
-        return acc;
-      }, {} as Record<ContextKey, boolean>),
+      CONTEXT_KEYS.reduce(
+        (acc, key) => {
+          acc[key] = contextEntries.some((entry) => entry.key === key);
+          return acc;
+        },
+        {} as Record<ContextKey, boolean>,
+      ),
     [contextEntries],
   );
 
@@ -154,10 +168,13 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
   const replayPayload = useMemo(() => {
     if (!selectedLog || !promptPack) return null;
 
-    const contextMap = contextEntries.reduce((acc, entry) => {
-      acc[entry.key] = entry;
-      return acc;
-    }, {} as Record<ContextKey, ContextEntry>);
+    const contextMap = contextEntries.reduce(
+      (acc, entry) => {
+        acc[entry.key] = entry;
+        return acc;
+      },
+      {} as Record<ContextKey, ContextEntry>,
+    );
 
     const overrides: Record<string, unknown> = {};
     const overrideErrors: Record<string, string> = {};
@@ -177,12 +194,15 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
         kind: selectedLog.kind,
         created_at: selectedLog.created_at,
         prompt_pack: promptPack,
-        pinned_context: CONTEXT_KEYS.reduce((acc, key) => {
-          if (pinned[key] && contextMap[key]) {
-            acc[key] = contextMap[key].data;
-          }
-          return acc;
-        }, {} as Record<string, unknown>),
+        pinned_context: CONTEXT_KEYS.reduce(
+          (acc, key) => {
+            if (pinned[key] && contextMap[key]) {
+              acc[key] = contextMap[key].data;
+            }
+            return acc;
+          },
+          {} as Record<string, unknown>,
+        ),
         overrides,
         note: note.trim() || null,
       },
@@ -217,26 +237,36 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
   return (
     <aside className="flex min-w-0 flex-col gap-4 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4">
       <div className="text-xs font-medium text-[color:var(--ink-muted)]">Debug Panel</div>
-      {!selectedLog ? <div className="text-xs text-[color:var(--ink-muted)]">No session selected.</div> : null}
+      {!selectedLog ? (
+        <div className="text-xs text-[color:var(--ink-muted)]">No session selected.</div>
+      ) : null}
 
       {selectedLog ? (
         <Section title="Session Meta" subtitle={selectedLog.status}>
           <div className="space-y-2 text-xs text-[color:var(--ink)]">
             <div className="flex min-w-0 items-start justify-between gap-2">
               <span className="shrink-0 text-[color:var(--ink-muted)]">Job</span>
-              <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.job_id ?? "—"}</span>
+              <span className="min-w-0 flex-1 truncate text-right tabular-nums">
+                {selectedLog.job_id ?? "—"}
+              </span>
             </div>
             <div className="flex min-w-0 items-start justify-between gap-2">
               <span className="shrink-0 text-[color:var(--ink-muted)]">Student</span>
-              <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.student_id ?? "—"}</span>
+              <span className="min-w-0 flex-1 truncate text-right tabular-nums">
+                {selectedLog.student_id ?? "—"}
+              </span>
             </div>
             <div className="flex min-w-0 items-start justify-between gap-2">
               <span className="shrink-0 text-[color:var(--ink-muted)]">Attempt</span>
-              <span className="min-w-0 flex-1 truncate text-right tabular-nums">{selectedLog.attempt_id ?? "—"}</span>
+              <span className="min-w-0 flex-1 truncate text-right tabular-nums">
+                {selectedLog.attempt_id ?? "—"}
+              </span>
             </div>
             <div className="flex min-w-0 items-start justify-between gap-2">
               <span className="shrink-0 text-[color:var(--ink-muted)]">Updated</span>
-              <span className="min-w-0 flex-1 text-right tabular-nums">{formatDateTime(selectedLog.created_at)}</span>
+              <span className="min-w-0 flex-1 text-right tabular-nums">
+                {formatDateTime(selectedLog.created_at)}
+              </span>
             </div>
           </div>
 
@@ -255,7 +285,10 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
           ) : (
             <div className="space-y-2">
               {contextEntries.map((entry) => (
-                <details key={entry.key} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                <details
+                  key={entry.key}
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3"
+                >
                   <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span>{entry.title}</span>
@@ -321,7 +354,9 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
               />
             </div>
           ) : (
-            <div className="text-xs text-[color:var(--ink-muted)]">No previous successful run found.</div>
+            <div className="text-xs text-[color:var(--ink-muted)]">
+              No previous successful run found.
+            </div>
           )}
         </Section>
       ) : null}
@@ -329,11 +364,16 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
       {selectedLog ? (
         <Section title="Provenance" subtitle="Sources + raw JSON" defaultOpen={false}>
           {Object.keys(provenance).length === 0 ? (
-            <div className="text-xs text-[color:var(--ink-muted)]">No provenance payload found in events.</div>
+            <div className="text-xs text-[color:var(--ink-muted)]">
+              No provenance payload found in events.
+            </div>
           ) : (
             <div className="space-y-2">
               {Object.entries(provenance).map(([key, entries]) => (
-                <details key={key} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                <details
+                  key={key}
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3"
+                >
                   <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[color:var(--accent)] focus-visible:outline-offset-2">
                     <div className="flex items-center justify-between gap-2">
                       <span>{key}</span>
@@ -344,7 +384,10 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                   </summary>
                   <div className="mt-2 space-y-2">
                     {entries.map((entry, index) => (
-                      <div key={`${entry.label}-${index}`} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-[11px] text-[color:var(--ink-muted)]">
+                      <div
+                        key={`${entry.label}-${index}`}
+                        className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-[11px] text-[color:var(--ink-muted)]"
+                      >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="text-[color:var(--ink)]">{entry.label}</span>
                           {entry.timestamp ? <span>{formatDateTime(entry.timestamp)}</span> : null}
@@ -368,7 +411,11 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
       ) : null}
 
       {selectedLog ? (
-        <Section title="Privacy" subtitle={maskEnabled ? "mask on" : "mask off"} defaultOpen={false}>
+        <Section
+          title="Privacy"
+          subtitle={maskEnabled ? "mask on" : "mask off"}
+          defaultOpen={false}
+        >
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-[color:var(--ink)]">
             <span>PII masking (emails, phones, ids, UUIDs)</span>
             <button
@@ -403,9 +450,14 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
               const parsed = parseOverride(overrideText[key]);
               const entry = contextEntries.find((item) => item.key === key);
               return (
-                <div key={key} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                <div
+                  key={key}
+                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-xs font-semibold text-[color:var(--ink)]">{CONTEXT_LABELS[key]}</span>
+                    <span className="text-xs font-semibold text-[color:var(--ink)]">
+                      {CONTEXT_LABELS[key]}
+                    </span>
                     <button
                       type="button"
                       onClick={() => setPinned((prev) => ({ ...prev, [key]: !prev[key] }))}
@@ -419,7 +471,9 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                     </button>
                   </div>
                   <div className="mt-2 text-[11px] text-[color:var(--ink-muted)]">
-                    {entry ? "Using context captured in events." : "No context found; override JSON to inject."}
+                    {entry
+                      ? "Using context captured in events."
+                      : "No context found; override JSON to inject."}
                   </div>
                   <label className="mt-2 grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]">
                     Override JSON
@@ -439,7 +493,9 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                     />
                   </label>
                   {parsed.error ? (
-                    <div className="text-[11px] text-[color:var(--danger-strong)]">{parsed.error}</div>
+                    <div className="text-[11px] text-[color:var(--danger-strong)]">
+                      {parsed.error}
+                    </div>
                   ) : null}
                 </div>
               );
@@ -463,20 +519,23 @@ export function DebugPanel({ selectedLog, previousSuccessLog, maskEnabled, onTog
                 className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)]"
                 onClick={() =>
                   handleCopy(
-                    formatPlain(
-                      serializeJson(replayPayload?.payload ?? {}, 2),
-                      maskEnabled,
-                    ),
+                    formatPlain(serializeJson(replayPayload?.payload ?? {}, 2), maskEnabled),
                   )
                 }
               >
                 Copy Replay Payload
               </button>
               {Object.values(replayPayload?.overrideErrors ?? {}).length > 0 ? (
-                <div className="text-[11px] text-[color:var(--danger-strong)]">Fix override JSON errors before replay.</div>
+                <div className="text-[11px] text-[color:var(--danger-strong)]">
+                  Fix override JSON errors before replay.
+                </div>
               ) : null}
               {copyStatus ? (
-                <div className="text-[11px] text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+                <div
+                  className="text-[11px] text-[color:var(--ink-muted)]"
+                  role="status"
+                  aria-live="polite"
+                >
                   {copyStatus}
                 </div>
               ) : null}

@@ -36,9 +36,7 @@ export type AdminOverview = {
   }>;
 };
 
-async function requireCount(
-  query: PromiseLike<{ count: number | null; error: unknown }>,
-) {
+async function requireCount(query: PromiseLike<{ count: number | null; error: unknown }>) {
   const { count, error } = await query;
   if (error || count === null) {
     throw new Error("Failed to load admin metrics.");
@@ -61,33 +59,16 @@ export async function getAdminOverview(accessToken: string): Promise<AdminOvervi
     attemptsWeekCount,
   ] = await Promise.all([
     requireCount(
-      supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "student"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "student"),
     ),
     requireCount(
-      supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "parent"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "parent"),
     ),
     requireCount(
-      supabase
-        .from("profiles")
-        .select("id", { count: "exact", head: true })
-        .eq("role", "admin"),
+      supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "admin"),
     ),
-    requireCount(
-      supabase
-        .from("questions")
-        .select("id", { count: "exact", head: true }),
-    ),
-    requireCount(
-      supabase
-        .from("question_banks")
-        .select("id", { count: "exact", head: true }),
-    ),
+    requireCount(supabase.from("questions").select("id", { count: "exact", head: true })),
+    requireCount(supabase.from("question_banks").select("id", { count: "exact", head: true })),
     requireCount(
       supabase
         .from("question_banks")

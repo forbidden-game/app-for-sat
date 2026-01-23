@@ -45,7 +45,9 @@ describe("scheduleRecurringJobs", () => {
     await scheduleRecurringJobs(baseConfig(), supabase);
 
     const inserts = extractInserts(calls);
-    const snapshotCalls = inserts.filter((call) => (call.payload as any).kind === "snapshot_refresh");
+    const snapshotCalls = inserts.filter(
+      (call) => (call.payload as any).kind === "snapshot_refresh",
+    );
     expect(snapshotCalls).toHaveLength(2);
   });
 
@@ -63,7 +65,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const weekly = extractInserts(calls).filter((call) => (call.payload as any).kind === "progress_report");
+    const weekly = extractInserts(calls).filter(
+      (call) => (call.payload as any).kind === "progress_report",
+    );
     expect(weekly.length).toBeGreaterThan(0);
     expect((weekly[0]?.payload as any).payload.period_kind).toBe("weekly");
   });
@@ -82,7 +86,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const reports = extractInserts(calls).filter((call) => (call.payload as any).kind === "progress_report");
+    const reports = extractInserts(calls).filter(
+      (call) => (call.payload as any).kind === "progress_report",
+    );
     const kinds = reports.map((call) => (call.payload as any).payload.period_kind);
     expect(kinds).toContain("monthly");
   });
@@ -122,7 +128,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const report = extractInserts(calls).find((call) => (call.payload as any).kind === "progress_report");
+    const report = extractInserts(calls).find(
+      (call) => (call.payload as any).kind === "progress_report",
+    );
     expect((report?.payload as any).payload.period_end).toBe("2025-01-09T00:00:00.000Z");
 
     vi.useRealTimers();
@@ -146,7 +154,9 @@ describe("scheduleRecurringJobs", () => {
     const config = baseConfig({ reportWeeklyDays: 14 });
     await scheduleRecurringJobs(config, supabase);
 
-    const report = extractInserts(calls).find((call) => (call.payload as any).payload.period_kind === "weekly");
+    const report = extractInserts(calls).find(
+      (call) => (call.payload as any).payload.period_kind === "weekly",
+    );
     expect((report?.payload as any).payload.period_start).toBe("2024-12-27T00:00:00.000Z");
 
     vi.useRealTimers();
@@ -170,7 +180,9 @@ describe("scheduleRecurringJobs", () => {
     const config = baseConfig({ reportMonthlyDays: 45 });
     await scheduleRecurringJobs(config, supabase);
 
-    const report = extractInserts(calls).find((call) => (call.payload as any).payload.period_kind === "monthly");
+    const report = extractInserts(calls).find(
+      (call) => (call.payload as any).payload.period_kind === "monthly",
+    );
     expect((report?.payload as any).payload.period_start).toBe("2024-11-26T00:00:00.000Z");
 
     vi.useRealTimers();
@@ -193,7 +205,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const snapshot = extractInserts(calls).find((call) => (call.payload as any).kind === "snapshot_refresh");
+    const snapshot = extractInserts(calls).find(
+      (call) => (call.payload as any).kind === "snapshot_refresh",
+    );
     expect((snapshot?.payload as any).dedupe_key).toContain("snapshot:s1:2025-01-02");
 
     vi.useRealTimers();
@@ -216,7 +230,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const report = extractInserts(calls).find((call) => (call.payload as any).kind === "progress_report");
+    const report = extractInserts(calls).find(
+      (call) => (call.payload as any).kind === "progress_report",
+    );
     expect((report?.payload as any).dedupe_key).toContain("report:s1:weekly-2025-01-02");
 
     vi.useRealTimers();
@@ -300,7 +316,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const report = extractInserts(calls).find((call) => (call.payload as any).kind === "progress_report");
+    const report = extractInserts(calls).find(
+      (call) => (call.payload as any).kind === "progress_report",
+    );
     expect((report?.payload as any).payload.period_key).toBe("weekly-2025-01-02");
 
     vi.useRealTimers();
@@ -323,7 +341,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig(), supabase);
 
-    const report = extractInserts(calls).find((call) => (call.payload as any).kind === "progress_report");
+    const report = extractInserts(calls).find(
+      (call) => (call.payload as any).kind === "progress_report",
+    );
     expect((report?.payload as any).payload.period_start).toBe("2024-12-26T00:00:00.000Z");
     expect((report?.payload as any).payload.period_end).toBe("2025-01-02T00:00:00.000Z");
 
@@ -391,7 +411,11 @@ describe("scheduleRecurringJobs", () => {
       },
       from: {
         ai_jobs: {
-          insert: [mockError("duplicate", "23505"), { data: null, error: null }, { data: null, error: null }],
+          insert: [
+            mockError("duplicate", "23505"),
+            { data: null, error: null },
+            { data: null, error: null },
+          ],
         },
       },
     });
@@ -416,7 +440,9 @@ describe("scheduleRecurringJobs", () => {
 
     await scheduleRecurringJobs(baseConfig({ workerId: "worker-x" }), supabase);
 
-    const snapshot = extractInserts(calls).find((call) => (call.payload as any).kind === "snapshot_refresh");
+    const snapshot = extractInserts(calls).find(
+      (call) => (call.payload as any).kind === "snapshot_refresh",
+    );
     expect((snapshot?.payload as any).dedupe_key).toContain("snapshot:s1:2025-01-02");
 
     vi.useRealTimers();

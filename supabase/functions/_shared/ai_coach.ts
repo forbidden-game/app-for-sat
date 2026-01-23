@@ -60,19 +60,21 @@ export function buildAttemptInsightDraft(snapshot: AttemptSnapshot): AttemptInsi
       : 0;
   const stepName = steps[errorStepIndex] ?? "Unknown step";
 
-  const explanationShort = selected !== null
-    ? `You flagged difficulty near step ${errorStepIndex + 1}: ${stepName}. Focus on clarifying that transition before moving on.`
-    : "You were unsure where the mistake began. Start by writing the target and checking each intermediate result for consistency.";
+  const explanationShort =
+    selected !== null
+      ? `You flagged difficulty near step ${errorStepIndex + 1}: ${stepName}. Focus on clarifying that transition before moving on.`
+      : "You were unsure where the mistake began. Start by writing the target and checking each intermediate result for consistency.";
 
-  const followups = selected !== null
-    ? [
-        { question: `Which part of "${stepName}" felt most confusing?` },
-        { question: "What intermediate value did you compute right before the mistake?" },
-      ]
-    : [
-        { question: "Which step felt most uncertain?" },
-        { question: "What was your last confident intermediate result?" },
-      ];
+  const followups =
+    selected !== null
+      ? [
+          { question: `Which part of "${stepName}" felt most confusing?` },
+          { question: "What intermediate value did you compute right before the mistake?" },
+        ]
+      : [
+          { question: "Which step felt most uncertain?" },
+          { question: "What was your last confident intermediate result?" },
+        ];
 
   return {
     explanationShort,

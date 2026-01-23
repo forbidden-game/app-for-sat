@@ -1,4 +1,5 @@
 # ai-coach
+
 日期：2026-01-14
 
 North Star: one AI teacher per student, with wrong-answer coaching, followup dialog, and long-term tracking.
@@ -15,6 +16,7 @@ AI Coach feature workspace.
 This directory is the primary home for AI Coach docs and implementation.
 
 ## Workspace
+
 This folder uses npm workspaces. Install dependencies from `ai-coach/` to use the shared core package.
 
 ## Testing
@@ -41,6 +43,7 @@ npm test
 ```
 
 Environment variables (defaults provided for local Supabase):
+
 - `SUPABASE_URL` (default: `http://127.0.0.1:54321`)
 - `SUPABASE_SERVICE_ROLE_KEY` (default: local dev key)
 - `MINIMAX_API_KEY` (required for LLM integration tests)

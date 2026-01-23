@@ -55,9 +55,24 @@ export async function processSnapshotRefreshJob(
   }
   const endIso = periodEnd.toISOString();
 
-  const stats7 = await fetchPeriodStats(supabase, studentId, subDays(periodEnd, 7).toISOString(), endIso);
-  const stats30 = await fetchPeriodStats(supabase, studentId, subDays(periodEnd, 30).toISOString(), endIso);
-  const stats90 = await fetchPeriodStats(supabase, studentId, subDays(periodEnd, 90).toISOString(), endIso);
+  const stats7 = await fetchPeriodStats(
+    supabase,
+    studentId,
+    subDays(periodEnd, 7).toISOString(),
+    endIso,
+  );
+  const stats30 = await fetchPeriodStats(
+    supabase,
+    studentId,
+    subDays(periodEnd, 30).toISOString(),
+    endIso,
+  );
+  const stats90 = await fetchPeriodStats(
+    supabase,
+    studentId,
+    subDays(periodEnd, 90).toISOString(),
+    endIso,
+  );
 
   const snapshotPayload = {
     student_id: studentId,

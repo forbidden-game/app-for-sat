@@ -109,9 +109,7 @@ export function EmptyState({
       <h3 className="text-sm font-semibold text-[color:var(--ink)]">{title}</h3>
 
       {description && (
-        <p className="mt-2 max-w-sm text-sm text-[color:var(--ink-muted)]">
-          {description}
-        </p>
+        <p className="mt-2 max-w-sm text-sm text-[color:var(--ink-muted)]">{description}</p>
       )}
 
       {action && (
@@ -143,10 +141,7 @@ interface EmptyTableRowProps {
 export function EmptyTableRow({ colSpan, message, action }: EmptyTableRowProps) {
   return (
     <tr>
-      <td
-        className="px-4 py-8 text-center"
-        colSpan={colSpan}
-      >
+      <td className="px-4 py-8 text-center" colSpan={colSpan}>
         <div className="flex flex-col items-center gap-2">
           <span className="text-sm text-[color:var(--ink-muted)]">{message}</span>
           {action && (

@@ -64,7 +64,12 @@ export type QuestionType = {
   is_active: boolean;
 };
 
-export type QuestionSortField = "created_at" | "subject" | "module" | "difficulty" | "question_type";
+export type QuestionSortField =
+  | "created_at"
+  | "subject"
+  | "module"
+  | "difficulty"
+  | "question_type";
 export type SortDirection = "asc" | "desc";
 
 export type ListQuestionsParams = {
@@ -124,15 +129,13 @@ export async function listQuestions(
   const pageSize = params.pageSize ?? 20;
   const offset = (page - 1) * pageSize;
 
-  let query = supabase
-    .from("questions")
-    .select(
-      `
+  let query = supabase.from("questions").select(
+    `
       id, subject, module, difficulty, question_type, stem, created_at,
       question_tags(tags(name))
     `,
-      { count: "exact" },
-    );
+    { count: "exact" },
+  );
 
   if (params.search) {
     query = query.ilike("stem", `%${params.search}%`);
@@ -151,7 +154,8 @@ export async function listQuestions(
   }
 
   const sortBy =
-    params.sortBy && ["created_at", "subject", "module", "difficulty", "question_type"].includes(params.sortBy)
+    params.sortBy &&
+    ["created_at", "subject", "module", "difficulty", "question_type"].includes(params.sortBy)
       ? params.sortBy
       : "created_at";
   const sortDirection = params.sortDirection === "asc" ? "asc" : "desc";
@@ -220,7 +224,10 @@ export async function getQuestion(accessToken: string, id: string): Promise<Ques
     metadata: Record<string, unknown> | null;
     created_at: string;
     question_options: Array<{ id: string; label: string; content: string }> | null;
-    question_tags: Array<{ tag_id: string; tags: { id: string; name: string; category: string } | null }> | null;
+    question_tags: Array<{
+      tag_id: string;
+      tags: { id: string; name: string; category: string } | null;
+    }> | null;
   };
   const rawOptions = record.question_options;
   const rawTags = record.question_tags;
@@ -254,7 +261,9 @@ export async function createQuestion(
   const { data: question, error: questionError } = await supabase
     .from("questions")
     .insert(insertPayload)
-    .select("id, subject, module, difficulty, question_type, stem, answer_key, metadata, created_at")
+    .select(
+      "id, subject, module, difficulty, question_type, stem, answer_key, metadata, created_at",
+    )
     .single();
 
   if (questionError || !question) {
@@ -268,9 +277,7 @@ export async function createQuestion(
         label: opt.label.trim(),
         content: opt.content.trim(),
       }));
-      const { error: optError } = await supabase
-        .from("question_options")
-        .insert(optionPayload);
+      const { error: optError } = await supabase.from("question_options").insert(optionPayload);
       if (optError) {
         throw new Error(`Failed to create options: ${optError.message}`);
       }
@@ -281,9 +288,7 @@ export async function createQuestion(
         question_id: question.id,
         tag_id: tagId,
       }));
-      const { error: tagError } = await supabase
-        .from("question_tags")
-        .insert(tagPayload);
+      const { error: tagError } = await supabase.from("question_tags").insert(tagPayload);
       if (tagError) {
         throw new Error(`Failed to assign tags: ${tagError.message}`);
       }
@@ -342,9 +347,7 @@ export async function updateQuestion(
       label: opt.label.trim(),
       content: opt.content.trim(),
     }));
-    const { error: optError } = await supabase
-      .from("question_options")
-      .insert(optionPayload);
+    const { error: optError } = await supabase.from("question_options").insert(optionPayload);
     if (optError) {
       throw new Error(`Failed to update options: ${optError.message}`);
     }
@@ -363,9 +366,7 @@ export async function updateQuestion(
       question_id: id,
       tag_id: tagId,
     }));
-    const { error: tagError } = await supabase
-      .from("question_tags")
-      .insert(tagPayload);
+    const { error: tagError } = await supabase.from("question_tags").insert(tagPayload);
     if (tagError) {
       throw new Error(`Failed to update tags: ${tagError.message}`);
     }

@@ -66,11 +66,15 @@ export default function AiLogsConversations({
   const [threadsLoading, setThreadsLoading] = useState(true);
   const [threadsError, setThreadsError] = useState<string | null>(null);
 
-  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(() => searchParams.get("student"));
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(() =>
+    searchParams.get("student"),
+  );
   const [userQuery, setUserQuery] = useState(() => searchParams.get("uq") ?? "");
   const [globalMessageQuery, setGlobalMessageQuery] = useState(() => searchParams.get("mq") ?? "");
   const [threadMessageQuery, setThreadMessageQuery] = useState(() => searchParams.get("tq") ?? "");
-  const [focusMessageId, setFocusMessageId] = useState<string | null>(() => searchParams.get("mid"));
+  const [focusMessageId, setFocusMessageId] = useState<string | null>(() =>
+    searchParams.get("mid"),
+  );
 
   const [searchResults, setSearchResults] = useState<CoachMessageSearchResult[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -141,11 +145,11 @@ export default function AiLogsConversations({
   }, [threads, userQuery]);
 
   // Sortable hook for threads list
-  const { sortedData: sortedThreads, handleSort: handleThreadSort, sortConfig: threadSortConfig } = useSortable(
-    filteredThreads,
-    "last_message_at",
-    "desc",
-  );
+  const {
+    sortedData: sortedThreads,
+    handleSort: handleThreadSort,
+    sortConfig: threadSortConfig,
+  } = useSortable(filteredThreads, "last_message_at", "desc");
 
   useEffect(() => {
     if (selectedStudentId) return;
@@ -267,7 +271,16 @@ export default function AiLogsConversations({
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [selectedStudentId, userQuery, globalMessageQuery, threadMessageQuery, focusMessageId, pathname, router, searchParams]);
+  }, [
+    selectedStudentId,
+    userQuery,
+    globalMessageQuery,
+    threadMessageQuery,
+    focusMessageId,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   useEffect(() => {
     setSelectedStudentId(searchParams.get("student"));
@@ -320,7 +333,10 @@ export default function AiLogsConversations({
     if (!q) return turns.turns;
 
     return turns.turns.filter((turn) => {
-      const texts = [extractText(turn.user.content), ...turn.assistants.map((a) => extractText(a.content))].join("\n");
+      const texts = [
+        extractText(turn.user.content),
+        ...turn.assistants.map((a) => extractText(a.content)),
+      ].join("\n");
       return normalizeForSearch(texts).includes(q);
     });
   }, [turns.turns, threadMessageQuery]);
@@ -429,13 +445,20 @@ export default function AiLogsConversations({
         </div>
 
         {threadsError ? (
-          <div className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]" role="alert">
+          <div
+            className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]"
+            role="alert"
+          >
             {threadsError}
           </div>
         ) : null}
 
         {threadsLoading ? (
-          <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          <div
+            className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-6 text-xs text-[color:var(--ink-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             Loading conversations…
           </div>
         ) : (
@@ -471,7 +494,11 @@ export default function AiLogsConversations({
                       {thread.display_name?.trim() ? thread.display_name : thread.student_id}
                     </div>
                     <div className="flex items-center justify-between gap-2 text-[11px] text-[color:var(--ink-muted)]">
-                      <span className="min-w-0 flex-1 truncate">{maskEnabled ? maskPII(thread.last_message_preview) : thread.last_message_preview}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {maskEnabled
+                          ? maskPII(thread.last_message_preview)
+                          : thread.last_message_preview}
+                      </span>
                       {thread.last_message_status ? (
                         <span
                           className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
@@ -496,7 +523,9 @@ export default function AiLogsConversations({
         {globalMessageQuery.trim().length > 0 ? (
           <div className="mt-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-xs font-medium text-[color:var(--ink-muted)]">Search Results</div>
+              <div className="text-xs font-medium text-[color:var(--ink-muted)]">
+                Search Results
+              </div>
               <span className="text-xs text-[color:var(--ink-muted)] tabular-nums">
                 {searchLoading ? "…" : searchResults.length}
               </span>
@@ -510,7 +539,11 @@ export default function AiLogsConversations({
 
             <div className="mt-2 space-y-2">
               {searchLoading ? (
-                <div className="text-xs text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+                <div
+                  className="text-xs text-[color:var(--ink-muted)]"
+                  role="status"
+                  aria-live="polite"
+                >
                   Searching…
                 </div>
               ) : searchResults.length === 0 ? (
@@ -524,7 +557,9 @@ export default function AiLogsConversations({
                     className="flex w-full flex-col gap-1 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-left text-xs transition hover:bg-[color:var(--surface-strong)]"
                   >
                     <div className="flex items-center justify-between gap-2 text-[11px] text-[color:var(--ink-muted)] tabular-nums">
-                      <span className="truncate">{result.display_name?.trim() ? result.display_name : result.student_id}</span>
+                      <span className="truncate">
+                        {result.display_name?.trim() ? result.display_name : result.student_id}
+                      </span>
                       <span>{formatDateTime(result.created_at)}</span>
                     </div>
                     <div className="truncate text-[color:var(--ink)]">
@@ -579,18 +614,27 @@ export default function AiLogsConversations({
             />
           </label>
           <div className="text-xs text-[color:var(--ink-muted)] tabular-nums">
-            {threadMessageQuery.trim() ? `${filteredTurns.length} matches` : `${turns.turns.length} turns`}
+            {threadMessageQuery.trim()
+              ? `${filteredTurns.length} matches`
+              : `${turns.turns.length} turns`}
           </div>
         </div>
 
         {detailError ? (
-          <div className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]" role="alert">
+          <div
+            className="rounded-xl border border-[color:var(--danger)] bg-[color:var(--surface)] px-3 py-2 text-xs text-[color:var(--danger-strong)]"
+            role="alert"
+          >
             {detailError}
           </div>
         ) : null}
 
         {detailLoading ? (
-          <div className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-8 text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          <div
+            className="rounded-xl border border-dashed border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-8 text-sm text-[color:var(--ink-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             Loading messages…
           </div>
         ) : !detail ? (
@@ -604,13 +648,20 @@ export default function AiLogsConversations({
             style={{ contentVisibility: "auto", containIntrinsicSize: "800px 600px" }}
           >
             {turns.prelude.length > 0 ? (
-              <details className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3" open={false}>
+              <details
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3"
+                open={false}
+              >
                 <summary className="cursor-pointer list-none text-xs font-semibold text-[color:var(--ink-muted)]">
                   Prelude ({turns.prelude.length})
                 </summary>
                 <div className="mt-3 space-y-2">
                   {turns.prelude.map((msg) => (
-                    <div key={msg.id} id={`msg-${msg.id}`} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                    <div
+                      key={msg.id}
+                      id={`msg-${msg.id}`}
+                      className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3"
+                    >
                       <div className="flex items-center justify-between gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
                         <span>{msg.role}</span>
                         <span className="tabular-nums">{formatDateTime(msg.created_at)}</span>
@@ -708,7 +759,9 @@ export default function AiLogsConversations({
                       <div
                         id={`msg-${turn.user.id}`}
                         className={`rounded-xl border bg-[color:var(--surface)] p-3 ${
-                          turn.user.id === focusMessageId ? "border-[color:var(--accent)]" : "border-[color:var(--border)]"
+                          turn.user.id === focusMessageId
+                            ? "border-[color:var(--accent)]"
+                            : "border-[color:var(--border)]"
                         }`}
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -738,10 +791,12 @@ export default function AiLogsConversations({
                                 key={msg.id}
                                 id={`msg-${msg.id}`}
                                 className={`rounded-xl border bg-[color:var(--surface)] p-3 ${
-                                  msg.id === focusMessageId ? "border-[color:var(--accent)]" : "border-[color:var(--border)]"
+                                  msg.id === focusMessageId
+                                    ? "border-[color:var(--accent)]"
+                                    : "border-[color:var(--border)]"
                                 }`}
                               >
-                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
                                   <div className="text-xs font-semibold text-[color:var(--ink-muted)]">
                                     Assistant
                                   </div>
@@ -776,13 +831,20 @@ export default function AiLogsConversations({
                       )}
 
                       {turn.tools.length > 0 ? (
-                        <details className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3" open={false}>
+                        <details
+                          className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3"
+                          open={false}
+                        >
                           <summary className="cursor-pointer text-xs font-semibold text-[color:var(--ink-muted)]">
                             Tool Messages ({turn.tools.length})
                           </summary>
                           <div className="mt-2 space-y-2">
                             {turn.tools.map((msg) => (
-                              <div key={msg.id} id={`msg-${msg.id}`} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3">
+                              <div
+                                key={msg.id}
+                                id={`msg-${msg.id}`}
+                                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-3"
+                              >
                                 <div className="flex items-center justify-between gap-2 text-xs font-medium text-[color:var(--ink-muted)] tabular-nums">
                                   <span>tool</span>
                                   <span>{formatDateTime(msg.created_at)}</span>
@@ -800,12 +862,15 @@ export default function AiLogsConversations({
                         <div className="flex flex-wrap items-center gap-2">
                           {turn.meta ? (
                             <span className="tabular-nums">
-                              prompt ~{turn.meta.estimated_prompt_tokens} + output ~{outputTokens} = total ~{totalTokens}
+                              prompt ~{turn.meta.estimated_prompt_tokens} + output ~{outputTokens} =
+                              total ~{totalTokens}
                             </span>
                           ) : (
                             <span>No ai_agent_log found for this user message.</span>
                           )}
-                          {turn.meta?.prompt_version ? <span>· {turn.meta.prompt_version}</span> : null}
+                          {turn.meta?.prompt_version ? (
+                            <span>· {turn.meta.prompt_version}</span>
+                          ) : null}
                         </div>
                         {turn.meta?.log_id ? (
                           <button

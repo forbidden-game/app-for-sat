@@ -24,13 +24,15 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   const supabase = getSupabaseClient();
   const isEdit = Boolean(initialData);
 
-  const initialOptions =
-    initialData?.options?.map((o) => ({ label: o.label, content: o.content })) ?? [
-      { label: "A", content: "" },
-      { label: "B", content: "" },
-      { label: "C", content: "" },
-      { label: "D", content: "" },
-    ];
+  const initialOptions = initialData?.options?.map((o) => ({
+    label: o.label,
+    content: o.content,
+  })) ?? [
+    { label: "A", content: "" },
+    { label: "B", content: "" },
+    { label: "C", content: "" },
+    { label: "D", content: "" },
+  ];
   const initialTagIds = initialData?.tags?.map((t) => t.id) ?? [];
   const initialAnswerKey = initialData?.answer_key ?? { correct: "" };
 
@@ -138,7 +140,9 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
   }
 
   function toggleTag(tagId: string) {
-    setSelectedTagIds((prev) => (prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId]));
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+    );
   }
 
   function handleCancel() {
@@ -158,7 +162,8 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
       answer_key: answerKey,
     };
 
-    const validOptions = questionType === "mcq" ? options.filter((o) => o.label.trim() && o.content.trim()) : [];
+    const validOptions =
+      questionType === "mcq" ? options.filter((o) => o.label.trim() && o.content.trim()) : [];
 
     await onSubmit(input, validOptions, selectedTagIds);
   }
@@ -350,7 +355,9 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
           <div className="flex flex-col gap-3">
             {Object.entries(tagsByCategory).map(([category, tags]) => (
               <div key={category} className="flex flex-wrap items-center gap-2">
-                <span className="w-16 text-xs font-medium text-[color:var(--ink-muted)] capitalize">{category}:</span>
+                <span className="w-16 text-xs font-medium text-[color:var(--ink-muted)] capitalize">
+                  {category}:
+                </span>
                 {tags.map((tag) => (
                   <button
                     key={tag.id}
@@ -372,18 +379,10 @@ export function QuestionForm({ initialData, onSubmit, onCancel, saving }: Questi
       </div>
 
       <div className="flex gap-3 border-t border-[color:var(--border)] pt-4">
-        <LoadingButton
-          type="submit"
-          loading={saving}
-          loadingText="…"
-        >
+        <LoadingButton type="submit" loading={saving} loadingText="…">
           {isEdit ? "Save Changes" : "Create Question"}
         </LoadingButton>
-        <LoadingButton
-          type="button"
-          variant="secondary"
-          onClick={handleCancel}
-        >
+        <LoadingButton type="button" variant="secondary" onClick={handleCancel}>
           Cancel
         </LoadingButton>
       </div>

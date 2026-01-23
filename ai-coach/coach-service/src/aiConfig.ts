@@ -30,9 +30,7 @@ export async function getPublishedAiPromptConfigs(
 
   const { data, error } = await supabase
     .from("ai_prompt_configs")
-    .select(
-      "id, kind, prompt_version, system_prompt, model_provider, model_id, status, updated_at",
-    )
+    .select("id, kind, prompt_version, system_prompt, model_provider, model_id, status, updated_at")
     .eq("status", "published");
 
   if (error) {

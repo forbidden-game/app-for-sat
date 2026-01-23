@@ -80,11 +80,11 @@ export default function AuditLogPage() {
   const csv = useMemo(() => buildCsv(logs), [logs]);
 
   // Sortable hook for audit log table - using all logs data for global sorting
-  const { sortedData: sortedLogs, handleSort: handleAuditSort, sortConfig: auditSortConfig } = useSortable(
-    logs,
-    "created_at",
-    "desc",
-  );
+  const {
+    sortedData: sortedLogs,
+    handleSort: handleAuditSort,
+    sortConfig: auditSortConfig,
+  } = useSortable(logs, "created_at", "desc");
 
   function downloadCsv() {
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -113,7 +113,9 @@ export default function AuditLogPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Audit Log</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+            Audit Log
+          </h1>
           <p className="text-sm text-[color:var(--ink-muted)]">Last 7 days of admin activity.</p>
         </div>
         <button
@@ -145,7 +147,10 @@ export default function AuditLogPage() {
               >
                 <span className="inline-flex items-center gap-1">
                   Time
-                  {renderSortIcon(auditSortConfig.column === "created_at", auditSortConfig.direction)}
+                  {renderSortIcon(
+                    auditSortConfig.column === "created_at",
+                    auditSortConfig.direction,
+                  )}
                 </span>
               </th>
               <th
@@ -175,10 +180,15 @@ export default function AuditLogPage() {
               >
                 <span className="inline-flex items-center gap-1">
                   Entity
-                  {renderSortIcon(auditSortConfig.column === "entity_type", auditSortConfig.direction)}
+                  {renderSortIcon(
+                    auditSortConfig.column === "entity_type",
+                    auditSortConfig.direction,
+                  )}
                 </span>
               </th>
-              <th scope="col" className="px-4 py-3">Details</th>
+              <th scope="col" className="px-4 py-3">
+                Details
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -195,7 +205,10 @@ export default function AuditLogPage() {
               </tr>
             ) : (
               sortedLogs.map((log) => (
-                <tr key={log.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
+                <tr
+                  key={log.id}
+                  className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]"
+                >
                   <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                     {formatDateTime(log.created_at)}
                   </td>

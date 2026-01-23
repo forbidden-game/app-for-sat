@@ -77,7 +77,9 @@ export default function ImportQuestionsPage() {
       setParseWarnings(parsed.warnings);
       setPayload(parsed.payload);
     } catch (err) {
-      setParseErrors([{ row: 0, message: err instanceof Error ? err.message : "Failed to read file." }]);
+      setParseErrors([
+        { row: 0, message: err instanceof Error ? err.message : "Failed to read file." },
+      ]);
     } finally {
       setParsing(false);
     }
@@ -155,8 +157,12 @@ export default function ImportQuestionsPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Import Questions</h1>
-          <p className="text-sm text-[color:var(--ink-muted)]">Bulk import questions from CSV or JSON.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+            Import Questions
+          </h1>
+          <p className="text-sm text-[color:var(--ink-muted)]">
+            Bulk import questions from CSV or JSON.
+          </p>
         </div>
         <Link
           href="/admin/questions"
@@ -204,11 +210,19 @@ export default function ImportQuestionsPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <label className="text-sm font-medium text-[color:var(--ink)]">Import file</label>
             <div className="flex items-center gap-2 text-xs font-medium text-[color:var(--ink-muted)]">
-              <button type="button" onClick={() => downloadSample("csv")} className="hover:text-[color:var(--ink)]">
+              <button
+                type="button"
+                onClick={() => downloadSample("csv")}
+                className="hover:text-[color:var(--ink)]"
+              >
                 Download CSV
               </button>
               <span>|</span>
-              <button type="button" onClick={() => downloadSample("json")} className="hover:text-[color:var(--ink)]">
+              <button
+                type="button"
+                onClick={() => downloadSample("json")}
+                className="hover:text-[color:var(--ink)]"
+              >
                 Download JSON
               </button>
             </div>
@@ -289,12 +303,15 @@ export default function ImportQuestionsPage() {
 
           {payload ? (
             <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs text-[color:var(--ink-muted)]">
-              <p className="font-medium text-[color:var(--ink)]">Parsed {payload.questions.length} questions</p>
+              <p className="font-medium text-[color:var(--ink)]">
+                Parsed {payload.questions.length} questions
+              </p>
               {previewQuestions.length > 0 ? (
                 <ul className="mt-2 list-disc list-inside space-y-1">
                   {previewQuestions.map((question, index) => (
                     <li key={index}>
-                      {question.subject} / {question.module} / D{question.difficulty} - {question.stem.slice(0, 60)}
+                      {question.subject} / {question.module} / D{question.difficulty} -{" "}
+                      {question.stem.slice(0, 60)}
                     </li>
                   ))}
                 </ul>
@@ -335,13 +352,14 @@ export default function ImportQuestionsPage() {
               subject, module, difficulty, question_type, stem, answer_key, options, tags, metadata
             </p>
             <p className="mt-1 text-[11px] text-[color:var(--ink-muted)]">
-              options/tags/metadata accept JSON. options also supports &quot;A:3|B:4&quot;. tags can be &quot;tag1;tag2&quot;.
+              options/tags/metadata accept JSON. options also supports &quot;A:3|B:4&quot;. tags can
+              be &quot;tag1;tag2&quot;.
             </p>
           </div>
           <div>
             <p className="mb-1 font-medium text-[color:var(--ink)]">JSON schema</p>
             <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-[11px]">
-{`{
+              {`{
   "questions": [
     {
       "subject": "string",

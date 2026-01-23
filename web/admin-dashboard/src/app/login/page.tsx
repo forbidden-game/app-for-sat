@@ -31,7 +31,9 @@ export default function LoginPage() {
       <SupabaseConfigBanner />
       <main className="mx-auto flex max-w-md flex-col px-6 py-16">
         <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6 shadow-[var(--shadow)]">
-          <h1 className="text-xl font-semibold tracking-tight text-[color:var(--ink)]">Admin Login</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-[color:var(--ink)]">
+            Admin Login
+          </h1>
           <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
             Receive a magic link to access the admin console.
           </p>

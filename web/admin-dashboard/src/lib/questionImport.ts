@@ -125,9 +125,7 @@ function parseCsvPayload(text: string): ImportParseResult {
   } catch (err) {
     return {
       payload: null,
-      errors: [
-        { row: 0, message: err instanceof Error ? err.message : "Invalid CSV." },
-      ],
+      errors: [{ row: 0, message: err instanceof Error ? err.message : "Invalid CSV." }],
       warnings: [],
     };
   }
@@ -201,10 +199,10 @@ function parseCsvRows(text: string): string[][] {
     const char = text[i];
 
     if (inQuotes) {
-      if (char === "\"") {
+      if (char === '"') {
         const next = text[i + 1];
-        if (next === "\"") {
-          cell += "\"";
+        if (next === '"') {
+          cell += '"';
           i += 1;
         } else {
           inQuotes = false;
@@ -215,7 +213,7 @@ function parseCsvRows(text: string): string[][] {
       continue;
     }
 
-    if (char === "\"") {
+    if (char === '"') {
       inQuotes = true;
       continue;
     }
@@ -279,9 +277,7 @@ function normalizeQuestion(
   warnings: string[],
 ): ImportQuestion | null {
   const record =
-    typeof input === "object" && input !== null
-      ? (input as Record<string, unknown>)
-      : null;
+    typeof input === "object" && input !== null ? (input as Record<string, unknown>) : null;
   if (!record) {
     errors.push({ row, message: "Row is not an object." });
     return null;
@@ -309,22 +305,11 @@ function normalizeQuestion(
   if (!difficultyValue) {
     errors.push({ row, message: "Missing difficulty." });
   }
-  if (
-    answerValue === undefined ||
-    answerValue === null ||
-    `${answerValue}`.trim() === ""
-  ) {
+  if (answerValue === undefined || answerValue === null || `${answerValue}`.trim() === "") {
     errors.push({ row, message: "Missing answer_key." });
   }
 
-  if (
-    !subject ||
-    !moduleValue ||
-    !stem ||
-    !questionType ||
-    !difficultyValue ||
-    !answerValue
-  ) {
+  if (!subject || !moduleValue || !stem || !questionType || !difficultyValue || !answerValue) {
     return null;
   }
 
@@ -489,9 +474,7 @@ function normalizeTags(
     const tags = value.filter(
       (item) => item !== null && item !== undefined && `${item}`.trim() !== "",
     );
-    return tags.length > 0
-      ? (tags as Array<{ name?: string; category?: string } | string>)
-      : null;
+    return tags.length > 0 ? (tags as Array<{ name?: string; category?: string } | string>) : null;
   }
 
   const raw = `${value}`.trim();

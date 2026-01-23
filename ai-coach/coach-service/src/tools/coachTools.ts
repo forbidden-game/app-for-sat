@@ -50,7 +50,10 @@ async function enqueueSnapshotRefresh(supabase: SupabaseClient, studentId: strin
   }
 }
 
-export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOptions = {}): AgentTool<any>[] {
+export function buildCoachTools(
+  supabase: SupabaseClient,
+  options: CoachToolOptions = {},
+): AgentTool<any>[] {
   const allowWriteInsight = options.allowWriteInsight ?? true;
   const includeMemoryTools = options.includeMemoryTools ?? true;
   const includeContextTool = options.includeContextTool ?? true;
@@ -63,7 +66,10 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
     label: "Search procedure candidates",
     description: "Search existing SAT Math procedures before creating a new one.",
     parameters: SearchProcedureCandidatesSchema,
-    execute: async (_toolCallId, params): Promise<AgentToolResult<{ candidates: SearchProcedureCandidate[] }>> => {
+    execute: async (
+      _toolCallId,
+      params,
+    ): Promise<AgentToolResult<{ candidates: SearchProcedureCandidate[] }>> => {
       const { data, error } = await supabase.rpc("search_procedure_candidates", {
         p_subject: params.subject,
         p_query: params.query,
@@ -80,30 +86,35 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
     },
   };
 
-  const getCoachContext: AgentTool<typeof GetCoachContextSchema, { context: CoachContextPacket }> = {
-    name: "get_coach_context",
-    label: "Get coach context",
-    description: "Load a compact context packet for the student (optionally linked to an attempt).",
-    parameters: GetCoachContextSchema,
-    execute: async (_toolCallId, params) => {
-      const context = await buildCoachContext({
-        supabase,
-        studentId: params.student_id,
-        linkedAttemptId: params.linked_attempt_id ?? null,
-        includeMessages: params.include_messages ?? true,
-        messageLimit: params.message_limit ?? 30,
-        insightLimit: params.insight_limit ?? 5,
-        reportLimit: params.report_limit ?? 2,
-      });
+  const getCoachContext: AgentTool<typeof GetCoachContextSchema, { context: CoachContextPacket }> =
+    {
+      name: "get_coach_context",
+      label: "Get coach context",
+      description:
+        "Load a compact context packet for the student (optionally linked to an attempt).",
+      parameters: GetCoachContextSchema,
+      execute: async (_toolCallId, params) => {
+        const context = await buildCoachContext({
+          supabase,
+          studentId: params.student_id,
+          linkedAttemptId: params.linked_attempt_id ?? null,
+          includeMessages: params.include_messages ?? true,
+          messageLimit: params.message_limit ?? 30,
+          insightLimit: params.insight_limit ?? 5,
+          reportLimit: params.report_limit ?? 2,
+        });
 
-      return {
-        content: [{ type: "text", text: JSON.stringify({ context }) }],
-        details: { context },
-      };
-    },
-  };
+        return {
+          content: [{ type: "text", text: JSON.stringify({ context }) }],
+          details: { context },
+        };
+      },
+    };
 
-  const createProcedure: AgentTool<typeof CreateProcedureSchema, { procedure_id: string; steps_version: number }> = {
+  const createProcedure: AgentTool<
+    typeof CreateProcedureSchema,
+    { procedure_id: string; steps_version: number }
+  > = {
     name: "create_procedure",
     label: "Create procedure",
     description: "Create a new SAT Math procedure with 3-7 steps.",
@@ -119,18 +130,30 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
         updated_at: new Date().toISOString(),
       };
 
-      const { data, error } = await supabase.from("procedures").insert(insertPayload).select("id,steps_version").single();
+      const { data, error } = await supabase
+        .from("procedures")
+        .insert(insertPayload)
+        .select("id,steps_version")
+        .single();
 
       if (error) throw new Error(error.message);
 
       return {
-        content: [{ type: "text", text: JSON.stringify({ procedure_id: data.id, steps_version: data.steps_version }) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ procedure_id: data.id, steps_version: data.steps_version }),
+          },
+        ],
         details: { procedure_id: data.id, steps_version: data.steps_version },
       };
     },
   };
 
-  const searchSimilarMistakes: AgentTool<typeof SearchSimilarMistakesSchema, { matches: SimilarMistake[] }> = {
+  const searchSimilarMistakes: AgentTool<
+    typeof SearchSimilarMistakesSchema,
+    { matches: SimilarMistake[] }
+  > = {
     name: "search_similar_mistakes",
     label: "Search similar mistakes",
     description: "Search this student's historical mistakes by procedure + step.",
@@ -204,49 +227,54 @@ export function buildCoachTools(supabase: SupabaseClient, options: CoachToolOpti
     },
   };
 
-  const memorySearch: AgentTool<typeof MemorySearchSchema, { results: MemorySearchResult[]; disabled?: boolean; error?: string }> =
-    {
-      name: "memory_search",
-      label: "Memory search",
-      description: "Search teacher memory entries for this student.",
-      parameters: MemorySearchSchema,
-      execute: async (_toolCallId, params) => {
-        const { data, error } = await supabase
-          .from("coach_memory_entries")
-          .select("id,scope,content,tags,source,created_at")
-          .eq("student_id", params.student_id)
-          .ilike("content", `%${params.query}%`)
-          .order("created_at", { ascending: false })
-          .limit(params.limit ?? 5);
+  const memorySearch: AgentTool<
+    typeof MemorySearchSchema,
+    { results: MemorySearchResult[]; disabled?: boolean; error?: string }
+  > = {
+    name: "memory_search",
+    label: "Memory search",
+    description: "Search teacher memory entries for this student.",
+    parameters: MemorySearchSchema,
+    execute: async (_toolCallId, params) => {
+      const { data, error } = await supabase
+        .from("coach_memory_entries")
+        .select("id,scope,content,tags,source,created_at")
+        .eq("student_id", params.student_id)
+        .ilike("content", `%${params.query}%`)
+        .order("created_at", { ascending: false })
+        .limit(params.limit ?? 5);
 
-        if (error) {
-          if (isMissingRelationError(error)) {
-            const details = { results: [], disabled: true, error: error.message };
-            return {
-              content: [{ type: "text", text: JSON.stringify(details) }],
-              details,
-            };
-          }
-          throw new Error(error.message);
+      if (error) {
+        if (isMissingRelationError(error)) {
+          const details = { results: [], disabled: true, error: error.message };
+          return {
+            content: [{ type: "text", text: JSON.stringify(details) }],
+            details,
+          };
         }
+        throw new Error(error.message);
+      }
 
-        const results = (data ?? []).map((row) => ({
-          id: row.id as string,
-          scope: row.scope as string,
-          tags: (row.tags as string[] | null) ?? [],
-          source: (row.source as string | null) ?? null,
-          created_at: row.created_at as string,
-          snippet: String(row.content ?? "").slice(0, 200),
-        }));
+      const results = (data ?? []).map((row) => ({
+        id: row.id as string,
+        scope: row.scope as string,
+        tags: (row.tags as string[] | null) ?? [],
+        source: (row.source as string | null) ?? null,
+        created_at: row.created_at as string,
+        snippet: String(row.content ?? "").slice(0, 200),
+      }));
 
-        return {
-          content: [{ type: "text", text: JSON.stringify({ results }) }],
-          details: { results },
-        };
-      },
-    };
+      return {
+        content: [{ type: "text", text: JSON.stringify({ results }) }],
+        details: { results },
+      };
+    },
+  };
 
-  const memoryGet: AgentTool<typeof MemoryGetSchema, { entry: MemoryEntry | null; disabled?: boolean; error?: string }> = {
+  const memoryGet: AgentTool<
+    typeof MemoryGetSchema,
+    { entry: MemoryEntry | null; disabled?: boolean; error?: string }
+  > = {
     name: "memory_get",
     label: "Memory get",
     description: "Fetch a full memory entry by id.",
@@ -399,7 +427,9 @@ const WriteAttemptInsightSchema = Type.Object({
   procedure_id: Type.String({ minLength: 1 }),
   procedure_steps_version: Type.Integer({ minimum: 1 }),
   error_step_index: Type.Integer({ minimum: 0, maximum: 20 }),
-  student_selected_step_index: Type.Optional(Type.Union([Type.Integer({ minimum: 0, maximum: 20 }), Type.Null()])),
+  student_selected_step_index: Type.Optional(
+    Type.Union([Type.Integer({ minimum: 0, maximum: 20 }), Type.Null()]),
+  ),
   student_selected_step_is_unknown: Type.Boolean(),
   error_mode_enum: Type.String({ minLength: 1 }),
   error_mode_detail: Type.Optional(Type.String()),

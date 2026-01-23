@@ -85,11 +85,11 @@ export default function BankQuestionsPage() {
   }, [loadData]);
 
   // Sortable hook for bank questions table
-  const { sortedData: sortedBankQuestions, handleSort: handleBankQuestionSort, sortConfig: bankQuestionSortConfig } = useSortable(
-    questions,
-    "position",
-    "asc",
-  );
+  const {
+    sortedData: sortedBankQuestions,
+    handleSort: handleBankQuestionSort,
+    sortConfig: bankQuestionSortConfig,
+  } = useSortable(questions, "position", "asc");
   const isPositionSort =
     bankQuestionSortConfig.column === "position" && bankQuestionSortConfig.direction === "asc";
 
@@ -246,7 +246,9 @@ export default function BankQuestionsPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
             {bankInfo?.title ?? "Bank"} Questions
           </h1>
-          <p className="text-sm text-[color:var(--ink-muted)]">Manage questions in this bank. Drag to reorder.</p>
+          <p className="text-sm text-[color:var(--ink-muted)]">
+            Manage questions in this bank. Drag to reorder.
+          </p>
         </div>
         <div className="flex gap-2">
           <button
@@ -320,7 +322,9 @@ export default function BankQuestionsPage() {
                   className="flex items-center justify-between rounded-xl border border-[color:var(--border)] p-2 hover:bg-[color:var(--surface-soft)]"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-[color:var(--ink)]">{truncate(q.stem, 60)}</p>
+                    <p className="truncate text-sm text-[color:var(--ink)]">
+                      {truncate(q.stem, 60)}
+                    </p>
                     <p className="text-xs text-[color:var(--ink-muted)]">
                       {q.subject} / {q.module} / D{q.difficulty}
                     </p>
@@ -375,7 +379,11 @@ export default function BankQuestionsPage() {
 
       <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
         {sortedBankQuestions.length === 0 ? (
-          <div className="p-6 text-center text-sm text-[color:var(--ink-muted)]" role="status" aria-live="polite">
+          <div
+            className="p-6 text-center text-sm text-[color:var(--ink-muted)]"
+            role="status"
+            aria-live="polite"
+          >
             No questions in this bank yet.
           </div>
         ) : (
@@ -450,7 +458,10 @@ export default function BankQuestionsPage() {
             </div>
             <div className="divide-y divide-[color:var(--border)]">
               {sortedBankQuestions.map((q, index) => (
-                <div key={q.question_id} className="flex items-center gap-3 p-3 hover:bg-[color:var(--surface-soft)]">
+                <div
+                  key={q.question_id}
+                  className="flex items-center gap-3 p-3 hover:bg-[color:var(--surface-soft)]"
+                >
                   <div className="flex flex-col gap-1">
                     <button
                       type="button"
@@ -464,22 +475,26 @@ export default function BankQuestionsPage() {
                     <button
                       type="button"
                       onClick={() => handleMoveDown(index)}
-                      disabled={!isPositionSort || index === sortedBankQuestions.length - 1 || saving}
+                      disabled={
+                        !isPositionSort || index === sortedBankQuestions.length - 1 || saving
+                      }
                       className="text-xs text-[color:var(--ink-muted)] hover:text-[color:var(--ink)] disabled:opacity-30"
                       aria-label="Move question down"
                     >
                       ▼
                     </button>
                   </div>
-                  <span className="w-8 text-center text-sm font-medium text-[color:var(--ink-muted)]">{q.position}</span>
+                  <span className="w-8 text-center text-sm font-medium text-[color:var(--ink-muted)]">
+                    {q.position}
+                  </span>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-[color:var(--ink)]">{truncate(q.stem, 80)}</p>
-                    <p className="text-xs text-[color:var(--ink-muted)]">
-                      {q.question_type}
-                    </p>
+                    <p className="text-xs text-[color:var(--ink-muted)]">{q.question_type}</p>
                   </div>
                   <span className="w-24 text-xs text-[color:var(--ink-muted)]">{q.subject}</span>
-                  <span className="w-20 text-xs text-[color:var(--ink-muted)] text-center">D{q.difficulty}</span>
+                  <span className="w-20 text-xs text-[color:var(--ink-muted)] text-center">
+                    D{q.difficulty}
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleRemoveQuestion(q.question_id)}
@@ -495,7 +510,9 @@ export default function BankQuestionsPage() {
         )}
       </div>
 
-      <div className="text-xs text-[color:var(--ink-muted)]">Total: {sortedBankQuestions.length} questions</div>
+      <div className="text-xs text-[color:var(--ink-muted)]">
+        Total: {sortedBankQuestions.length} questions
+      </div>
     </main>
   );
 }

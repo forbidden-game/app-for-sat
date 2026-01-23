@@ -50,7 +50,6 @@ type ProfileRow = {
   created_at: string;
 };
 
-
 function assertRole(role: string): UserRole {
   if (!USER_ROLES.includes(role as UserRole)) {
     throw new Error("Role must be student, parent, or admin.");
@@ -84,7 +83,6 @@ function buildUserListItem(authUser: AuthUser, profile?: ProfileRow | null): Use
     last_sign_in_at: authUser.last_sign_in_at ?? null,
   };
 }
-
 
 export async function listUsers(
   accessToken: string,
@@ -165,10 +163,7 @@ export async function listUsers(
   };
 }
 
-export async function createUser(
-  accessToken: string,
-  input: UserInput,
-): Promise<UserListItem> {
+export async function createUser(accessToken: string, input: UserInput): Promise<UserListItem> {
   const context = await requireAdmin(accessToken);
   const { supabase } = context;
   const { email, display_name, role } = normalizeInput(input);
@@ -227,9 +222,7 @@ export async function updateUser(
     throw new Error("You cannot remove your own admin role.");
   }
 
-  const { data: authData, error: authError } = await supabase.auth.admin.getUserById(
-    userId,
-  );
+  const { data: authData, error: authError } = await supabase.auth.admin.getUserById(userId);
 
   if (authError || !authData.user) {
     throw new Error("User not found.");
@@ -256,8 +249,10 @@ export async function updateUser(
 
   let updatedAuthUser = existingAuthUser;
   if (email !== before.email) {
-    const { data: updatedAuth, error: updateAuthError } =
-      await supabase.auth.admin.updateUserById(userId, { email });
+    const { data: updatedAuth, error: updateAuthError } = await supabase.auth.admin.updateUserById(
+      userId,
+      { email },
+    );
 
     if (updateAuthError || !updatedAuth.user) {
       throw new Error("Failed to update user email.");
@@ -311,9 +306,7 @@ export async function deleteUser(accessToken: string, userId: string): Promise<v
     throw new Error("You cannot delete your own account.");
   }
 
-  const { data: authData, error: authError } = await supabase.auth.admin.getUserById(
-    userId,
-  );
+  const { data: authData, error: authError } = await supabase.auth.admin.getUserById(userId);
 
   if (authError || !authData.user) {
     throw new Error("User not found.");
@@ -325,9 +318,9 @@ export async function deleteUser(accessToken: string, userId: string): Promise<v
     .eq("id", userId)
     .limit(1);
 
-  const profile = (profileRows && profileRows.length > 0 ? profileRows[0] : null) as
-    | ProfileRow
-    | null;
+  const profile = (
+    profileRows && profileRows.length > 0 ? profileRows[0] : null
+  ) as ProfileRow | null;
 
   const before = {
     email: (authData.user as AuthUser).email ?? null,

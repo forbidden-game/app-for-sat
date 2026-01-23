@@ -21,12 +21,12 @@ export default async function AiConfigPage() {
     ]);
 
     configs = loadedConfigs;
-    keyStatuses = providerStatuses.reduce<Record<AiProvider, typeof providerStatuses[number]>>(
+    keyStatuses = providerStatuses.reduce<Record<AiProvider, (typeof providerStatuses)[number]>>(
       (acc, status) => {
         acc[status.provider] = status;
         return acc;
       },
-      {} as Record<AiProvider, typeof providerStatuses[number]>,
+      {} as Record<AiProvider, (typeof providerStatuses)[number]>,
     );
   } catch (err) {
     error = err instanceof Error ? err.message : "Failed to load configs.";

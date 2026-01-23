@@ -141,7 +141,17 @@ export default function QuestionsPage() {
         setLoading(false);
       }
     }
-  }, [getAccessToken, search, subject, module, difficulty, questionType, page, sortBy, sortDirection]);
+  }, [
+    getAccessToken,
+    search,
+    subject,
+    module,
+    difficulty,
+    questionType,
+    page,
+    sortBy,
+    sortDirection,
+  ]);
 
   useEffect(() => {
     loadQuestions();
@@ -229,7 +239,19 @@ export default function QuestionsPage() {
     if (nextQuery !== currentQuery) {
       router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false });
     }
-  }, [search, subject, module, difficulty, questionType, page, sortBy, sortDirection, pathname, router, searchParams]);
+  }, [
+    search,
+    subject,
+    module,
+    difficulty,
+    questionType,
+    page,
+    sortBy,
+    sortDirection,
+    pathname,
+    router,
+    searchParams,
+  ]);
 
   useEffect(() => {
     async function loadFilters() {
@@ -245,8 +267,7 @@ export default function QuestionsPage() {
         setSubjects(subjectList);
         setModules(moduleList);
         setQuestionTypes(typeList);
-      } catch {
-      }
+      } catch {}
     }
     loadFilters();
   }, [getAccessToken]);
@@ -302,7 +323,11 @@ export default function QuestionsPage() {
     }
   }
 
-  async function handleDrawerSubmit(input: QuestionInput, options: OptionInput[], tagIds: string[]) {
+  async function handleDrawerSubmit(
+    input: QuestionInput,
+    options: OptionInput[],
+    tagIds: string[],
+  ) {
     const accessToken = await getAccessToken();
     if (!accessToken) return;
 
@@ -315,7 +340,13 @@ export default function QuestionsPage() {
         setSelectedQuestion(created);
         setSelectedQuestionId(created.id);
       } else if (selectedQuestionId) {
-        const updated = await updateQuestion(accessToken, selectedQuestionId, input, options, tagIds);
+        const updated = await updateQuestion(
+          accessToken,
+          selectedQuestionId,
+          input,
+          options,
+          tagIds,
+        );
         setSelectedQuestion(updated);
       }
 
@@ -375,8 +406,12 @@ export default function QuestionsPage() {
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Questions</h1>
-          <p className="text-sm text-[color:var(--ink-muted)]">Manage questions in the question bank.</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+            Questions
+          </h1>
+          <p className="text-sm text-[color:var(--ink-muted)]">
+            Manage questions in the question bank.
+          </p>
         </div>
         <div className="flex gap-2">
           <Link
@@ -519,7 +554,9 @@ export default function QuestionsPage() {
         <table className="w-full text-left text-sm text-[color:var(--ink-muted)]">
           <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
             <tr>
-              <th scope="col" className="px-4 py-3">Stem</th>
+              <th scope="col" className="px-4 py-3">
+                Stem
+              </th>
               <th
                 scope="col"
                 className="w-24 px-4 py-3 cursor-pointer select-none hover:text-[color:var(--ink)]"
@@ -570,7 +607,9 @@ export default function QuestionsPage() {
                   {renderSortIcon(sortBy === "created_at", sortDirection)}
                 </span>
               </th>
-              <th scope="col" className="w-24 px-4 py-3">Actions</th>
+              <th scope="col" className="w-24 px-4 py-3">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -598,7 +637,10 @@ export default function QuestionsPage() {
               </tr>
             ) : (
               questions.map((q) => (
-                <tr key={q.id} className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]">
+                <tr
+                  key={q.id}
+                  className="border-t border-[color:var(--border)] hover:bg-[color:var(--surface-soft)]"
+                >
                   <td className="px-4 py-3">
                     <button
                       type="button"
@@ -619,16 +661,24 @@ export default function QuestionsPage() {
                           </span>
                         ))}
                         {q.tags.length > 3 && (
-                          <span className="text-xs text-[color:var(--ink-muted)]">+{q.tags.length - 3}</span>
+                          <span className="text-xs text-[color:var(--ink-muted)]">
+                            +{q.tags.length - 3}
+                          </span>
                         )}
                       </div>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{q.subject}</td>
                   <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{q.module}</td>
-                  <td className="px-4 py-3 text-center text-xs text-[color:var(--ink-muted)]">{q.difficulty}</td>
-                  <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{q.question_type}</td>
-                  <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{formatDate(q.created_at)}</td>
+                  <td className="px-4 py-3 text-center text-xs text-[color:var(--ink-muted)]">
+                    {q.difficulty}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                    {q.question_type}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                    {formatDate(q.created_at)}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <button
@@ -693,7 +743,11 @@ export default function QuestionsPage() {
 
       {drawerOpen ? (
         <div className="fixed inset-0 z-40 flex justify-end">
-          <button className="absolute inset-0 bg-black/30" onClick={closeDrawer} aria-label="Close drawer" />
+          <button
+            className="absolute inset-0 bg-black/30"
+            onClick={closeDrawer}
+            aria-label="Close drawer"
+          />
           <aside className="relative z-10 flex h-full w-full max-w-3xl flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
@@ -724,7 +778,8 @@ export default function QuestionsPage() {
             {drawerMode === "edit" && selectedQuestionId ? (
               <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
                 <div className="text-xs text-[color:var(--ink-muted)]">
-                  ID: <span className="font-mono text-[color:var(--ink)]">{selectedQuestionId}</span>
+                  ID:{" "}
+                  <span className="font-mono text-[color:var(--ink)]">{selectedQuestionId}</span>
                 </div>
                 <Link
                   href={`/admin/questions/${selectedQuestionId}`}

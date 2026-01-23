@@ -57,7 +57,9 @@ function DiffBlock({
           <div
             key={`${label}-${index}`}
             className={`whitespace-pre-wrap break-words px-2 py-0.5 ${
-              row.changed ? "bg-[color:var(--surface-strong)] text-[color:var(--ink)]" : "text-[color:var(--ink)]"
+              row.changed
+                ? "bg-[color:var(--surface-strong)] text-[color:var(--ink)]"
+                : "text-[color:var(--ink)]"
             }`}
           >
             {side === "current" ? row.current || " " : row.previous || " "}

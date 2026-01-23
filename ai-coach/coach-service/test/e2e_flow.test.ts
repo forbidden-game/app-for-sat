@@ -134,14 +134,22 @@ describeIntegration("AI coach end-to-end flow", () => {
   it("snapshot_refresh writes student_snapshots", async () => {
     await processSnapshotRefreshJob(supabase, studentId, new Date().toISOString());
 
-    const { data } = await supabase.from("student_snapshots").select("student_id").eq("student_id", studentId);
+    const { data } = await supabase
+      .from("student_snapshots")
+      .select("student_id")
+      .eq("student_id", studentId);
     expect(data?.length).toBe(1);
   });
 
   it("snapshot_refresh updates notes", async () => {
     const procedure = await createProcedure(supabase, { subject: "math" });
     procedureIds.push(procedure.id);
-    const attempt = await createAttempt(supabase, { studentId, sessionId, questionId, isCorrect: false });
+    const attempt = await createAttempt(supabase, {
+      studentId,
+      sessionId,
+      questionId,
+      isCorrect: false,
+    });
     attemptIds.push(attempt.id);
     const insight = await createAttemptInsight(supabase, {
       attemptId: attempt.id,
@@ -153,7 +161,11 @@ describeIntegration("AI coach end-to-end flow", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, new Date().toISOString());
 
-    const { data } = await supabase.from("student_snapshots").select("notes").eq("student_id", studentId).single();
+    const { data } = await supabase
+      .from("student_snapshots")
+      .select("notes")
+      .eq("student_id", studentId)
+      .single();
     expect(typeof data?.notes).toBe("string");
   });
 
@@ -212,7 +224,10 @@ describeIntegration("AI coach end-to-end flow", () => {
     await processProgressReportJob(supabase, config, makeModel(), payload);
     await processProgressReportJob(supabase, config, makeModel(), payload);
 
-    const { data } = await supabase.from("student_reports").select("id").eq("period_key", periodKey);
+    const { data } = await supabase
+      .from("student_reports")
+      .select("id")
+      .eq("period_key", periodKey);
     expect(data?.length).toBe(1);
     if (data?.[0]?.id) reportIds.push(data[0].id);
   });
@@ -234,7 +249,9 @@ describeIntegration("AI coach end-to-end flow", () => {
   });
 
   it("list_active_students returns student", async () => {
-    const { data } = await supabase.rpc("list_active_students", { p_since: "2025-01-01T00:00:00.000Z" });
+    const { data } = await supabase.rpc("list_active_students", {
+      p_since: "2025-01-01T00:00:00.000Z",
+    });
     const ids = (data as Array<{ student_id: string }>).map((row) => row.student_id);
     expect(ids).toContain(studentId);
   });
@@ -250,10 +267,16 @@ describeIntegration("AI coach end-to-end flow", () => {
   });
 
   it("claim_notification_events works for report events", async () => {
-    const event = await createNotificationEvent(supabase, { studentId, eventType: "progress_report_ready" });
+    const event = await createNotificationEvent(supabase, {
+      studentId,
+      eventType: "progress_report_ready",
+    });
     notificationIds.push(event.id);
 
-    const { data } = await supabase.rpc("claim_notification_events", { p_worker_id: "worker-e2e", p_limit: 5 });
+    const { data } = await supabase.rpc("claim_notification_events", {
+      p_worker_id: "worker-e2e",
+      p_limit: 5,
+    });
     const ids = (data as Array<{ id: string }>).map((row) => row.id);
     expect(ids).toContain(event.id);
   });
@@ -279,13 +302,21 @@ describeIntegration("AI coach end-to-end flow", () => {
 
   it("snapshot_refresh keeps subject_scope", async () => {
     await processSnapshotRefreshJob(supabase, studentId, new Date().toISOString());
-    const { data } = await supabase.from("student_snapshots").select("subject_scope").eq("student_id", studentId).single();
+    const { data } = await supabase
+      .from("student_snapshots")
+      .select("subject_scope")
+      .eq("student_id", studentId)
+      .single();
     expect(data?.subject_scope).toBe("all");
   });
 
   it("snapshot_refresh updates updated_at", async () => {
     await processSnapshotRefreshJob(supabase, studentId, new Date().toISOString());
-    const { data } = await supabase.from("student_snapshots").select("updated_at").eq("student_id", studentId).single();
+    const { data } = await supabase
+      .from("student_snapshots")
+      .select("updated_at")
+      .eq("student_id", studentId)
+      .single();
     expect(typeof data?.updated_at).toBe("string");
   });
 
@@ -382,7 +413,12 @@ describeIntegration("AI coach end-to-end flow", () => {
   it("cleanup attempt insights after use", async () => {
     const procedure = await createProcedure(supabase, { subject: "math" });
     procedureIds.push(procedure.id);
-    const attempt = await createAttempt(supabase, { studentId, sessionId, questionId, isCorrect: false });
+    const attempt = await createAttempt(supabase, {
+      studentId,
+      sessionId,
+      questionId,
+      isCorrect: false,
+    });
     attemptIds.push(attempt.id);
     const insight = await createAttemptInsight(supabase, {
       attemptId: attempt.id,
@@ -394,12 +430,20 @@ describeIntegration("AI coach end-to-end flow", () => {
 
     await cleanupAttemptInsights(supabase, [insight.attempt_id]);
 
-    const { data } = await supabase.from("attempt_insights").select("attempt_id").eq("attempt_id", insight.attempt_id);
+    const { data } = await supabase
+      .from("attempt_insights")
+      .select("attempt_id")
+      .eq("attempt_id", insight.attempt_id);
     expect(data?.length).toBe(0);
   });
 
   it("cleanup attempts after use", async () => {
-    const attempt = await createAttempt(supabase, { studentId, sessionId, questionId, isCorrect: true });
+    const attempt = await createAttempt(supabase, {
+      studentId,
+      sessionId,
+      questionId,
+      isCorrect: true,
+    });
     await cleanupAttempts(supabase, [attempt.id]);
 
     const { data } = await supabase.from("attempts").select("id").eq("id", attempt.id);

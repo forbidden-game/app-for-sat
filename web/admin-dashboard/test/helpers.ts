@@ -11,25 +11,22 @@ export interface TestClient extends SupabaseClient {
   userEmail: string;
 }
 
-export async function createClientAs(
-  role: TestRole,
-  email?: string
-): Promise<TestClient> {
+export async function createClientAs(role: TestRole, email?: string): Promise<TestClient> {
   if (!serviceClient) {
     throw new Error("Service client not initialized");
   }
 
-  const testEmail = email || `${role}_${Date.now()}_${Math.random().toString(36).slice(2)}@test.com`;
+  const testEmail =
+    email || `${role}_${Date.now()}_${Math.random().toString(36).slice(2)}@test.com`;
   const testPassword = "testpassword123";
 
   let userId: string;
 
-  const { data: authData, error: authError } =
-    await serviceClient.auth.admin.createUser({
-      email: testEmail,
-      password: testPassword,
-      email_confirm: true,
-    });
+  const { data: authData, error: authError } = await serviceClient.auth.admin.createUser({
+    email: testEmail,
+    password: testPassword,
+    email_confirm: true,
+  });
 
   if (authError) {
     if (authError.message.includes("already registered")) {

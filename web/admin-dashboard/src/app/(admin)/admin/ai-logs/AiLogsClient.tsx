@@ -31,10 +31,10 @@ function resolveView(searchParams: ReturnType<typeof useSearchParams>): ViewId {
   // default to the workbench.
   const hasWorkbenchParams = Boolean(
     searchParams.get("log") ||
-      searchParams.get("q") ||
-      searchParams.get("kind") ||
-      searchParams.get("status") ||
-      searchParams.get("provider"),
+    searchParams.get("q") ||
+    searchParams.get("kind") ||
+    searchParams.get("status") ||
+    searchParams.get("provider"),
   );
 
   return hasWorkbenchParams ? "workbench" : "conversations";
@@ -78,11 +78,16 @@ export default function AiLogsClient() {
         Skip to main content
       </a>
 
-      <main id="ai-logs-main" className="mx-auto flex max-w-[1280px] flex-col gap-5 overflow-x-hidden px-6 pb-10 pt-8">
+      <main
+        id="ai-logs-main"
+        className="mx-auto flex max-w-[1280px] flex-col gap-5 overflow-x-hidden px-6 pb-10 pt-8"
+      >
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="min-w-0">
             <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-            <h1 className="text-balance text-2xl font-semibold tracking-tight text-[color:var(--ink)]">AI Logs</h1>
+            <h1 className="text-balance text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+              AI Logs
+            </h1>
             <p className="text-sm text-[color:var(--ink-muted)]">
               Conversation-first view for coach chat, plus the original debug workbench.
             </p>

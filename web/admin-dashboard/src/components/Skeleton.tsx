@@ -108,13 +108,11 @@ interface SkeletonTableProps {
   className?: string;
 }
 
-export function SkeletonTable({
-  rows = 5,
-  columns = 5,
-  className = "",
-}: SkeletonTableProps) {
+export function SkeletonTable({ rows = 5, columns = 5, className = "" }: SkeletonTableProps) {
   return (
-    <div className={`overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] ${className}`}>
+    <div
+      className={`overflow-hidden rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] ${className}`}
+    >
       <div className="bg-[color:var(--surface-soft)] px-4 py-3">
         <div className="flex gap-4">
           {Array.from({ length: columns }).map((_, i) => (

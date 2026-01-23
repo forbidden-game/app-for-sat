@@ -55,7 +55,8 @@ serve(async (req) => {
   }
 
   let linkedAttemptId: string | null = null;
-  const linkedAttemptCandidate = typeof body.linked_attempt_id === "string" ? body.linked_attempt_id.trim() : "";
+  const linkedAttemptCandidate =
+    typeof body.linked_attempt_id === "string" ? body.linked_attempt_id.trim() : "";
   if (linkedAttemptCandidate) {
     const { data: attemptRow, error: attemptError } = await supabase
       .from("attempts")
@@ -77,7 +78,8 @@ serve(async (req) => {
   }
 
   let replyToMessageId: string | null = null;
-  const replyToMessageCandidate = typeof body.reply_to_message_id === "string" ? body.reply_to_message_id.trim() : "";
+  const replyToMessageCandidate =
+    typeof body.reply_to_message_id === "string" ? body.reply_to_message_id.trim() : "";
   if (replyToMessageCandidate) {
     const { data: replyRow, error: replyError } = await supabase
       .from("coach_thread_messages")

@@ -73,7 +73,10 @@ function makeJob(createdAt: string = new Date().toISOString()) {
   };
 }
 
-function buildSupabaseForAttempt(snapshot: Snapshot, attemptInsightSelect?: Array<{ data: any; error: any }>) {
+function buildSupabaseForAttempt(
+  snapshot: Snapshot,
+  attemptInsightSelect?: Array<{ data: any; error: any }>,
+) {
   return createSupabaseMock({
     rpc: {
       get_attempt_for_coach: [{ data: snapshot, error: null }],
@@ -83,13 +86,11 @@ function buildSupabaseForAttempt(snapshot: Snapshot, attemptInsightSelect?: Arra
       student_snapshots: { select: [{ data: null, error: null }] },
       student_reports: { select: [{ data: [], error: null }] },
       attempt_insights: {
-        select:
-          attemptInsightSelect ??
-          [
-            { data: [], error: null }, // recent_insights
-            { data: null, error: null }, // linked attempt insight
-            { data: { attempt_id: "attempt-1" }, error: null }, // hasInsight
-          ],
+        select: attemptInsightSelect ?? [
+          { data: [], error: null }, // recent_insights
+          { data: null, error: null }, // linked attempt insight
+          { data: { attempt_id: "attempt-1" }, error: null }, // hasInsight
+        ],
       },
     },
   });
@@ -134,19 +135,27 @@ describe("processAttemptInsightJob", () => {
 
   it("defers when step missing and job is fresh", async () => {
     const snapshot = makeSnapshot({
-      attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: false },
+      attempt: {
+        ...makeSnapshot().attempt,
+        student_selected_step_index: null,
+        student_selected_step_is_unknown: false,
+      },
     });
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
-    await expect(processAttemptInsightJob(supabase, agent as any, makeJob())).rejects.toBeInstanceOf(
-      JobDeferredError,
-    );
+    await expect(
+      processAttemptInsightJob(supabase, agent as any, makeJob()),
+    ).rejects.toBeInstanceOf(JobDeferredError);
   });
 
   it("proceeds when step missing but job is old", async () => {
     const snapshot = makeSnapshot({
-      attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: false },
+      attempt: {
+        ...makeSnapshot().attempt,
+        student_selected_step_index: null,
+        student_selected_step_is_unknown: false,
+      },
     });
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
@@ -159,7 +168,11 @@ describe("processAttemptInsightJob", () => {
 
   it("does not defer when step explicitly unknown", async () => {
     const snapshot = makeSnapshot({
-      attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: true },
+      attempt: {
+        ...makeSnapshot().attempt,
+        student_selected_step_index: null,
+        student_selected_step_is_unknown: true,
+      },
     });
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
@@ -188,19 +201,23 @@ describe("processAttemptInsightJob", () => {
 
     await processAttemptInsightJob(supabase, agent as any, makeJob());
 
-    expect(agent.prompts[0]).toContain("\"student_selected_step\": \"3\"");
+    expect(agent.prompts[0]).toContain('"student_selected_step": "3"');
   });
 
   it("includes unknown step in prompt", async () => {
     const snapshot = makeSnapshot({
-      attempt: { ...makeSnapshot().attempt, student_selected_step_index: null, student_selected_step_is_unknown: true },
+      attempt: {
+        ...makeSnapshot().attempt,
+        student_selected_step_index: null,
+        student_selected_step_is_unknown: true,
+      },
     });
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 
     await processAttemptInsightJob(supabase, agent as any, makeJob());
 
-    expect(agent.prompts[0]).toContain("\"student_selected_step\": \"unknown\"");
+    expect(agent.prompts[0]).toContain('"student_selected_step": "unknown"');
   });
 
   it("retries when insight missing after first prompt", async () => {
@@ -300,7 +317,9 @@ describe("processAttemptInsightJob", () => {
   });
 
   it("supports numeric answer_key", async () => {
-    const snapshot = makeSnapshot({ question: { ...makeSnapshot().question, answer_key: { correct: 42 } as any } });
+    const snapshot = makeSnapshot({
+      question: { ...makeSnapshot().question, answer_key: { correct: 42 } as any },
+    });
     const { supabase } = buildSupabaseForAttempt(snapshot);
     const agent = new StubAgent();
 

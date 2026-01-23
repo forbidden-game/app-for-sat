@@ -52,10 +52,7 @@ describe("Questions RLS", () => {
     it("cannot delete questions", async () => {
       if (skipIfNoSupabase()) return;
 
-      const { error } = await studentClient
-        .from("questions")
-        .delete()
-        .eq("subject", "Math");
+      const { error } = await studentClient.from("questions").delete().eq("subject", "Math");
 
       expect(error).toBeNull();
     });

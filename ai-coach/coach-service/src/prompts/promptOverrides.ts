@@ -24,7 +24,12 @@ export type PromptOverrides = {
 
 export function resolvePromptOverrides(
   kind: AiJobRow["kind"],
-  configs: Partial<Record<AiPromptKind, { systemPrompt: string; promptVersion: string; modelProvider: string; modelId: string }>> | null,
+  configs: Partial<
+    Record<
+      AiPromptKind,
+      { systemPrompt: string; promptVersion: string; modelProvider: string; modelId: string }
+    >
+  > | null,
 ): PromptOverrides | null {
   if (kind !== "attempt_insight" && kind !== "coach_reply" && kind !== "progress_report") {
     return null;

@@ -121,18 +121,16 @@ async function handleAttemptInsight(job: AIJob) {
     throw new Error("missing_attempt_id");
   }
 
-  const { data: snapshot, error: snapshotError } = await supabase.rpc(
-    "get_attempt_for_coach",
-    { p_attempt_id: attemptId },
-  );
+  const { data: snapshot, error: snapshotError } = await supabase.rpc("get_attempt_for_coach", {
+    p_attempt_id: attemptId,
+  });
 
   if (snapshotError || !snapshot) {
     throw new Error(`attempt_snapshot_failed:${snapshotError?.message ?? "missing"}`);
   }
 
   const draft = buildAttemptInsightDraft(snapshot as AttemptSnapshot);
-  const subject =
-    (snapshot as AttemptSnapshot).question.subject?.trim() || "general";
+  const subject = (snapshot as AttemptSnapshot).question.subject?.trim() || "general";
 
   const procedure = await ensureProcedure({
     subject,
@@ -183,9 +181,7 @@ async function handleAttemptInsight(job: AIJob) {
 async function handleCoachReply(job: AIJob) {
   const payload = job.payload ?? {};
   const userMessageId =
-    typeof payload.user_message_id === "string"
-      ? payload.user_message_id
-      : null;
+    typeof payload.user_message_id === "string" ? payload.user_message_id : null;
 
   if (!userMessageId) {
     throw new Error("missing_user_message_id");
@@ -201,8 +197,7 @@ async function handleCoachReply(job: AIJob) {
     throw new Error(`user_message_missing:${userMessageError?.message ?? "unknown"}`);
   }
 
-  const userText =
-    typeof userMessage.content?.text === "string" ? userMessage.content.text : "";
+  const userText = typeof userMessage.content?.text === "string" ? userMessage.content.text : "";
 
   const draft = buildCoachReplyDraft({
     userText,

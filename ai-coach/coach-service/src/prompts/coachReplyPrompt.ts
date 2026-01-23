@@ -12,7 +12,10 @@ export type CoachReplyTargetMessage = {
   reply_to?: CoachReplyToMessage | null;
 } | null;
 
-export function buildCoachReplyPrompt(ctx: CoachContextPacket, target?: CoachReplyTargetMessage): string {
+export function buildCoachReplyPrompt(
+  ctx: CoachContextPacket,
+  target?: CoachReplyTargetMessage,
+): string {
   return [
     "你是一位严格、精要的 SAT 全科老师。",
     "目标：用最短的文字帮助学生继续推进思考。",
@@ -46,14 +49,12 @@ export function buildCoachReplyPrompt(ctx: CoachContextPacket, target?: CoachRep
         ].join("\n")
       : "",
     ctx.linked_attempt_insight
-      ? ["关联错题洞察（JSON）：", JSON.stringify(ctx.linked_attempt_insight, null, 2), ""].join("\n")
+      ? ["关联错题洞察（JSON）：", JSON.stringify(ctx.linked_attempt_insight, null, 2), ""].join(
+          "\n",
+        )
       : "",
     target
-      ? [
-          "本次目标用户消息（必须回复这一条）：",
-          JSON.stringify(target, null, 2),
-          "",
-        ].join("\n")
+      ? ["本次目标用户消息（必须回复这一条）：", JSON.stringify(target, null, 2), ""].join("\n")
       : "",
     target ? "现在请以老师身份回复目标用户消息。" : "现在请以老师身份回复学生最后一条消息。",
   ]

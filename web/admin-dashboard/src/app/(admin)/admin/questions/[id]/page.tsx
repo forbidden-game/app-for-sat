@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
-import { getQuestion, updateQuestion, type Question, type QuestionInput, type OptionInput } from "../actions";
+import {
+  getQuestion,
+  updateQuestion,
+  type Question,
+  type QuestionInput,
+  type OptionInput,
+} from "../actions";
 import { QuestionForm } from "../QuestionForm";
 import { AssetUploader } from "../AssetUploader";
 
@@ -56,7 +62,13 @@ export default function EditQuestionPage() {
     }
 
     try {
-      const updated = await updateQuestion(session.access_token, questionId, input, options, tagIds);
+      const updated = await updateQuestion(
+        session.access_token,
+        questionId,
+        input,
+        options,
+        tagIds,
+      );
       setQuestion(updated);
       setError(null);
     } catch (err) {
@@ -104,10 +116,14 @@ export default function EditQuestionPage() {
     <main className="mx-auto flex max-w-[1280px] flex-col gap-6 px-6 pb-10 pt-8">
       <header>
         <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Edit Question</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+          Edit Question
+        </h1>
         <p className="text-sm text-[color:var(--ink-muted)]">
           ID:{" "}
-          <code className="rounded bg-[color:var(--surface-soft)] px-1 py-0.5 text-xs">{questionId}</code>
+          <code className="rounded bg-[color:var(--surface-soft)] px-1 py-0.5 text-xs">
+            {questionId}
+          </code>
         </p>
       </header>
 
@@ -121,7 +137,12 @@ export default function EditQuestionPage() {
       ) : null}
 
       <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
-        <QuestionForm initialData={question} onSubmit={handleSubmit} onCancel={handleCancel} saving={saving} />
+        <QuestionForm
+          initialData={question}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+          saving={saving}
+        />
       </div>
 
       <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">

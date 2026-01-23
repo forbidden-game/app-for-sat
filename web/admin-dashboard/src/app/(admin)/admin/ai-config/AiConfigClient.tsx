@@ -77,7 +77,10 @@ const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
   },
 };
 
-function normalizeForm(config: AiPromptConfig | undefined, kind: AiPromptKind): AiPromptConfigInput {
+function normalizeForm(
+  config: AiPromptConfig | undefined,
+  kind: AiPromptKind,
+): AiPromptConfigInput {
   if (!config) return { ...DEFAULT_PROMPTS[kind] };
   return {
     kind,
@@ -164,16 +167,21 @@ export default function AiConfigClient({
       try {
         const [data, providerStatuses] = await Promise.all([
           listAiPromptConfigs(session.access_token),
-          Promise.all(PROVIDERS.map((provider) => getAiProviderKeyStatus(session.access_token, provider))),
+          Promise.all(
+            PROVIDERS.map((provider) => getAiProviderKeyStatus(session.access_token, provider)),
+          ),
         ]);
         if (!active) return;
         setConfigs(data);
         setError(null);
         setKeyStatuses(
-          providerStatuses.reduce<Partial<Record<AiProvider, AiProviderKeyStatus>>>((acc, status) => {
-            acc[status.provider] = status;
-            return acc;
-          }, {}),
+          providerStatuses.reduce<Partial<Record<AiProvider, AiProviderKeyStatus>>>(
+            (acc, status) => {
+              acc[status.provider] = status;
+              return acc;
+            },
+            {},
+          ),
         );
         setKeyErrors({});
         setForms(buildForms(data));
@@ -277,7 +285,10 @@ export default function AiConfigClient({
         } catch (err) {
           setKeyErrors((prev) => ({
             ...prev,
-            [kind]: err instanceof Error ? err.message : `Failed to update ${PROVIDER_LABELS[provider]} key.`,
+            [kind]:
+              err instanceof Error
+                ? err.message
+                : `Failed to update ${PROVIDER_LABELS[provider]} key.`,
           }));
           return;
         }
@@ -303,7 +314,9 @@ export default function AiConfigClient({
 
     try {
       await archiveAiPromptConfig(session.access_token, configId);
-      setConfigs((prev) => prev.map((row) => (row.id === configId ? { ...row, status: "archived" } : row)));
+      setConfigs((prev) =>
+        prev.map((row) => (row.id === configId ? { ...row, status: "archived" } : row)),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to archive config.");
     } finally {
@@ -326,7 +339,9 @@ export default function AiConfigClient({
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-balance text-2xl font-semibold tracking-tight text-[color:var(--ink)]">AI Config</h1>
+          <h1 className="text-balance text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+            AI Config
+          </h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Control prompt versions and model routing for the AI coach pipeline.
           </p>
@@ -348,9 +363,12 @@ export default function AiConfigClient({
       <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-balance text-lg font-semibold tracking-tight text-[color:var(--ink)]">Providers & Routing</h2>
+            <h2 className="text-balance text-lg font-semibold tracking-tight text-[color:var(--ink)]">
+              Providers & Routing
+            </h2>
             <p className="text-sm text-[color:var(--ink-muted)]">
-              Pick a model per job type. Provider keys are optional and override stored or env defaults when supplied.
+              Pick a model per job type. Provider keys are optional and override stored or env
+              defaults when supplied.
             </p>
           </div>
           <Link
@@ -380,222 +398,230 @@ export default function AiConfigClient({
 
             return (
               <section
-                  key={kind}
-                  className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-medium text-[color:var(--ink-muted)]">
-                        {KIND_META[kind].label}
+                key={kind}
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-medium text-[color:var(--ink-muted)]">
+                      {KIND_META[kind].label}
+                    </p>
+                    <h2 className="text-balance text-lg font-semibold tracking-tight text-[color:var(--ink)]">
+                      {KIND_META[kind].description}
+                    </h2>
+                    {published ? (
+                      <p className="mt-2 break-words text-xs text-[color:var(--ink-muted)]">
+                        Published: {published.prompt_version} · {published.model_provider}/
+                        {published.model_id}
                       </p>
-                      <h2 className="text-balance text-lg font-semibold tracking-tight text-[color:var(--ink)]">
-                        {KIND_META[kind].description}
-                      </h2>
-                      {published ? (
-                        <p className="mt-2 break-words text-xs text-[color:var(--ink-muted)]">
-                          Published: {published.prompt_version} · {published.model_provider}/{published.model_id}
-                        </p>
-                      ) : (
-                        <p className="mt-2 text-xs text-[color:var(--danger-strong)]">No published config yet.</p>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handlePublish(kind)}
-                      disabled={savingKind === kind}
-                      className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
-                    >
-                      {savingKind === kind ? "Publishing…" : "Publish New Version"}
-                    </button>
+                    ) : (
+                      <p className="mt-2 text-xs text-[color:var(--danger-strong)]">
+                        No published config yet.
+                      </p>
+                    )}
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handlePublish(kind)}
+                    disabled={savingKind === kind}
+                    className="rounded-full bg-[color:var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[color:var(--accent-strong)] disabled:opacity-60"
+                  >
+                    {savingKind === kind ? "Publishing…" : "Publish New Version"}
+                  </button>
+                </div>
 
-                  <div className="mt-6 grid gap-4">
-                    <div className="grid gap-3 md:grid-cols-3">
-                      <label
-                        className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
-                        htmlFor={`${kind}-version`}
-                      >
-                        Prompt version
-                        <input
-                          id={`${kind}-version`}
-                          name={`${kind}-version`}
-                          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                          value={forms[kind].prompt_version}
-                          onChange={(e) => updateForm(kind, { prompt_version: e.target.value })}
-                          placeholder="ai-coach-insight-v3…"
-                          autoComplete="off"
-                        />
-                      </label>
-                      <label
-                        className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
-                        htmlFor={`${kind}-provider`}
-                      >
-                        Model provider
-                        <select
-                          id={`${kind}-provider`}
-                          name={`${kind}-provider`}
-                          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                          value={forms[kind].model_provider}
-                          onChange={(e) =>
-                            handleProviderChange(kind, e.target.value as "minimax" | "openai" | "openrouter")
-                          }
-                        >
-                          <option value="minimax">MiniMax</option>
-                          <option value="openai">OpenAI</option>
-                          <option value="openrouter">OpenRouter</option>
-                        </select>
-                      </label>
-                      <label
-                        className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
-                        htmlFor={`${kind}-model`}
-                      >
-                        Model ID
-                        <input
-                          id={`${kind}-model`}
-                          name={`${kind}-model`}
-                          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                          value={forms[kind].model_id}
-                          list={modelListId}
-                          onChange={(e) => {
-                            updateForm(kind, { model_id: e.target.value });
-                            if (forms[kind].model_provider === "openrouter") {
-                              resetKeyInput(kind);
-                            }
-                          }}
-                          placeholder="gpt-5.2…"
-                          autoComplete="off"
-                        />
-                        {modelListId ? (
-                          <datalist id={modelListId}>
-                            {modelSuggestions.map((modelId) => (
-                              <option key={modelId} value={modelId} />
-                            ))}
-                          </datalist>
-                        ) : null}
-                        {modelSuggestions.length > 1 ? (
-                          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-muted)]">
-                            <span className="text-[11px] font-medium">Suggested</span>
-                            {modelSuggestions.map((modelId) => (
-                              <button
-                                key={modelId}
-                                type="button"
-                                onClick={() => {
-                                  updateForm(kind, { model_id: modelId });
-                                  if (forms[kind].model_provider === "openrouter") {
-                                    resetKeyInput(kind);
-                                  }
-                                }}
-                                className={`rounded-full border px-3 py-1 font-mono text-[11px] transition ${
-                                  forms[kind].model_id === modelId
-                                    ? "border-[color:var(--accent)] text-[color:var(--ink)]"
-                                    : "border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
-                                }`}
-                              >
-                                {modelId}
-                              </button>
-                            ))}
-                          </div>
-                        ) : null}
-                      </label>
-                    </div>
-
-                    <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                          <p className="text-xs font-medium text-[color:var(--ink-muted)]">
-                            {providerLabel} API Key
-                          </p>
-                          <p className="text-xs text-[color:var(--ink-muted)]">{keyHint}</p>
-                        </div>
-                        <div className="text-xs text-[color:var(--ink-muted)]">{keyStatusLabel}</div>
-                      </div>
-                      <label
-                        className="mt-3 grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
-                        htmlFor={`${kind}-${provider}-key`}
-                      >
-                        {providerLabel} API key
-                        <input
-                          id={`${kind}-${provider}-key`}
-                          name={`${kind}-${provider}-key`}
-                          type="password"
-                          className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                          value={keyValue}
-                          onChange={(e) => updateKeyInput(kind, e.target.value)}
-                          placeholder="sk-…"
-                          autoComplete="off"
-                        />
-                      </label>
-                      {keyErrors[kind] ? (
-                        <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
-                          {keyErrors[kind]}
-                        </p>
-                      ) : null}
-                      {keyStatus?.updatedAt ? (
-                        <p className="mt-2 text-xs text-[color:var(--ink-muted)]">Updated {keyStatus.updatedAt}</p>
-                      ) : null}
-                    </div>
-
+                <div className="mt-6 grid gap-4">
+                  <div className="grid gap-3 md:grid-cols-3">
                     <label
-                      className="grid gap-2 text-xs font-medium text-[color:var(--ink-muted)]"
-                      htmlFor={`${kind}-prompt`}
+                      className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
+                      htmlFor={`${kind}-version`}
                     >
-                      System prompt
-                      <textarea
-                        id={`${kind}-prompt`}
-                        name={`${kind}-prompt`}
-                        className="min-h-[120px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
-                        value={forms[kind].system_prompt}
-                        onChange={(e) => updateForm(kind, { system_prompt: e.target.value })}
+                      Prompt version
+                      <input
+                        id={`${kind}-version`}
+                        name={`${kind}-version`}
+                        className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                        value={forms[kind].prompt_version}
+                        onChange={(e) => updateForm(kind, { prompt_version: e.target.value })}
+                        placeholder="ai-coach-insight-v3…"
                         autoComplete="off"
                       />
                     </label>
+                    <label
+                      className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
+                      htmlFor={`${kind}-provider`}
+                    >
+                      Model provider
+                      <select
+                        id={`${kind}-provider`}
+                        name={`${kind}-provider`}
+                        className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                        value={forms[kind].model_provider}
+                        onChange={(e) =>
+                          handleProviderChange(
+                            kind,
+                            e.target.value as "minimax" | "openai" | "openrouter",
+                          )
+                        }
+                      >
+                        <option value="minimax">MiniMax</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="openrouter">OpenRouter</option>
+                      </select>
+                    </label>
+                    <label
+                      className="grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
+                      htmlFor={`${kind}-model`}
+                    >
+                      Model ID
+                      <input
+                        id={`${kind}-model`}
+                        name={`${kind}-model`}
+                        className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                        value={forms[kind].model_id}
+                        list={modelListId}
+                        onChange={(e) => {
+                          updateForm(kind, { model_id: e.target.value });
+                          if (forms[kind].model_provider === "openrouter") {
+                            resetKeyInput(kind);
+                          }
+                        }}
+                        placeholder="gpt-5.2…"
+                        autoComplete="off"
+                      />
+                      {modelListId ? (
+                        <datalist id={modelListId}>
+                          {modelSuggestions.map((modelId) => (
+                            <option key={modelId} value={modelId} />
+                          ))}
+                        </datalist>
+                      ) : null}
+                      {modelSuggestions.length > 1 ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[color:var(--ink-muted)]">
+                          <span className="text-[11px] font-medium">Suggested</span>
+                          {modelSuggestions.map((modelId) => (
+                            <button
+                              key={modelId}
+                              type="button"
+                              onClick={() => {
+                                updateForm(kind, { model_id: modelId });
+                                if (forms[kind].model_provider === "openrouter") {
+                                  resetKeyInput(kind);
+                                }
+                              }}
+                              className={`rounded-full border px-3 py-1 font-mono text-[11px] transition ${
+                                forms[kind].model_id === modelId
+                                  ? "border-[color:var(--accent)] text-[color:var(--ink)]"
+                                  : "border-[color:var(--border)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
+                              }`}
+                            >
+                              {modelId}
+                            </button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </label>
                   </div>
 
-                  {history.length > 0 ? (
-                    <div className="mt-6 border-t border-[color:var(--border)] pt-4">
-                      <p className="text-xs font-medium text-[color:var(--ink-muted)]">
-                        Recent Versions
-                      </p>
-                      <div className="mt-2 space-y-2">
-                        {history.slice(0, 3).map((row) => (
-                          <div
-                            key={row.id}
-                            className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs"
-                          >
-                            <div className="min-w-0 break-words text-[color:var(--ink-muted)]">
-                              {row.prompt_version} · {row.model_provider}/{row.model_id}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
-                                  row.status === "published"
-                                    ? "bg-[color:var(--accent-strong)]"
-                                    : row.status === "archived"
-                                      ? "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
-                                      : "bg-[color:var(--danger-strong)]"
-                                }`}
-                              >
-                                {row.status}
-                              </span>
-                              {row.status !== "archived" ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleArchive(row.id)}
-                                  disabled={archivingId === row.id}
-                                  className="text-[11px] font-medium text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
-                                >
-                                  {archivingId === row.id ? "Archiving…" : "Archive"}
-                                </button>
-                              ) : null}
-                            </div>
-                          </div>
-                        ))}
+                  <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p className="text-xs font-medium text-[color:var(--ink-muted)]">
+                          {providerLabel} API Key
+                        </p>
+                        <p className="text-xs text-[color:var(--ink-muted)]">{keyHint}</p>
                       </div>
+                      <div className="text-xs text-[color:var(--ink-muted)]">{keyStatusLabel}</div>
                     </div>
-                  ) : null}
-                </section>
-              );
-            })}
+                    <label
+                      className="mt-3 grid gap-1 text-xs font-medium text-[color:var(--ink-muted)]"
+                      htmlFor={`${kind}-${provider}-key`}
+                    >
+                      {providerLabel} API key
+                      <input
+                        id={`${kind}-${provider}-key`}
+                        name={`${kind}-${provider}-key`}
+                        type="password"
+                        className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                        value={keyValue}
+                        onChange={(e) => updateKeyInput(kind, e.target.value)}
+                        placeholder="sk-…"
+                        autoComplete="off"
+                      />
+                    </label>
+                    {keyErrors[kind] ? (
+                      <p className="mt-2 text-xs text-[color:var(--danger-strong)]" role="alert">
+                        {keyErrors[kind]}
+                      </p>
+                    ) : null}
+                    {keyStatus?.updatedAt ? (
+                      <p className="mt-2 text-xs text-[color:var(--ink-muted)]">
+                        Updated {keyStatus.updatedAt}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <label
+                    className="grid gap-2 text-xs font-medium text-[color:var(--ink-muted)]"
+                    htmlFor={`${kind}-prompt`}
+                  >
+                    System prompt
+                    <textarea
+                      id={`${kind}-prompt`}
+                      name={`${kind}-prompt`}
+                      className="min-h-[120px] rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--ink)]"
+                      value={forms[kind].system_prompt}
+                      onChange={(e) => updateForm(kind, { system_prompt: e.target.value })}
+                      autoComplete="off"
+                    />
+                  </label>
+                </div>
+
+                {history.length > 0 ? (
+                  <div className="mt-6 border-t border-[color:var(--border)] pt-4">
+                    <p className="text-xs font-medium text-[color:var(--ink-muted)]">
+                      Recent Versions
+                    </p>
+                    <div className="mt-2 space-y-2">
+                      {history.slice(0, 3).map((row) => (
+                        <div
+                          key={row.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2 text-xs"
+                        >
+                          <div className="min-w-0 break-words text-[color:var(--ink-muted)]">
+                            {row.prompt_version} · {row.model_provider}/{row.model_id}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-medium text-white ${
+                                row.status === "published"
+                                  ? "bg-[color:var(--accent-strong)]"
+                                  : row.status === "archived"
+                                    ? "bg-[color:var(--surface-strong)] text-[color:var(--ink-muted)]"
+                                    : "bg-[color:var(--danger-strong)]"
+                              }`}
+                            >
+                              {row.status}
+                            </span>
+                            {row.status !== "archived" ? (
+                              <button
+                                type="button"
+                                onClick={() => handleArchive(row.id)}
+                                disabled={archivingId === row.id}
+                                className="text-[11px] font-medium text-[color:var(--ink-muted)] hover:text-[color:var(--ink)]"
+                              >
+                                {archivingId === row.id ? "Archiving…" : "Archive"}
+                              </button>
+                            ) : null}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </section>
+            );
+          })}
         </div>
       </section>
     </main>

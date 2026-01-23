@@ -26,7 +26,9 @@ export default function TagsPage() {
   const [form, setForm] = useState<TagInput>({ ...EMPTY_FORM });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>(() => searchParams.get("category") ?? "");
+  const [filterCategory, setFilterCategory] = useState<string>(
+    () => searchParams.get("category") ?? "",
+  );
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState<"create" | "edit">("create");
   const [selectedTag, setSelectedTag] = useState<Tag | null>(null);
@@ -172,7 +174,9 @@ export default function TagsPage() {
 
   async function handleDelete(tag: Tag) {
     if (!supabase) return;
-    const confirmed = window.confirm(`Delete tag "${tag.name}"? Questions using this tag will be untagged.`);
+    const confirmed = window.confirm(
+      `Delete tag "${tag.name}"? Questions using this tag will be untagged.`,
+    );
     if (!confirmed) return;
 
     setSaving(true);
@@ -218,13 +222,22 @@ export default function TagsPage() {
 
         <section className="flex flex-col gap-6">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+            <div
+              key={i}
+              className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]"
+            >
               <div className="border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
                 <Skeleton variant="text" width="80px" />
               </div>
               <div className="flex flex-wrap gap-2 p-4">
                 {Array.from({ length: 6 }).map((_, j) => (
-                  <Skeleton key={j} variant="rectangular" width="80px" height="28px" className="rounded-full" />
+                  <Skeleton
+                    key={j}
+                    variant="rectangular"
+                    width="80px"
+                    height="28px"
+                    className="rounded-full"
+                  />
                 ))}
               </div>
             </div>
@@ -250,7 +263,9 @@ export default function TagsPage() {
         <div>
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
           <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Tags</h1>
-          <p className="text-sm text-[color:var(--ink-muted)]">Manage tags for categorizing questions.</p>
+          <p className="text-sm text-[color:var(--ink-muted)]">
+            Manage tags for categorizing questions.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <select
@@ -266,9 +281,7 @@ export default function TagsPage() {
               </option>
             ))}
           </select>
-          <LoadingButton onClick={openCreateDrawer}>
-            Create Tag
-          </LoadingButton>
+          <LoadingButton onClick={openCreateDrawer}>Create Tag</LoadingButton>
         </div>
       </header>
 
@@ -295,9 +308,14 @@ export default function TagsPage() {
           />
         ) : (
           Object.entries(groupedTags).map(([category, categoryTags]) => (
-            <div key={category} className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]">
+            <div
+              key={category}
+              className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)]"
+            >
               <div className="border-b border-[color:var(--border)] bg-[color:var(--surface-soft)] px-4 py-3">
-                <h3 className="text-sm font-medium text-[color:var(--ink)] capitalize">{category}</h3>
+                <h3 className="text-sm font-medium text-[color:var(--ink)] capitalize">
+                  {category}
+                </h3>
               </div>
               <div className="flex flex-wrap gap-2 p-4">
                 {categoryTags.map((tag) => (
@@ -357,7 +375,11 @@ export default function TagsPage() {
 
       {drawerOpen ? (
         <div className="fixed inset-0 z-40 flex justify-end">
-          <button className="absolute inset-0 bg-black/30" onClick={closeDrawer} aria-label="Close drawer" />
+          <button
+            className="absolute inset-0 bg-black/30"
+            onClick={closeDrawer}
+            aria-label="Close drawer"
+          />
           <aside className="relative z-10 flex h-full w-full max-w-md flex-col gap-4 overflow-auto overscroll-contain bg-[color:var(--surface)] p-6 shadow-2xl">
             <div className="flex items-center justify-between">
               <div>
@@ -418,18 +440,10 @@ export default function TagsPage() {
                 </select>
               </label>
               <div className="flex flex-wrap gap-2 pt-2">
-                <LoadingButton
-                  loading={saving}
-                  disabled={!form.name.trim()}
-                  onClick={handleSave}
-                >
+                <LoadingButton loading={saving} disabled={!form.name.trim()} onClick={handleSave}>
                   {drawerMode === "edit" ? "Save Changes" : "Create Tag"}
                 </LoadingButton>
-                <LoadingButton
-                  variant="secondary"
-                  onClick={closeDrawer}
-                  disabled={saving}
-                >
+                <LoadingButton variant="secondary" onClick={closeDrawer} disabled={saving}>
                   Cancel
                 </LoadingButton>
               </div>

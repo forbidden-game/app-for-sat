@@ -24,18 +24,14 @@ export default function StudentsPage() {
           >
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-semibold text-zinc-900">
-                  {student.name}
-                </p>
+                <p className="text-sm font-semibold text-zinc-900">{student.name}</p>
                 <p className="text-xs text-zinc-500">Grade {student.grade}</p>
               </div>
               <span className="rounded-full bg-zinc-900 px-3 py-1 text-xs font-semibold text-white">
                 {formatPercent(student.accuracy)}
               </span>
             </div>
-            <div className="mt-4 text-xs text-zinc-500">
-              Last 7 days accuracy
-            </div>
+            <div className="mt-4 text-xs text-zinc-500">Last 7 days accuracy</div>
           </Link>
         ))}
       </div>

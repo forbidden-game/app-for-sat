@@ -26,9 +26,15 @@ describe("processSnapshotRefreshJob", () => {
 
     expect(calls.rpc).toHaveLength(3);
     expect(calls.rpc[0]?.args.p_end).toBe(periodEnd.toISOString());
-    expect(calls.rpc[0]?.args.p_start).toBe(new Date(periodEnd.getTime() - 7 * DAY_MS).toISOString());
-    expect(calls.rpc[1]?.args.p_start).toBe(new Date(periodEnd.getTime() - 30 * DAY_MS).toISOString());
-    expect(calls.rpc[2]?.args.p_start).toBe(new Date(periodEnd.getTime() - 90 * DAY_MS).toISOString());
+    expect(calls.rpc[0]?.args.p_start).toBe(
+      new Date(periodEnd.getTime() - 7 * DAY_MS).toISOString(),
+    );
+    expect(calls.rpc[1]?.args.p_start).toBe(
+      new Date(periodEnd.getTime() - 30 * DAY_MS).toISOString(),
+    );
+    expect(calls.rpc[2]?.args.p_start).toBe(
+      new Date(periodEnd.getTime() - 90 * DAY_MS).toISOString(),
+    );
   });
 
   it("defaults to now when period_end is invalid", async () => {
@@ -67,7 +73,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.weak_procedures_top).toEqual(stats30.mistakes.top_procedures);
     expect(payload.weak_steps_top).toEqual(stats30.mistakes.top_steps);
     expect(payload.common_error_modes_top).toEqual(stats30.mistakes.top_error_modes);
@@ -81,7 +88,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     const trend = payload.recent_trend as Record<string, unknown>;
     expect(trend.window_7d).toEqual(stats7);
     expect(trend.window_30d).toEqual(stats30);
@@ -93,7 +101,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.subject_scope).toBe("all");
   });
 
@@ -103,7 +112,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     const updatedAt = Date.parse(payload.updated_at as string);
     expect(Number.isFinite(updatedAt)).toBe(true);
     expect(updatedAt).toBeGreaterThanOrEqual(before - 1000);
@@ -114,7 +124,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toBeNull();
   });
 
@@ -130,7 +141,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toContain("函数");
     expect(payload.notes).toContain("几何");
   });
@@ -147,7 +159,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toContain("粗心");
     expect(payload.notes).toContain("计算");
   });
@@ -164,7 +177,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toContain("函数");
     expect(payload.notes).toContain("粗心");
   });
@@ -181,7 +195,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toBeNull();
   });
 
@@ -197,7 +212,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toBeNull();
   });
 
@@ -213,17 +229,21 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toContain("方程");
   });
 
   it("handles empty top arrays", async () => {
-    const stats30 = makeStats({ mistakes: { top_procedures: [], top_steps: [], top_error_modes: [] } });
+    const stats30 = makeStats({
+      mistakes: { top_procedures: [], top_steps: [], top_error_modes: [] },
+    });
     const { supabase, calls } = setup(makeStats(), stats30, makeStats());
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.notes).toBeNull();
   });
 
@@ -234,15 +254,19 @@ describe("processSnapshotRefreshJob", () => {
       },
     });
 
-    await expect(processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z")).rejects.toThrow(
-      /rpc_failed/,
-    );
+    await expect(
+      processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z"),
+    ).rejects.toThrow(/rpc_failed/);
   });
 
   it("throws when upsert fails", async () => {
     const { supabase } = createSupabaseMock({
       rpc: {
-        get_student_period_stats: [{ data: makeStats() }, { data: makeStats() }, { data: makeStats() }],
+        get_student_period_stats: [
+          { data: makeStats() },
+          { data: makeStats() },
+          { data: makeStats() },
+        ],
       },
       from: {
         student_snapshots: {
@@ -251,9 +275,9 @@ describe("processSnapshotRefreshJob", () => {
       },
     });
 
-    await expect(processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z")).rejects.toThrow(
-      /upsert_failed/,
-    );
+    await expect(
+      processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z"),
+    ).rejects.toThrow(/upsert_failed/);
   });
 
   it("uses 7 day window correctly", async () => {
@@ -262,7 +286,9 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, periodEnd.toISOString());
 
-    expect(calls.rpc[0]?.args.p_start).toBe(new Date(periodEnd.getTime() - 7 * DAY_MS).toISOString());
+    expect(calls.rpc[0]?.args.p_start).toBe(
+      new Date(periodEnd.getTime() - 7 * DAY_MS).toISOString(),
+    );
   });
 
   it("uses 30 day window correctly", async () => {
@@ -271,7 +297,9 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, periodEnd.toISOString());
 
-    expect(calls.rpc[1]?.args.p_start).toBe(new Date(periodEnd.getTime() - 30 * DAY_MS).toISOString());
+    expect(calls.rpc[1]?.args.p_start).toBe(
+      new Date(periodEnd.getTime() - 30 * DAY_MS).toISOString(),
+    );
   });
 
   it("uses 90 day window correctly", async () => {
@@ -280,7 +308,9 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, periodEnd.toISOString());
 
-    expect(calls.rpc[2]?.args.p_start).toBe(new Date(periodEnd.getTime() - 90 * DAY_MS).toISOString());
+    expect(calls.rpc[2]?.args.p_start).toBe(
+      new Date(periodEnd.getTime() - 90 * DAY_MS).toISOString(),
+    );
   });
 
   it("keeps student_id in snapshot payload", async () => {
@@ -288,7 +318,8 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.student_id).toBe(studentId);
   });
 
@@ -297,17 +328,21 @@ describe("processSnapshotRefreshJob", () => {
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.subject_scope).toBe("all");
   });
 
   it("handles missing stats fields gracefully", async () => {
-    const stats30 = makeStats({ mistakes: { top_procedures: [], top_steps: [], top_error_modes: [] } });
+    const stats30 = makeStats({
+      mistakes: { top_procedures: [], top_steps: [], top_error_modes: [] },
+    });
     const { supabase, calls } = setup(makeStats(), stats30, makeStats());
 
     await processSnapshotRefreshJob(supabase, studentId, "2025-01-08T00:00:00.000Z");
 
-    const payload = calls.from.find((call) => call.table === "student_snapshots")?.payload as Record<string, unknown>;
+    const payload = calls.from.find((call) => call.table === "student_snapshots")
+      ?.payload as Record<string, unknown>;
     expect(payload.weak_procedures_top).toEqual([]);
     expect(payload.common_error_modes_top).toEqual([]);
   });

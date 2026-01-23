@@ -1,18 +1,22 @@
 # SAT Math `error_mode_enum`（MVP）
+
 日期：2026-01-14
 
 北极星：稳定枚举支撑“每个学生一个 AI 老师”的长期画像与可追问讲解。
 
 目标：提供一个**稳定、可枚举**的错误模式集合，用于：
+
 - 相似错误的细分（加权证据）
 - 重点讲解的“对比你上次错法”
 - 长期快照统计
 
 规则：
+
 - 必须包含 `unknown`。
 - AI 可补充更细描述到 `error_mode_detail`，但不要随意扩枚举。
 
 ## 枚举建议（MVP 版）
+
 - `unknown`
 - `setup_equation`：未正确建模/列式
 - `translate_words_to_math`：文字到数学翻译错误（条件/单位/关系）
@@ -33,6 +37,7 @@
 - `time_pressure_guess`：时间压力导致的跳步/猜测
 
 ## 与 step 的关系
+
 - `error_step_index` 用于描述“卡在哪一步”（主判定）。
 - `error_mode_enum` 用于描述“具体怎么错”（细分/加权）。
 

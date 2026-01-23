@@ -182,8 +182,10 @@ export async function processProgressReportJob(
   try {
     const apiKey = apiKeyResolver
       ? await apiKeyResolver(model.provider)
-      : (await getProviderApiKey(supabase, model.provider)) ??
-        (model.provider === "minimax" ? config.minimaxApiKey ?? undefined : getEnvApiKey(model.provider));
+      : ((await getProviderApiKey(supabase, model.provider)) ??
+        (model.provider === "minimax"
+          ? (config.minimaxApiKey ?? undefined)
+          : getEnvApiKey(model.provider)));
 
     if (model.provider === "minimax" && !apiKey) {
       throw new Error("missing_minimax_api_key");

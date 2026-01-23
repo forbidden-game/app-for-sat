@@ -66,7 +66,9 @@ export default function AdminOverviewClient({
         }
       } catch (loadError) {
         if (active) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load admin overview.");
+          setError(
+            loadError instanceof Error ? loadError.message : "Failed to load admin overview.",
+          );
         }
       } finally {
         if (active) {
@@ -87,16 +89,16 @@ export default function AdminOverviewClient({
   const recentUsers = overview?.recent_users ?? [];
 
   // Sortable hooks for tables
-  const { sortedData: sortedQuestionBanks, handleSort: handleBankSort, sortConfig: bankSortConfig } = useSortable(
-    questionBanks,
-    "title",
-    "asc",
-  );
-  const { sortedData: sortedRecentUsers, handleSort: handleUserSort, sortConfig: userSortConfig } = useSortable(
-    recentUsers,
-    "created_at",
-    "desc",
-  );
+  const {
+    sortedData: sortedQuestionBanks,
+    handleSort: handleBankSort,
+    sortConfig: bankSortConfig,
+  } = useSortable(questionBanks, "title", "asc");
+  const {
+    sortedData: sortedRecentUsers,
+    handleSort: handleUserSort,
+    sortConfig: userSortConfig,
+  } = useSortable(recentUsers, "created_at", "desc");
 
   if (loading) {
     return (
@@ -164,7 +166,9 @@ export default function AdminOverviewClient({
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <p className="text-xs font-medium text-[color:var(--ink-muted)]">Admin Console</p>
-          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">Operations Overview</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
+            Operations Overview
+          </h1>
           <p className="text-sm text-[color:var(--ink-muted)]">
             Signed in as{" "}
             <span className="font-medium text-[color:var(--ink)]">
@@ -183,7 +187,7 @@ export default function AdminOverviewClient({
           const mockTrends: Record<string, number> = {
             "Total Users": 12,
             "Active Today": 8,
-            "Questions": 5,
+            Questions: 5,
             "Practice Sessions": -3,
           };
           const trend = mockTrends[metric.label];
@@ -203,7 +207,9 @@ export default function AdminOverviewClient({
 
       <section id="content" className="flex flex-col gap-4">
         <div className="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
-          <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">Question Banks</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">
+            Question Banks
+          </h2>
           <Link
             className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-3 py-1.5 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)]"
             href="/admin/banks"
@@ -216,7 +222,12 @@ export default function AdminOverviewClient({
             <table className="w-full text-left text-sm text-[color:var(--ink-muted)] min-w-[600px]">
               <thead className="bg-[color:var(--surface-soft)] text-xs font-medium text-[color:var(--ink-muted)]">
                 <tr>
-                  <th scope="col" className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[140px]">Title</th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 sticky left-0 bg-[color:var(--surface-soft)] min-w-[140px]"
+                  >
+                    Title
+                  </th>
                   <th
                     scope="col"
                     className="px-4 py-3 min-w-[100px] cursor-pointer select-none hover:text-[color:var(--ink)]"
@@ -244,7 +255,10 @@ export default function AdminOverviewClient({
                   >
                     <span className="inline-flex items-center gap-1 justify-center">
                       Limit
-                      {renderSortIcon(bankSortConfig.column === "question_limit", bankSortConfig.direction)}
+                      {renderSortIcon(
+                        bankSortConfig.column === "question_limit",
+                        bankSortConfig.direction,
+                      )}
                     </span>
                   </th>
                   <th
@@ -254,7 +268,10 @@ export default function AdminOverviewClient({
                   >
                     <span className="inline-flex items-center gap-1">
                       Status
-                      {renderSortIcon(bankSortConfig.column === "is_active", bankSortConfig.direction)}
+                      {renderSortIcon(
+                        bankSortConfig.column === "is_active",
+                        bankSortConfig.direction,
+                      )}
                     </span>
                   </th>
                 </tr>
@@ -262,16 +279,14 @@ export default function AdminOverviewClient({
               <tbody>
                 {sortedQuestionBanks.length === 0 ? (
                   <tr>
-                    <td
-                      colSpan={5}
-                    >
+                    <td colSpan={5}>
                       <EmptyState
                         title="No question banks yet"
                         description="Create your first question bank to start managing practice content."
                         icon="banks"
                         action={{
                           label: "Create Bank",
-                          onClick: () => window.location.href = "/admin/banks",
+                          onClick: () => (window.location.href = "/admin/banks"),
                           variant: "primary",
                         }}
                         className="m-4"
@@ -280,10 +295,19 @@ export default function AdminOverviewClient({
                   </tr>
                 ) : (
                   sortedQuestionBanks.map((bank) => (
-                    <tr key={bank.id} className="border-t border-[color:var(--border)] transition-colors hover:bg-[color:var(--surface-soft)]">
-                      <td className="px-4 py-3 font-medium text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">{bank.title}</td>
-                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.slug}</td>
-                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{bank.mode}</td>
+                    <tr
+                      key={bank.id}
+                      className="border-t border-[color:var(--border)] transition-colors hover:bg-[color:var(--surface-soft)]"
+                    >
+                      <td className="px-4 py-3 font-medium text-[color:var(--ink)] sticky left-0 bg-[color:var(--surface)]">
+                        {bank.title}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                        {bank.slug}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                        {bank.mode}
+                      </td>
                       <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                         {bank.question_limit ?? "N/A"}
                       </td>
@@ -309,7 +333,9 @@ export default function AdminOverviewClient({
 
       <section id="users" className="flex flex-col gap-4">
         <div className="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
-          <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">Recent Users</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[color:var(--ink)]">
+            Recent Users
+          </h2>
           <span className="text-xs text-[color:var(--ink-muted)]">Latest 12 profiles</span>
         </div>
         <div className="overflow-hidden rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface)]">
@@ -323,7 +349,10 @@ export default function AdminOverviewClient({
                 >
                   <span className="inline-flex items-center gap-1">
                     Name
-                    {renderSortIcon(userSortConfig.column === "display_name", userSortConfig.direction)}
+                    {renderSortIcon(
+                      userSortConfig.column === "display_name",
+                      userSortConfig.direction,
+                    )}
                   </span>
                 </th>
                 <th
@@ -343,7 +372,10 @@ export default function AdminOverviewClient({
                 >
                   <span className="inline-flex items-center gap-1">
                     Created
-                    {renderSortIcon(userSortConfig.column === "created_at", userSortConfig.direction)}
+                    {renderSortIcon(
+                      userSortConfig.column === "created_at",
+                      userSortConfig.direction,
+                    )}
                   </span>
                 </th>
               </tr>
@@ -351,9 +383,7 @@ export default function AdminOverviewClient({
             <tbody>
               {sortedRecentUsers.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={3}
-                  >
+                  <td colSpan={3}>
                     <EmptyState
                       title="No users yet"
                       description="Users will appear here once students sign up for the platform."
@@ -368,7 +398,9 @@ export default function AdminOverviewClient({
                     <td className="px-4 py-3 font-medium text-[color:var(--ink)]">
                       {user.display_name ?? "Unnamed"}
                     </td>
-                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">{user.role ?? "unknown"}</td>
+                    <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
+                      {user.role ?? "unknown"}
+                    </td>
                     <td className="px-4 py-3 text-xs text-[color:var(--ink-muted)]">
                       {formatDateTime(user.created_at)}
                     </td>

@@ -1,4 +1,5 @@
 # Data Model（MVP + v2）
+
 日期：2026-01-22
 
 北极星：这些结构用于支撑“每个学生一个 AI 老师”的长期记忆与错题追问。
@@ -6,9 +7,11 @@
 本页描述在现有 Supabase schema（`attempts/questions/tags/sessions` 等）基础上，新增的核心数据结构与实际工作字段。
 
 ## 1) `public.procedures`
+
 AI 自增长的“解题套路库”（procedure taxonomy）。
 
 字段建议：
+
 - `id` uuid PK default `gen_random_uuid()`
 - `subject` text（MVP: `sat_math`）
 - `name` text（短名，如 "Linear equation isolation"）
@@ -23,13 +26,16 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `updated_at` timestamptz default now()
 
 索引建议：
+
 - `(subject, status)`
 - `name`（可加 trigram）
 
 ## 2) `public.attempt_insights`
+
 每次作答的结构化诊断结果（用于检索、统计、长期追踪）。
 
 字段建议：
+
 - `attempt_id` uuid PK FK -> `attempts.id`
 - `student_id` uuid FK -> `profiles.id`
 - `question_id` uuid FK -> `questions.id`
@@ -50,9 +56,11 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `created_at` timestamptz default now()
 
 ## 3) `public.student_snapshots`
+
 学生长期状态快照（用于对话注入）。
 
 字段建议：
+
 - `student_id` uuid PK FK -> `profiles.id`
 - `subject_scope` text
 - `weak_procedures_top` jsonb
@@ -63,9 +71,11 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `updated_at` timestamptz default now()
 
 ## 4) `public.coach_thread_messages`
+
 学生“全科老师总线程”的对话记录（跨题）。
 
 字段建议：
+
 - `id` uuid PK default `gen_random_uuid()`
 - `student_id` uuid FK -> `profiles.id`
 - `role` text enum: `user|assistant|tool`
@@ -75,9 +85,11 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `created_at` timestamptz default now()
 
 ## 5) `public.student_reports`
+
 阶段报告（周报/月报）。
 
 字段建议：
+
 - `id` uuid PK default `gen_random_uuid()`
 - `student_id` uuid not null
 - `period_kind` text not null (weekly|monthly)
@@ -96,9 +108,11 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 约束：unique(student_id, period_key)
 
 ## 6) `public.ai_jobs`
+
 异步任务表（MVP + v2）
 
 字段：
+
 - `id` uuid PK
 - `kind` text
 - `status` text (queued|running|done|error)
@@ -118,14 +132,17 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `created_at`/`updated_at`
 
 索引：
+
 - `(status, run_after)`
 - `(status, updated_at)`
 - unique(kind, dedupe_key) where dedupe_key is not null
 
 ## 7) `public.notification_events`
+
 通知发送队列。
 
 字段：
+
 - `id` uuid PK
 - `student_id` uuid not null
 - `event_type` text
@@ -137,9 +154,11 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `created_at`/`updated_at`
 
 ## 8) `public.ai_provider_keys`
+
 Provider key（服务端读取）。
 
 字段建议：
+
 - `id` uuid PK
 - `provider` text（`minimax` | `openai` | `openrouter`）
 - `api_key` text
@@ -147,9 +166,11 @@ Provider key（服务端读取）。
 - `created_at` / `updated_at` timestamptz
 
 ## 9) `public.ai_agent_logs`
+
 AI Coach agent 执行日志（prompt + tool 轨迹，用于 debug）。
 
 字段建议：
+
 - `id` uuid PK
 - `job_id` uuid nullable
 - `kind` text

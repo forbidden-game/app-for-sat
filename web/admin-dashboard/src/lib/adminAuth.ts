@@ -19,9 +19,7 @@ const requireAdminCached = cache(async (accessToken: string): Promise<AdminConte
     throw new Error("Supabase admin not configured.");
   }
 
-  const { data: userData, error: userError } = await supabase.auth.getUser(
-    accessToken,
-  );
+  const { data: userData, error: userError } = await supabase.auth.getUser(accessToken);
   if (userError || !userData.user) {
     throw new Error("Invalid session.");
   }

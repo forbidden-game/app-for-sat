@@ -10,7 +10,10 @@ function getMinimaxBaseUrl(): string | undefined {
   return raw && raw.length > 0 ? raw : undefined;
 }
 
-export function parseModelSpec(spec: string, fallbackProvider: KnownProvider = "minimax"): ModelSpec {
+export function parseModelSpec(
+  spec: string,
+  fallbackProvider: KnownProvider = "minimax",
+): ModelSpec {
   const trimmed = spec.trim();
   if (!trimmed) {
     return { provider: fallbackProvider, modelId: "MiniMax-M2.1" };
@@ -34,7 +37,10 @@ function cloneModel<T extends Model<any>>(model: T): T {
   };
 }
 
-export function resolveModel(spec: string, fallbackProvider: KnownProvider = "minimax"): Model<any> {
+export function resolveModel(
+  spec: string,
+  fallbackProvider: KnownProvider = "minimax",
+): Model<any> {
   const parsed = parseModelSpec(spec, fallbackProvider);
   const model = (getModel as any)(parsed.provider, parsed.modelId) as Model<any>;
   if (!model) {

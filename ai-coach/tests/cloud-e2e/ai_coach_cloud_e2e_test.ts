@@ -46,7 +46,10 @@ async function delay(ms: number) {
   await new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function retry<T>(fn: () => Promise<T>, opts?: { timeoutMs?: number; intervalMs?: number }): Promise<T> {
+async function retry<T>(
+  fn: () => Promise<T>,
+  opts?: { timeoutMs?: number; intervalMs?: number },
+): Promise<T> {
   const timeoutMs = opts?.timeoutMs ?? 15_000;
   const intervalMs = opts?.intervalMs ?? 500;
   const startedAt = Date.now();
@@ -77,7 +80,10 @@ async function createTestUser(): Promise<TestUser> {
     throw new Error(`Failed to create test user: ${createError?.message ?? "unknown"}`);
   }
 
-  const { data: signInData, error: signInError } = await anon.auth.signInWithPassword({ email, password });
+  const { data: signInData, error: signInError } = await anon.auth.signInWithPassword({
+    email,
+    password,
+  });
   if (signInError || !signInData.session?.access_token) {
     throw new Error(`Failed to sign in test user: ${signInError?.message ?? "unknown"}`);
   }
@@ -157,7 +163,10 @@ async function createBankAndQuestion(): Promise<BankAndQuestion> {
   return { bankId, bankSlug, questionId };
 }
 
-async function createSessionWithQuestion(studentId: string, bank: BankAndQuestion): Promise<string> {
+async function createSessionWithQuestion(
+  studentId: string,
+  bank: BankAndQuestion,
+): Promise<string> {
   const { data: session, error: sessionError } = await admin
     .from("sessions")
     .insert({
@@ -240,7 +249,9 @@ function parseAttemptIdAndCorrect(json: unknown): { attemptId: string; isCorrect
   const isCorrect = (payload.isCorrect ?? payload.is_correct) as boolean | undefined;
 
   if (typeof isCorrect !== "boolean") {
-    throw new Error(`submit_attempt response missing isCorrect. Keys: ${Object.keys(payload).join(", ")}`);
+    throw new Error(
+      `submit_attempt response missing isCorrect. Keys: ${Object.keys(payload).join(", ")}`,
+    );
   }
   if (typeof attemptId !== "string" || attemptId.length === 0) {
     throw new Error(
@@ -364,11 +375,15 @@ Deno.test({
 
       await delay(1100);
 
-      const { status: setStatus, json: setJson } = await postEdgeFunction("set_attempt_step", testUser.accessToken, {
-        attempt_id: attemptId,
-        student_selected_step_index: 2,
-        student_selected_step_is_unknown: false,
-      });
+      const { status: setStatus, json: setJson } = await postEdgeFunction(
+        "set_attempt_step",
+        testUser.accessToken,
+        {
+          attempt_id: attemptId,
+          student_selected_step_index: 2,
+          student_selected_step_is_unknown: false,
+        },
+      );
 
       if (setStatus !== 200) {
         requireFunctionDeployed(setStatus, setJson, "set_attempt_step");
@@ -413,7 +428,9 @@ Deno.test({
         const after = new Date(jobAfter.run_after as string).getTime();
         if (Number.isFinite(before) && Number.isFinite(after)) {
           if (after < before) {
-            throw new Error(`Expected run_after to bump forward (before=${jobBefore.run_after}, after=${jobAfter.run_after})`);
+            throw new Error(
+              `Expected run_after to bump forward (before=${jobBefore.run_after}, after=${jobAfter.run_after})`,
+            );
           }
         }
       }
@@ -516,27 +533,37 @@ Deno.test({
       const sessionId = await createSessionWithQuestion(testUser.id, bank);
       resources.sessionId = sessionId;
 
-      const { status: submitStatus, json: submitJson } = await postEdgeFunction("submit_attempt", testUser.accessToken, {
-        session_id: sessionId,
-        question_id: bank.questionId,
-        answer: "B",
-        duration_ms: 1000,
-        skipped: false,
-        student_selected_step_is_unknown: true,
-      });
+      const { status: submitStatus, json: submitJson } = await postEdgeFunction(
+        "submit_attempt",
+        testUser.accessToken,
+        {
+          session_id: sessionId,
+          question_id: bank.questionId,
+          answer: "B",
+          duration_ms: 1000,
+          skipped: false,
+          student_selected_step_is_unknown: true,
+        },
+      );
 
       if (submitStatus !== 200) {
         requireFunctionDeployed(submitStatus, submitJson, "submit_attempt");
-        throw new Error(`submit_attempt failed: HTTP ${submitStatus} ${JSON.stringify(submitJson)}`);
+        throw new Error(
+          `submit_attempt failed: HTTP ${submitStatus} ${JSON.stringify(submitJson)}`,
+        );
       }
 
       const { attemptId } = parseAttemptIdAndCorrect(submitJson);
 
       const text = `E2E linked attempt (${Date.now()})`;
-      const { status: chatStatus, json: chatJson } = await postEdgeFunction("coach_chat", testUser.accessToken, {
-        text,
-        linked_attempt_id: attemptId,
-      });
+      const { status: chatStatus, json: chatJson } = await postEdgeFunction(
+        "coach_chat",
+        testUser.accessToken,
+        {
+          text,
+          linked_attempt_id: attemptId,
+        },
+      );
 
       if (chatStatus !== 200) {
         requireFunctionDeployed(chatStatus, chatJson, "coach_chat");

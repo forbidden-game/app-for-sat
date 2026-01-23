@@ -17,9 +17,7 @@ export default function StudentPage({ params }: { params: { id: string } }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="text-sm text-zinc-500">Student profile</p>
-          <h1 className="text-2xl font-semibold text-zinc-900">
-            {summary.name}
-          </h1>
+          <h1 className="text-2xl font-semibold text-zinc-900">{summary.name}</h1>
           <p className="text-sm text-zinc-500">Grade {summary.grade}</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm shadow-sm">
@@ -37,9 +35,7 @@ export default function StudentPage({ params }: { params: { id: string } }) {
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
           <p className="text-sm text-zinc-500">Total sessions</p>
-          <p className="mt-2 text-sm font-medium text-zinc-900">
-            {summary.totalSessions}
-          </p>
+          <p className="mt-2 text-sm font-medium text-zinc-900">{summary.totalSessions}</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
           <p className="text-sm text-zinc-500">Last activity</p>
@@ -48,9 +44,7 @@ export default function StudentPage({ params }: { params: { id: string } }) {
       </div>
 
       <section className="mt-8 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="text-base font-semibold text-zinc-900">
-          Recent sessions
-        </h2>
+        <h2 className="text-base font-semibold text-zinc-900">Recent sessions</h2>
         <div className="mt-4 divide-y divide-zinc-100">
           {recentSessions.map((session) => (
             <div key={session.id} className="flex items-center py-3 text-sm">
@@ -59,9 +53,7 @@ export default function StudentPage({ params }: { params: { id: string } }) {
                 <p className="text-xs text-zinc-500">Session {session.id}</p>
               </div>
               <div className="text-right">
-                <p className="font-semibold text-zinc-900">
-                  {formatPercent(session.accuracy)}
-                </p>
+                <p className="font-semibold text-zinc-900">{formatPercent(session.accuracy)}</p>
                 <p className="text-xs text-zinc-400">Accuracy</p>
               </div>
             </div>

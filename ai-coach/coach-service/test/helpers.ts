@@ -55,7 +55,10 @@ export function mockError(message: string, code?: string): MockResponse<null> {
   return { data: null, error: { message, code } };
 }
 
-async function resolveHandler(value: HandlerValue | undefined, state: MockState): Promise<MockResponse> {
+async function resolveHandler(
+  value: HandlerValue | undefined,
+  state: MockState,
+): Promise<MockResponse> {
   if (!value) return { data: null, error: null };
   if (Array.isArray(value)) {
     const next = value.shift();
@@ -67,9 +70,10 @@ async function resolveHandler(value: HandlerValue | undefined, state: MockState)
   return value;
 }
 
-export function createSupabaseMock(
-  config: SupabaseMockConfig = {},
-): { supabase: SupabaseClient; calls: SupabaseMockCalls } {
+export function createSupabaseMock(config: SupabaseMockConfig = {}): {
+  supabase: SupabaseClient;
+  calls: SupabaseMockCalls;
+} {
   const calls: SupabaseMockCalls = { rpc: [], from: [] };
 
   const supabase = {
@@ -146,8 +150,10 @@ export function createSupabaseMock(
         },
         maybeSingle: () => run("maybeSingle"),
         single: () => run("single"),
-        then: (onFulfilled: (value: MockResponse) => unknown, onRejected: (reason: unknown) => unknown) =>
-          run("execute").then(onFulfilled, onRejected),
+        then: (
+          onFulfilled: (value: MockResponse) => unknown,
+          onRejected: (reason: unknown) => unknown,
+        ) => run("execute").then(onFulfilled, onRejected),
       };
 
       return builder;

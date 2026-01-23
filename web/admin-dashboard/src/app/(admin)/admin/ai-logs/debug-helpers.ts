@@ -83,11 +83,7 @@ function getSourceLabel(value: unknown) {
 function getTimestamp(value: unknown) {
   if (!isRecord(value)) return undefined;
   const candidate =
-    value.captured_at ??
-    value.logged_at ??
-    value.timestamp ??
-    value.created_at ??
-    value.updated_at;
+    value.captured_at ?? value.logged_at ?? value.timestamp ?? value.created_at ?? value.updated_at;
   return typeof candidate === "string" ? candidate : undefined;
 }
 

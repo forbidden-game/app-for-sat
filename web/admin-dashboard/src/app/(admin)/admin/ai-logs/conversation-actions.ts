@@ -96,7 +96,10 @@ function normalizePromptText(systemPrompt: unknown, prompts: unknown): string {
   return system.trim();
 }
 
-export async function listCoachThreads(accessToken: string, limit: number = 60): Promise<CoachThreadListItem[]> {
+export async function listCoachThreads(
+  accessToken: string,
+  limit: number = 60,
+): Promise<CoachThreadListItem[]> {
   const { supabase } = await requireAdmin(accessToken);
 
   // We sample a larger slice of recent messages and then collapse per-student.
@@ -114,7 +117,9 @@ export async function listCoachThreads(accessToken: string, limit: number = 60):
   }
 
   const map = new Map<string, Omit<CoachThreadListItem, "display_name">>();
-  for (const row of (data ?? []) as Array<Pick<CoachThreadMessageRow, "student_id" | "role" | "content" | "created_at">>) {
+  for (const row of (data ?? []) as Array<
+    Pick<CoachThreadMessageRow, "student_id" | "role" | "content" | "created_at">
+  >) {
     if (map.has(row.student_id)) continue;
     const text = extractText(row.content);
     map.set(row.student_id, {
@@ -142,10 +147,13 @@ export async function listCoachThreads(accessToken: string, limit: number = 60):
     profiles = (profileData ?? []) as Array<{ id: string; display_name: string | null }>;
   }
 
-  const displayNameById = profiles.reduce((acc, profile) => {
-    acc[profile.id] = profile.display_name;
-    return acc;
-  }, {} as Record<string, string | null>);
+  const displayNameById = profiles.reduce(
+    (acc, profile) => {
+      acc[profile.id] = profile.display_name;
+      return acc;
+    },
+    {} as Record<string, string | null>,
+  );
 
   return studentIds
     .map((studentId) => {
@@ -227,17 +235,22 @@ export async function getCoachThreadDetail(
     }
 
     const jobs = (jobData ?? []) as AiJobRow[];
-    const jobByUserMessageId = jobs.reduce((acc, job) => {
-      if (job.dedupe_key) acc[job.dedupe_key] = job;
-      return acc;
-    }, {} as Record<string, AiJobRow>);
+    const jobByUserMessageId = jobs.reduce(
+      (acc, job) => {
+        if (job.dedupe_key) acc[job.dedupe_key] = job;
+        return acc;
+      },
+      {} as Record<string, AiJobRow>,
+    );
 
     const jobIds = jobs.map((job) => job.id);
 
     if (jobIds.length > 0) {
       const { data: logData, error: logError } = await supabase
         .from("ai_agent_logs")
-        .select("id, job_id, model_provider, model_id, prompt_version, system_prompt, prompts, status, error, created_at")
+        .select(
+          "id, job_id, model_provider, model_id, prompt_version, system_prompt, prompts, status, error, created_at",
+        )
         .in("job_id", jobIds);
 
       if (logError) {
@@ -245,18 +258,21 @@ export async function getCoachThreadDetail(
       }
 
       const logs = (logData ?? []) as AiAgentLogRow[];
-      const logByJobId = logs.reduce((acc, log) => {
-        if (!log.job_id) return acc;
-        const existing = acc[log.job_id];
-        if (!existing) {
-          acc[log.job_id] = log;
-          return acc;
-        }
+      const logByJobId = logs.reduce(
+        (acc, log) => {
+          if (!log.job_id) return acc;
+          const existing = acc[log.job_id];
+          if (!existing) {
+            acc[log.job_id] = log;
+            return acc;
+          }
 
-        // Keep the newest one if duplicates exist.
-        acc[log.job_id] = existing.created_at >= log.created_at ? existing : log;
-        return acc;
-      }, {} as Record<string, AiAgentLogRow>);
+          // Keep the newest one if duplicates exist.
+          acc[log.job_id] = existing.created_at >= log.created_at ? existing : log;
+          return acc;
+        },
+        {} as Record<string, AiAgentLogRow>,
+      );
 
       for (const userMessageId of userMessageIds) {
         const job = jobByUserMessageId[userMessageId];
@@ -313,7 +329,12 @@ export async function searchCoachMessages(
     throw new Error("Failed to search coach messages.");
   }
 
-  const rows = (data ?? []) as Array<Pick<CoachThreadMessageRow, "id" | "student_id" | "role" | "content" | "created_at" | "linked_attempt_id">>;
+  const rows = (data ?? []) as Array<
+    Pick<
+      CoachThreadMessageRow,
+      "id" | "student_id" | "role" | "content" | "created_at" | "linked_attempt_id"
+    >
+  >;
 
   const studentIds = Array.from(new Set(rows.map((row) => row.student_id)));
   let profiles: Array<{ id: string; display_name: string | null }> = [];
@@ -330,10 +351,13 @@ export async function searchCoachMessages(
     profiles = (profileData ?? []) as Array<{ id: string; display_name: string | null }>;
   }
 
-  const displayNameById = profiles.reduce((acc, profile) => {
-    acc[profile.id] = profile.display_name;
-    return acc;
-  }, {} as Record<string, string | null>);
+  const displayNameById = profiles.reduce(
+    (acc, profile) => {
+      acc[profile.id] = profile.display_name;
+      return acc;
+    },
+    {} as Record<string, string | null>,
+  );
 
   return rows.map((row) => {
     const text = extractText(row.content);

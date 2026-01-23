@@ -26,9 +26,7 @@ export default function LoginPage() {
             Receive a magic link to access your student dashboard.
           </p>
           {sent ? (
-            <p className="mt-4 text-sm text-zinc-700">
-              Check your email for the login link.
-            </p>
+            <p className="mt-4 text-sm text-zinc-700">Check your email for the login link.</p>
           ) : supabase ? (
             <form onSubmit={onSubmit} className="mt-4 space-y-3">
               <input

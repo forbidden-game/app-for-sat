@@ -88,7 +88,10 @@ function buildProgressReportJob(
   };
 }
 
-export async function scheduleRecurringJobs(config: CoachConfig, supabase: SupabaseClient): Promise<void> {
+export async function scheduleRecurringJobs(
+  config: CoachConfig,
+  supabase: SupabaseClient,
+): Promise<void> {
   const since = new Date(Date.now() - config.activeLookbackDays * DAY_MS).toISOString();
   const studentIds = await listActiveStudents(supabase, since);
   if (studentIds.length === 0) return;
@@ -99,7 +102,9 @@ export async function scheduleRecurringJobs(config: CoachConfig, supabase: Supab
   for (const studentId of studentIds) {
     payloads.push(buildSnapshotRefreshJob(studentId, periodEnd));
     payloads.push(buildProgressReportJob(studentId, "weekly", config.reportWeeklyDays, periodEnd));
-    payloads.push(buildProgressReportJob(studentId, "monthly", config.reportMonthlyDays, periodEnd));
+    payloads.push(
+      buildProgressReportJob(studentId, "monthly", config.reportMonthlyDays, periodEnd),
+    );
   }
 
   for (let i = 0; i < payloads.length; i += BATCH_SIZE) {

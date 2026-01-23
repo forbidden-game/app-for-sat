@@ -40,9 +40,8 @@ export function getConfig(): SenderConfig {
     config.apnsKeyId = requireEnv("APNS_KEY_ID");
     config.apnsPrivateKey = requireEnv("APNS_PRIVATE_KEY");
     config.apnsBundleId = requireEnv("APNS_BUNDLE_ID");
-    config.apnsEnv = process.env["APNS_ENV"]?.toLowerCase() === "production"
-      ? "production"
-      : "development";
+    config.apnsEnv =
+      process.env["APNS_ENV"]?.toLowerCase() === "production" ? "production" : "development";
   }
 
   return config;

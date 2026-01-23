@@ -127,10 +127,7 @@ export async function publishAiPromptConfig(
   return publishedConfig;
 }
 
-export async function archiveAiPromptConfig(
-  accessToken: string,
-  configId: string,
-): Promise<void> {
+export async function archiveAiPromptConfig(accessToken: string, configId: string): Promise<void> {
   const context = await requireAdmin(accessToken);
   const now = new Date().toISOString();
 

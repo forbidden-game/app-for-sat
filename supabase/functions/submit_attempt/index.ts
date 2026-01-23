@@ -152,16 +152,18 @@ serve(async (req) => {
   const result = skipped
     ? { isCorrect: false }
     : scoreAttempt(
-      {
-        questionType: typedQuestion.question_type,
-        answerKey: { correct: correctValue },
-      },
-      { answer: attemptAnswer },
-    );
+        {
+          questionType: typedQuestion.question_type,
+          answerKey: { correct: correctValue },
+        },
+        { answer: attemptAnswer },
+      );
 
   const selectedStepIsUnknown = body.student_selected_step_is_unknown === true;
   const selectedStepIndex =
-    selectedStepIsUnknown || typeof body.student_selected_step_index !== "number" || !Number.isFinite(body.student_selected_step_index)
+    selectedStepIsUnknown ||
+    typeof body.student_selected_step_index !== "number" ||
+    !Number.isFinite(body.student_selected_step_index)
       ? null
       : Math.trunc(body.student_selected_step_index);
 

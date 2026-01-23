@@ -52,7 +52,8 @@ export function createCoachAgent(
     },
     getApiKey: apiKeyResolver
       ? apiKeyResolver
-      : async (provider) => (provider === "minimax" ? config.minimaxApiKey ?? undefined : getEnvApiKey(provider)),
+      : async (provider) =>
+          provider === "minimax" ? (config.minimaxApiKey ?? undefined) : getEnvApiKey(provider),
   });
 }
 
@@ -72,7 +73,8 @@ export function createChatAgent(
     },
     getApiKey: apiKeyResolver
       ? apiKeyResolver
-      : async (provider) => (provider === "minimax" ? config.minimaxApiKey ?? undefined : getEnvApiKey(provider)),
+      : async (provider) =>
+          provider === "minimax" ? (config.minimaxApiKey ?? undefined) : getEnvApiKey(provider),
   });
 }
 

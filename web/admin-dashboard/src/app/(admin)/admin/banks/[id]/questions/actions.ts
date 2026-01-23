@@ -45,7 +45,12 @@ export async function listBankQuestions(
   }
 
   return (data ?? []).map((row: Record<string, unknown>) => {
-    const q = row.questions as { stem: string; subject: string; difficulty: number; question_type: string } | null;
+    const q = row.questions as {
+      stem: string;
+      subject: string;
+      difficulty: number;
+      question_type: string;
+    } | null;
     return {
       question_id: row.question_id as string,
       position: row.position as number,
@@ -83,7 +88,6 @@ export async function searchAvailableQuestions(
     query = query.eq("subject", filters.subject);
   }
 
-
   const { data, error } = await query;
 
   if (error) {
@@ -93,9 +97,7 @@ export async function searchAvailableQuestions(
   return data as AvailableQuestion[];
 }
 
-export async function getAvailableSubjects(
-  accessToken: string,
-): Promise<string[]> {
+export async function getAvailableSubjects(accessToken: string): Promise<string[]> {
   const { supabase } = await requireAdmin(accessToken);
 
   const values = new Set<string>();

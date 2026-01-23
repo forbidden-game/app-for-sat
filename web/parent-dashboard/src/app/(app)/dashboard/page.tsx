@@ -66,16 +66,16 @@ function formatShortDate(value: string) {
   });
 }
 
-function formatSupabaseError(error: {
-  message?: string;
-  details?: string;
-  hint?: string;
-  code?: string;
-} | null) {
+function formatSupabaseError(
+  error: {
+    message?: string;
+    details?: string;
+    hint?: string;
+    code?: string;
+  } | null,
+) {
   if (!error) return "Unknown error";
-  const parts = [error.message, error.details, error.hint, error.code]
-    .filter(Boolean)
-    .join(" | ");
+  const parts = [error.message, error.details, error.hint, error.code].filter(Boolean).join(" | ");
   return parts.length > 0 ? parts : "Unknown error";
 }
 
@@ -109,9 +109,7 @@ export default function DashboardPage() {
       if (linksError) {
         console.error("[dashboard] Failed to load parent links", linksError);
         if (isActive) {
-          setError(
-            `Failed to load linked student. ${formatSupabaseError(linksError)}`,
-          );
+          setError(`Failed to load linked student. ${formatSupabaseError(linksError)}`);
           setLoading(false);
         }
         return;
@@ -126,20 +124,15 @@ export default function DashboardPage() {
       }
 
       const targetStudentId = links[0].student_id;
-      const { data, error: rpcError } = await supabase.rpc(
-        "get_parent_dashboard",
-        {
-          target_student_id: targetStudentId,
-          window_days: 7,
-        },
-      );
+      const { data, error: rpcError } = await supabase.rpc("get_parent_dashboard", {
+        target_student_id: targetStudentId,
+        window_days: 7,
+      });
 
       if (rpcError) {
         console.error("[dashboard] Failed to load parent dashboard", rpcError);
         if (isActive) {
-          setError(
-            `Failed to load dashboard data. ${formatSupabaseError(rpcError)}`,
-          );
+          setError(`Failed to load dashboard data. ${formatSupabaseError(rpcError)}`);
           setLoading(false);
         }
         return;
@@ -159,9 +152,7 @@ export default function DashboardPage() {
 
   const topics = useMemo(() => {
     if (!dashboard) return [] as ParentDashboard["topics"];
-    return [...dashboard.topics].sort(
-      (a, b) => (a.accuracy ?? 0) - (b.accuracy ?? 0),
-    );
+    return [...dashboard.topics].sort((a, b) => (a.accuracy ?? 0) - (b.accuracy ?? 0));
   }, [dashboard]);
 
   const strengths = useMemo(() => topics.slice(-3).reverse(), [topics]);
@@ -178,11 +169,7 @@ export default function DashboardPage() {
   }, [dashboard]);
 
   const hasRankSeries = rankSeries.some((value) => value !== null);
-  const accuracyPoints = buildLinePoints(
-    accuracySeries,
-    chartWidth,
-    chartHeight,
-  );
+  const accuracyPoints = buildLinePoints(accuracySeries, chartWidth, chartHeight);
   const rankPoints = hasRankSeries
     ? buildLinePoints(
         rankSeries.map((value) => value ?? 0),
@@ -239,20 +226,14 @@ export default function DashboardPage() {
 
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-zinc-500">
-            Study time ({dashboard.overview.window_days}d)
-          </p>
+          <p className="text-sm text-zinc-500">Study time ({dashboard.overview.window_days}d)</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900">
             {dashboard.overview.practice_minutes.toFixed(1)} min
           </p>
-          <p className="mt-1 text-xs text-zinc-400">
-            {dashboard.overview.attempts} attempts
-          </p>
+          <p className="mt-1 text-xs text-zinc-400">{dashboard.overview.attempts} attempts</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-zinc-500">
-            Error rate ({dashboard.overview.window_days}d)
-          </p>
+          <p className="text-sm text-zinc-500">Error rate ({dashboard.overview.window_days}d)</p>
           <p className="mt-2 text-2xl font-semibold text-zinc-900">
             {formatPercentOrNA(dashboard.overview.error_rate)}
           </p>
@@ -267,26 +248,18 @@ export default function DashboardPage() {
           <p className="mt-2 text-2xl font-semibold text-zinc-900">
             {formatPercentOrNA(dashboard.overview.rank_percentile)}
           </p>
-          <p className="mt-1 text-xs text-zinc-400">
-            All users · min 20 attempts
-          </p>
+          <p className="mt-1 text-xs text-zinc-400">All users · min 20 attempts</p>
         </div>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[2fr,1fr]">
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-zinc-900">
-              Last 5 sessions trend
-            </h2>
-            <span className="text-xs text-zinc-400">
-              Accuracy vs rank percentile
-            </span>
+            <h2 className="text-base font-semibold text-zinc-900">Last 5 sessions trend</h2>
+            <span className="text-xs text-zinc-400">Accuracy vs rank percentile</span>
           </div>
           {dashboard.trend.length === 0 ? (
-            <p className="mt-4 text-sm text-zinc-500">
-              No session data yet.
-            </p>
+            <p className="mt-4 text-sm text-zinc-500">No session data yet.</p>
           ) : (
             <>
               <div className="mt-4 rounded-lg border border-zinc-100 bg-zinc-50 p-3">
@@ -296,12 +269,7 @@ export default function DashboardPage() {
                   role="img"
                   aria-label="Accuracy and rank percentile trend"
                 >
-                  <polyline
-                    fill="none"
-                    stroke="#18181b"
-                    strokeWidth="3"
-                    points={accuracyPoints}
-                  />
+                  <polyline fill="none" stroke="#18181b" strokeWidth="3" points={accuracyPoints} />
                   {hasRankSeries ? (
                     <polyline
                       fill="none"
@@ -328,65 +296,41 @@ export default function DashboardPage() {
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="text-base font-semibold text-zinc-900">
-            Strengths & weaknesses
-          </h2>
+          <h2 className="text-base font-semibold text-zinc-900">Strengths & weaknesses</h2>
           <p className="mt-1 text-xs text-zinc-400">
             Last {dashboard.overview.window_days} days · min 10 attempts
           </p>
           <div className="mt-4">
-            <p className="text-xs font-semibold uppercase text-zinc-500">
-              Strengths
-            </p>
+            <p className="text-xs font-semibold uppercase text-zinc-500">Strengths</p>
             <div className="mt-3 space-y-3">
               {strengths.length === 0 ? (
                 <p className="text-xs text-zinc-500">No topic data yet.</p>
               ) : (
                 strengths.map((topic) => (
-                  <div
-                    key={topic.tag_id}
-                    className="flex items-center justify-between text-sm"
-                  >
+                  <div key={topic.tag_id} className="flex items-center justify-between text-sm">
                     <div>
-                      <p className="font-medium text-zinc-900">
-                        {topic.tag_name}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {topic.attempts} attempts
-                      </p>
+                      <p className="font-medium text-zinc-900">{topic.tag_name}</p>
+                      <p className="text-xs text-zinc-500">{topic.attempts} attempts</p>
                     </div>
-                    <span className="text-zinc-900">
-                      {formatPercentOrNA(topic.accuracy)}
-                    </span>
+                    <span className="text-zinc-900">{formatPercentOrNA(topic.accuracy)}</span>
                   </div>
                 ))
               )}
             </div>
           </div>
           <div className="mt-6">
-            <p className="text-xs font-semibold uppercase text-zinc-500">
-              Weaknesses
-            </p>
+            <p className="text-xs font-semibold uppercase text-zinc-500">Weaknesses</p>
             <div className="mt-3 space-y-3">
               {weaknesses.length === 0 ? (
                 <p className="text-xs text-zinc-500">No topic data yet.</p>
               ) : (
                 weaknesses.map((topic) => (
-                  <div
-                    key={topic.tag_id}
-                    className="flex items-center justify-between text-sm"
-                  >
+                  <div key={topic.tag_id} className="flex items-center justify-between text-sm">
                     <div>
-                      <p className="font-medium text-zinc-900">
-                        {topic.tag_name}
-                      </p>
-                      <p className="text-xs text-zinc-500">
-                        {topic.attempts} attempts
-                      </p>
+                      <p className="font-medium text-zinc-900">{topic.tag_name}</p>
+                      <p className="text-xs text-zinc-500">{topic.attempts} attempts</p>
                     </div>
-                    <span className="text-zinc-900">
-                      {formatPercentOrNA(topic.accuracy)}
-                    </span>
+                    <span className="text-zinc-900">{formatPercentOrNA(topic.accuracy)}</span>
                   </div>
                 ))
               )}
@@ -415,9 +359,7 @@ export default function DashboardPage() {
                 className="flex flex-wrap items-center justify-between gap-4 py-3 text-sm"
               >
                 <div>
-                  <p className="font-medium text-zinc-900">
-                    {formatShortDate(session.created_at)}
-                  </p>
+                  <p className="font-medium text-zinc-900">{formatShortDate(session.created_at)}</p>
                   <p className="text-xs text-zinc-500">
                     {session.attempts} attempts · {session.duration_minutes.toFixed(1)} min
                   </p>

@@ -1,12 +1,6 @@
 import type { AiJobKind } from "./types.js";
 import { parseModelSpec } from "./model.js";
-import {
-  readBoolEnv,
-  readCsvEnv,
-  readIntEnv,
-  readStringEnv,
-  requireEnv,
-} from "@ai-coach/shared";
+import { readBoolEnv, readCsvEnv, readIntEnv, readStringEnv, requireEnv } from "@ai-coach/shared";
 
 export type CoachConfig = {
   supabaseUrl: string;
@@ -57,7 +51,10 @@ function parseJobKinds(): AiJobKind[] | null {
   return Array.from(new Set(parts)) as AiJobKind[];
 }
 
-function shouldRequireMinimaxKey(jobKinds: AiJobKind[] | null, models: Record<string, string>): boolean {
+function shouldRequireMinimaxKey(
+  jobKinds: AiJobKind[] | null,
+  models: Record<string, string>,
+): boolean {
   const enabledKinds = jobKinds ?? allowedJobKinds;
   return enabledKinds.some((kind) => {
     if (!llmJobKinds.has(kind)) return false;
@@ -92,7 +89,7 @@ export function getConfig(): CoachConfig {
   const requireMinimax = shouldRequireMinimaxKey(jobKinds, models);
   const minimaxApiKey = requireMinimax
     ? requireEnv("MINIMAX_API_KEY")
-    : process.env["MINIMAX_API_KEY"]?.trim() ?? null;
+    : (process.env["MINIMAX_API_KEY"]?.trim() ?? null);
 
   return {
     supabaseUrl: requireEnv("SUPABASE_URL"),

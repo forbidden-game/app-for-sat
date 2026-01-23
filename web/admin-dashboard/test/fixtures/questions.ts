@@ -38,10 +38,7 @@ export const questionFactory = {
     ...overrides,
   }),
 
-  withTags: (
-    base: QuestionInput,
-    tagIds: string[]
-  ): QuestionInput & { tag_ids: string[] } => ({
+  withTags: (base: QuestionInput, tagIds: string[]): QuestionInput & { tag_ids: string[] } => ({
     ...base,
     tag_ids: tagIds,
   }),

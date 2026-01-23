@@ -34,9 +34,7 @@ export default function SessionsPage() {
           >
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-zinc-900">
-                  {session.date}
-                </p>
+                <p className="text-sm font-semibold text-zinc-900">{session.date}</p>
                 <p className="text-xs text-zinc-500">{session.student}</p>
               </div>
               <div className="text-right text-xs text-zinc-500">

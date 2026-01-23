@@ -66,7 +66,7 @@ serve(async (req) => {
         last_seen_at: now,
         updated_at: now,
       },
-      { onConflict: "student_id,device_token" }
+      { onConflict: "student_id,device_token" },
     )
     .select("id")
     .single();

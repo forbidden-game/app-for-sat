@@ -25,12 +25,12 @@ Status: Approved
 
 ### 1.1 项目技术栈
 
-| 层级 | 技术 | 测试工具 |
-|------|------|----------|
-| iOS | Swift 6.2 / SwiftUI | XCTest |
-| Web | Next.js 16 / React 19 / TypeScript | Vitest |
+| 层级    | 技术                                | 测试工具           |
+| ------- | ----------------------------------- | ------------------ |
+| iOS     | Swift 6.2 / SwiftUI                 | XCTest             |
+| Web     | Next.js 16 / React 19 / TypeScript  | Vitest             |
 | Backend | Supabase (Postgres, Edge Functions) | Vitest + Deno Test |
-| E2E | 跨层验收 | Playwright |
+| E2E     | 跨层验收                            | Playwright         |
 
 ### 1.2 核心原则
 
@@ -41,12 +41,12 @@ Status: Approved
 
 ### 1.3 覆盖率目标
 
-| 层级 | 目标 | 说明 |
-|------|------|------|
-| Unit | 80%+ | 工具函数全覆盖 |
-| Integration | 核心路径 100% | 每个 Server Action 至少一个测试 |
-| RLS | 角色 × 操作矩阵 | 关键表的权限验证 |
-| E2E | 关键路径 | 不追求覆盖率，只保护核心流程 |
+| 层级        | 目标            | 说明                            |
+| ----------- | --------------- | ------------------------------- |
+| Unit        | 80%+            | 工具函数全覆盖                  |
+| Integration | 核心路径 100%   | 每个 Server Action 至少一个测试 |
+| RLS         | 角色 × 操作矩阵 | 关键表的权限验证                |
+| E2E         | 关键路径        | 不追求覆盖率，只保护核心流程    |
 
 ---
 
@@ -76,11 +76,11 @@ Status: Approved
 
 ### 各层职责
 
-| 层级 | 测什么 | 不测什么 | 运行时机 |
-|------|--------|----------|----------|
-| **Unit** | 格式化、验证、计算逻辑 | DB、网络、UI | 每次保存 |
-| **Integration** | Server Actions、RPC、RLS | UI 渲染 | 每次 commit |
-| **E2E** | 完整用户流程 | 边缘情况 | PR 合并到 main |
+| 层级            | 测什么                   | 不测什么     | 运行时机       |
+| --------------- | ------------------------ | ------------ | -------------- |
+| **Unit**        | 格式化、验证、计算逻辑   | DB、网络、UI | 每次保存       |
+| **Integration** | Server Actions、RPC、RLS | UI 渲染      | 每次 commit    |
+| **E2E**         | 完整用户流程             | 边缘情况     | PR 合并到 main |
 
 ---
 
@@ -112,10 +112,7 @@ export function validateQuestionStem(stem: string): string | null {
   return null;
 }
 
-export function validateAnswerKey(
-  questionType: string,
-  answerKey: unknown
-): string | null {
+export function validateAnswerKey(questionType: string, answerKey: unknown): string | null {
   if (questionType === "mcq") {
     if (typeof answerKey !== "object" || !answerKey) return "答案格式错误";
     const key = answerKey as Record<string, unknown>;
@@ -177,6 +174,7 @@ swift test --package-path ios/StudentCore --filter "Unit"
 **关键决策**: 使用真实 Supabase Local（非 Mock）
 
 **理由**:
+
 - 核心逻辑在 RLS/RPC 层，Mock 会漏掉 policy bugs
 - Supabase Local 启动快（~10s）
 - 测试真实 SQL 行为
@@ -200,12 +198,7 @@ web/admin-dashboard/src/app/(admin)/admin/
 ```typescript
 // questions/__tests__/actions.test.ts
 import { describe, it, expect, beforeAll, afterEach } from "vitest";
-import {
-  createQuestion,
-  updateQuestion,
-  deleteQuestion,
-  listQuestions,
-} from "../actions";
+import { createQuestion, updateQuestion, deleteQuestion, listQuestions } from "../actions";
 import { withTransaction, createTestAdmin } from "@/test/helpers";
 import { questionFactory } from "@/test/fixtures/questions";
 
@@ -326,12 +319,12 @@ npm run test:integration -- questions/__tests__/actions.test.ts
 
 **测试矩阵**:
 
-| 表 | student | parent | admin |
-|------|---------|--------|-------|
-| questions | ❌ 不可读 | ❌ 不可读 | ✅ CRUD |
-| attempts | ✅ 只读自己 | ✅ 读关联学生 | ✅ 全部 |
-| sessions | ✅ 只读自己 | ✅ 读关联学生 | ✅ 全部 |
-| profiles | ✅ 只读自己 | ✅ 读关联 | ✅ 全部 |
+| 表        | student     | parent        | admin   |
+| --------- | ----------- | ------------- | ------- |
+| questions | ❌ 不可读   | ❌ 不可读     | ✅ CRUD |
+| attempts  | ✅ 只读自己 | ✅ 读关联学生 | ✅ 全部 |
+| sessions  | ✅ 只读自己 | ✅ 读关联学生 | ✅ 全部 |
+| profiles  | ✅ 只读自己 | ✅ 读关联     | ✅ 全部 |
 
 **文件位置**: `test/rls/`
 
@@ -355,7 +348,7 @@ describe("Questions RLS", () => {
     it("cannot read questions table directly", async () => {
       const client = await createClientAs("student");
       const { data, error } = await client.from("questions").select("*");
-      
+
       // RLS should return empty array, not error
       expect(error).toBeNull();
       expect(data).toEqual([]);
@@ -371,7 +364,7 @@ describe("Questions RLS", () => {
         question_type: "mcq",
         answer_key: { correct: "A" },
       });
-      
+
       expect(error).not.toBeNull();
     });
   });
@@ -380,7 +373,7 @@ describe("Questions RLS", () => {
     it("can read all questions", async () => {
       const client = await createClientAs("admin");
       const { data, error } = await client.from("questions").select("*");
-      
+
       expect(error).toBeNull();
       expect(data?.length).toBeGreaterThan(0);
     });
@@ -418,9 +411,7 @@ describe("Attempts RLS", () => {
 
       // Student2 cannot see Student1's attempts
       const { data } = await student2.from("attempts").select("*");
-      const otherStudentAttempts = data?.filter(
-        (a) => a.student_id !== student2.userId
-      );
+      const otherStudentAttempts = data?.filter((a) => a.student_id !== student2.userId);
       expect(otherStudentAttempts).toEqual([]);
     });
   });
@@ -430,7 +421,7 @@ describe("Attempts RLS", () => {
       const parent = await createClientAs("parent");
       // Assuming parent is linked to a student
       const { data, error } = await parent.from("attempts").select("*");
-      
+
       expect(error).toBeNull();
       // Should see linked student's attempts
     });
@@ -438,11 +429,9 @@ describe("Attempts RLS", () => {
     it("cannot read unlinked student attempts", async () => {
       const parent = await createClientAs("parent");
       const { data } = await parent.from("attempts").select("*");
-      
+
       // Should not see attempts from students not linked to this parent
-      const unlinkedAttempts = data?.filter(
-        (a) => !parent.linkedStudentIds.includes(a.student_id)
-      );
+      const unlinkedAttempts = data?.filter((a) => !parent.linkedStudentIds.includes(a.student_id));
       expect(unlinkedAttempts).toEqual([]);
     });
   });
@@ -488,7 +477,7 @@ import { assertEquals, assertRejects } from "https://deno.land/std@0.224.0/asser
 Deno.test("sign-asset-upload validates content type", async () => {
   // Test that only allowed image types are accepted
   const allowedTypes = ["image/png", "image/jpeg", "image/gif", "image/webp"];
-  
+
   for (const type of allowedTypes) {
     // Should not throw for valid types
     // ... test logic
@@ -497,7 +486,7 @@ Deno.test("sign-asset-upload validates content type", async () => {
 
 Deno.test("sign-asset-upload rejects invalid content types", async () => {
   const invalidTypes = ["application/pdf", "text/plain", "video/mp4"];
-  
+
   for (const type of invalidTypes) {
     // Should throw/reject for invalid types
     // ... test logic
@@ -526,14 +515,14 @@ deno test --allow-read --allow-env supabase/functions/
 
 **必须覆盖的场景**:
 
-| # | 场景 | 理由 |
-|---|------|------|
-| 1 | Admin 登录 | 进不去 = 无法管理 |
-| 2 | 创建 MCQ 题目完整流程 | 核心功能 |
-| 3 | 批量导入题目 | 效率功能 |
-| 4 | 题库编排（排序） | 内容管理 |
-| 5 | 学生答题流程 | 核心产品价值 |
-| 6 | 错误处理（网络错误） | 优雅降级 |
+| #   | 场景                  | 理由              |
+| --- | --------------------- | ----------------- |
+| 1   | Admin 登录            | 进不去 = 无法管理 |
+| 2   | 创建 MCQ 题目完整流程 | 核心功能          |
+| 3   | 批量导入题目          | 效率功能          |
+| 4   | 题库编排（排序）      | 内容管理          |
+| 5   | 学生答题流程          | 核心产品价值      |
+| 6   | 错误处理（网络错误）  | 优雅降级          |
 
 **文件结构**:
 
@@ -562,10 +551,10 @@ setup("authenticate as admin", async ({ page }) => {
   await page.fill('[name="email"]', process.env.TEST_ADMIN_EMAIL!);
   await page.fill('[name="password"]', process.env.TEST_ADMIN_PASSWORD!);
   await page.click('button[type="submit"]');
-  
+
   // 等待登录完成
   await expect(page).toHaveURL(/\/admin/);
-  
+
   // 保存登录状态供其他测试复用
   await page.context().storageState({ path: ".auth/admin.json" });
 });
@@ -583,13 +572,13 @@ test.describe("Question CRUD", () => {
   test("admin can create MCQ question with options", async ({ page }) => {
     // Navigate to create page
     await page.goto("/admin/questions/new");
-    
+
     // Fill form
     await page.fill('[name="stem"]', "What is the capital of France?");
     await page.selectOption('[name="subject"]', "English");
     await page.selectOption('[name="question_type"]', "mcq");
     await page.selectOption('[name="difficulty"]', "2");
-    
+
     // Add options
     await page.fill('[name="options.0.label"]', "A");
     await page.fill('[name="options.0.content"]', "London");
@@ -599,16 +588,16 @@ test.describe("Question CRUD", () => {
     await page.fill('[name="options.2.content"]', "Berlin");
     await page.fill('[name="options.3.label"]', "D");
     await page.fill('[name="options.3.content"]', "Madrid");
-    
+
     // Set correct answer
     await page.fill('[name="correct_answer"]', "B");
-    
+
     // Submit
     await page.click('button[type="submit"]');
-    
+
     // Verify redirect to list
     await expect(page).toHaveURL("/admin/questions");
-    
+
     // Verify question appears in list
     await expect(page.locator("text=What is the capital of France?")).toBeVisible();
   });
@@ -616,32 +605,32 @@ test.describe("Question CRUD", () => {
   test("admin can edit existing question", async ({ page }) => {
     // Navigate to questions list
     await page.goto("/admin/questions");
-    
+
     // Click first question
     await page.click("table tbody tr:first-child a");
-    
+
     // Edit stem
     const stemInput = page.locator('[name="stem"]');
     await stemInput.clear();
     await stemInput.fill("Updated question stem");
-    
+
     // Save
     await page.click('button[type="submit"]');
-    
+
     // Verify success
     await expect(page.locator("text=Updated question stem")).toBeVisible();
   });
 
   test("admin can delete question", async ({ page }) => {
     await page.goto("/admin/questions");
-    
+
     // Get initial count
     const initialCount = await page.locator("table tbody tr").count();
-    
+
     // Delete first question
     await page.click("table tbody tr:first-child button.delete");
     await page.click("button.confirm-delete");
-    
+
     // Verify count decreased
     await expect(page.locator("table tbody tr")).toHaveCount(initialCount - 1);
   });
@@ -653,14 +642,14 @@ test.describe("Question Import", () => {
 
   test("admin can bulk import questions from JSON", async ({ page }) => {
     await page.goto("/admin/questions/import");
-    
+
     // Upload JSON file
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles("e2e/fixtures/test-import.json");
-    
+
     // Submit import
     await page.click("button.import-submit");
-    
+
     // Verify success message
     await expect(page.locator("text=成功导入")).toBeVisible();
     await expect(page.locator(".success-count")).toContainText("3"); // 3 questions imported
@@ -681,7 +670,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
-  
+
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -691,7 +680,7 @@ export default defineConfig({
   projects: [
     // Setup project for authentication
     { name: "setup", testMatch: /.*\.setup\.ts/ },
-    
+
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
@@ -798,12 +787,10 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // 使用 service role 进行测试
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // 使用 service role 进行测试
 );
 
-export async function withTransaction<T>(
-  fn: () => Promise<T>
-): Promise<T> {
+export async function withTransaction<T>(fn: () => Promise<T>): Promise<T> {
   await supabase.rpc("begin_test_transaction");
   try {
     return await fn();
@@ -889,13 +876,13 @@ import { createClient } from "@supabase/supabase-js";
 
 const serviceClient = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
 );
 
 // 创建测试用户并返回已认证的 client
 export async function createClientAs(
   role: "admin" | "student" | "parent",
-  email?: string
+  email?: string,
 ): Promise<SupabaseClient & { userId: string }> {
   const testEmail = email || `${role}_${Date.now()}@test.com`;
   const testPassword = "testpassword123";
@@ -910,15 +897,12 @@ export async function createClientAs(
   if (authError) throw authError;
 
   // 设置角色
-  await serviceClient
-    .from("profiles")
-    .update({ role })
-    .eq("id", authData.user.id);
+  await serviceClient.from("profiles").update({ role }).eq("id", authData.user.id);
 
   // 创建用户级别的 client
   const userClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
   await userClient.auth.signInWithPassword({
@@ -972,18 +956,18 @@ export async function createTestAdmin(): Promise<void> {
 
 必须测试的组合：
 
-| 表 | 操作 | student | parent | admin |
-|------|------|---------|--------|-------|
-| **questions** | SELECT | ❌ | ❌ | ✅ |
-| | INSERT | ❌ | ❌ | ✅ |
-| | UPDATE | ❌ | ❌ | ✅ |
-| | DELETE | ❌ | ❌ | ✅ |
-| **attempts** | SELECT | 只自己 | 关联学生 | ✅ |
-| | INSERT | 只自己 | ❌ | ✅ |
-| **sessions** | SELECT | 只自己 | 关联学生 | ✅ |
-| | INSERT | 只自己 | ❌ | ✅ |
-| **profiles** | SELECT | 只自己 | 关联 | ✅ |
-| | UPDATE | 只自己 | ❌ | ✅ |
+| 表            | 操作   | student | parent   | admin |
+| ------------- | ------ | ------- | -------- | ----- |
+| **questions** | SELECT | ❌      | ❌       | ✅    |
+|               | INSERT | ❌      | ❌       | ✅    |
+|               | UPDATE | ❌      | ❌       | ✅    |
+|               | DELETE | ❌      | ❌       | ✅    |
+| **attempts**  | SELECT | 只自己  | 关联学生 | ✅    |
+|               | INSERT | 只自己  | ❌       | ✅    |
+| **sessions**  | SELECT | 只自己  | 关联学生 | ✅    |
+|               | INSERT | 只自己  | ❌       | ✅    |
+| **profiles**  | SELECT | 只自己  | 关联     | ✅    |
+|               | UPDATE | 只自己  | ❌       | ✅    |
 
 ### 5.3 实现方式
 
@@ -1012,7 +996,7 @@ jobs:
   test-admin-dashboard:
     name: Admin Dashboard
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -1036,7 +1020,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: 1.200.3  # 固定版本
+          version: 1.200.3 # 固定版本
 
       - name: Cache Supabase
         uses: actions/cache@v4
@@ -1071,7 +1055,7 @@ jobs:
   test-parent-dashboard:
     name: Parent Dashboard
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -1096,7 +1080,7 @@ jobs:
   test-edge-functions:
     name: Edge Functions
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -1114,7 +1098,7 @@ jobs:
   test-ios:
     name: iOS (StudentCore)
     runs-on: macos-latest
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -1129,7 +1113,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     needs: [test-admin-dashboard]
-    
+
     steps:
       - uses: actions/checkout@v4
 
@@ -1250,7 +1234,7 @@ export default mergeConfig(
       include: ["src/**/*.test.ts"],
       exclude: ["src/**/__tests__/**"],
     },
-  })
+  }),
 );
 
 // vitest.integration.config.ts
@@ -1265,7 +1249,7 @@ export default mergeConfig(
       testTimeout: 30000, // Integration tests may take longer
       hookTimeout: 30000,
     },
-  })
+  }),
 );
 ```
 
@@ -1347,6 +1331,7 @@ deno test --allow-read --allow-env supabase/functions/
 ### 7.3 调试技巧
 
 **Vitest 调试**:
+
 ```bash
 # 运行单个测试文件
 npm run test -- questions/__tests__/actions.test.ts
@@ -1359,6 +1344,7 @@ npm run test -- --reporter=verbose
 ```
 
 **Playwright 调试**:
+
 ```bash
 # UI 模式
 npx playwright test --ui
@@ -1460,55 +1446,55 @@ app-for-sat/
 
 ### Phase 1: 基础设施 (Day 1)
 
-| 任务 | 预计时间 |
-|------|----------|
-| 创建 `test/` 目录结构 | 15 min |
-| 配置 `vitest.config.ts` (unit + integration) | 30 min |
-| 创建 `test/setup.ts` + `test/helpers.ts` | 30 min |
-| 创建 `test/fixtures/` 工厂函数 | 30 min |
-| 添加 npm scripts | 10 min |
-| **小计** | **~2 hours** |
+| 任务                                         | 预计时间     |
+| -------------------------------------------- | ------------ |
+| 创建 `test/` 目录结构                        | 15 min       |
+| 配置 `vitest.config.ts` (unit + integration) | 30 min       |
+| 创建 `test/setup.ts` + `test/helpers.ts`     | 30 min       |
+| 创建 `test/fixtures/` 工厂函数               | 30 min       |
+| 添加 npm scripts                             | 10 min       |
+| **小计**                                     | **~2 hours** |
 
 ### Phase 2: Integration Tests (Day 1-2)
 
-| 任务 | 预计时间 |
-|------|----------|
-| Questions CRUD tests | 1 hour |
-| Tags CRUD tests | 30 min |
-| Import RPC tests | 30 min |
-| Bank Questions tests | 30 min |
-| **小计** | **~2.5 hours** |
+| 任务                 | 预计时间       |
+| -------------------- | -------------- |
+| Questions CRUD tests | 1 hour         |
+| Tags CRUD tests      | 30 min         |
+| Import RPC tests     | 30 min         |
+| Bank Questions tests | 30 min         |
+| **小计**             | **~2.5 hours** |
 
 ### Phase 3: RLS Tests (Day 2)
 
-| 任务 | 预计时间 |
-|------|----------|
-| questions RLS tests | 30 min |
-| attempts RLS tests | 30 min |
-| sessions RLS tests | 30 min |
-| profiles RLS tests | 30 min |
-| **小计** | **~2 hours** |
+| 任务                | 预计时间     |
+| ------------------- | ------------ |
+| questions RLS tests | 30 min       |
+| attempts RLS tests  | 30 min       |
+| sessions RLS tests  | 30 min       |
+| profiles RLS tests  | 30 min       |
+| **小计**            | **~2 hours** |
 
 ### Phase 4: CI 配置 (Day 2)
 
-| 任务 | 预计时间 |
-|------|----------|
-| 创建 `.github/workflows/test.yml` | 30 min |
-| 配置 GitHub Secrets | 15 min |
-| 配置 Branch Protection | 15 min |
-| 验证 CI 运行 | 30 min |
-| **小计** | **~1.5 hours** |
+| 任务                              | 预计时间       |
+| --------------------------------- | -------------- |
+| 创建 `.github/workflows/test.yml` | 30 min         |
+| 配置 GitHub Secrets               | 15 min         |
+| 配置 Branch Protection            | 15 min         |
+| 验证 CI 运行                      | 30 min         |
+| **小计**                          | **~1.5 hours** |
 
 ### Phase 5: E2E Tests (Day 3)
 
-| 任务 | 预计时间 |
-|------|----------|
-| 配置 `playwright.config.ts` | 20 min |
-| 创建 `auth.setup.ts` | 20 min |
-| question-crud.spec.ts | 40 min |
-| question-import.spec.ts | 30 min |
-| bank-questions.spec.ts | 30 min |
-| **小计** | **~2.5 hours** |
+| 任务                        | 预计时间       |
+| --------------------------- | -------------- |
+| 配置 `playwright.config.ts` | 20 min         |
+| 创建 `auth.setup.ts`        | 20 min         |
+| question-crud.spec.ts       | 40 min         |
+| question-import.spec.ts     | 30 min         |
+| bank-questions.spec.ts      | 30 min         |
+| **小计**                    | **~2.5 hours** |
 
 ### 总计: ~10.5 hours (2-3 天)
 
@@ -1523,19 +1509,20 @@ app-for-sat/
 > 测试存在的主要目的是证明：**用户不能看到或修改他们不该碰的数据。**
 >
 > 如果你只理解一件事，就理解：
+>
 > - **角色（role）如何映射到允许的操作**
 > - **一个失败的 policy 如何破坏产品**
 
 ### 10.2 何时添加新测试
 
-| 场景 | 需要添加 |
-|------|----------|
-| 新增 Server Action | Integration Test |
-| 修改 RLS Policy | RLS Test |
-| 新增 Edge Function | Deno Test |
-| 新增关键用户路径 | E2E Test |
-| 新增工具函数 | Unit Test |
-| 修复 Bug | 先写复现测试，再修复 |
+| 场景               | 需要添加             |
+| ------------------ | -------------------- |
+| 新增 Server Action | Integration Test     |
+| 修改 RLS Policy    | RLS Test             |
+| 新增 Edge Function | Deno Test            |
+| 新增关键用户路径   | E2E Test             |
+| 新增工具函数       | Unit Test            |
+| 修复 Bug           | 先写复现测试，再修复 |
 
 ### 10.3 测试失败处理
 
@@ -1554,11 +1541,11 @@ CI 测试失败
 
 ### 10.4 定期维护
 
-| 频率 | 任务 |
-|------|------|
-| 每周 | 检查 CI 运行时间，优化慢测试 |
-| 每月 | 更新依赖版本 (Vitest, Playwright, Supabase CLI) |
-| 每季度 | Review 测试覆盖率，补充遗漏场景 |
+| 频率   | 任务                                            |
+| ------ | ----------------------------------------------- |
+| 每周   | 检查 CI 运行时间，优化慢测试                    |
+| 每月   | 更新依赖版本 (Vitest, Playwright, Supabase CLI) |
+| 每季度 | Review 测试覆盖率，补充遗漏场景                 |
 
 ### 10.5 常见问题
 
@@ -1567,12 +1554,14 @@ A: 可能是 RLS 策略差异。检查 migrations 是否完全同步。
 
 **Q: CI 偶尔失败（Flaky）？**
 A: 常见原因：
+
 - 测试之间有数据依赖（应该隔离）
 - 异步操作未正确等待
 - Supabase Local 启动未完成
 
 **Q: 测试运行太慢？**
 A: 优化方向：
+
 - 减少不必要的 E2E 测试
 - 使用事务回滚代替数据删除
 - 并行运行测试
@@ -1598,9 +1587,9 @@ TEST_ADMIN_PASSWORD=admin123456
 
 需要在 GitHub 仓库设置中添加：
 
-| Secret | 来源 |
-|--------|------|
-| `SUPABASE_ANON_KEY` | `supabase status` 输出 |
+| Secret                      | 来源                   |
+| --------------------------- | ---------------------- |
+| `SUPABASE_ANON_KEY`         | `supabase status` 输出 |
 | `SUPABASE_SERVICE_ROLE_KEY` | `supabase status` 输出 |
 
 ### C. 参考资料

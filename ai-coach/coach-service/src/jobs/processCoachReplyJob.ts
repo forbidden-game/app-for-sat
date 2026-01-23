@@ -4,7 +4,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildCoachContext } from "../context/coachContext.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
-import { buildCoachReplyPrompt, type CoachReplyTargetMessage, type CoachReplyToMessage } from "../prompts/coachReplyPrompt.js";
+import {
+  buildCoachReplyPrompt,
+  type CoachReplyTargetMessage,
+  type CoachReplyToMessage,
+} from "../prompts/coachReplyPrompt.js";
 
 type CoachContent = {
   text?: string;
@@ -56,7 +60,10 @@ async function updateAssistantMessage(
   messageId: string,
   content: CoachContent,
 ): Promise<void> {
-  const { error } = await supabase.from("coach_thread_messages").update({ content }).eq("id", messageId);
+  const { error } = await supabase
+    .from("coach_thread_messages")
+    .update({ content })
+    .eq("id", messageId);
   if (error) throw new Error(error.message);
 }
 
@@ -103,9 +110,11 @@ export async function processCoachReplyJob(
   const studentId = job.student_id;
 
   const payload = (job.payload ?? {}) as Record<string, unknown>;
-  const userMessageId = typeof payload.user_message_id === "string" ? payload.user_message_id : null;
+  const userMessageId =
+    typeof payload.user_message_id === "string" ? payload.user_message_id : null;
 
-  let linkedAttemptId = typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
+  let linkedAttemptId =
+    typeof payload.linked_attempt_id === "string" ? payload.linked_attempt_id : null;
   let messagesBeforeCreatedAt: string | null = null;
   let target: CoachReplyTargetMessage = null;
 
@@ -154,7 +163,10 @@ export async function processCoachReplyJob(
     lastFlushAt = now;
     lastFlushedLength = buffer.length;
 
-    await updateAssistantMessage(supabase, assistantMessageId, { text: buffer, status: status ?? "streaming" });
+    await updateAssistantMessage(supabase, assistantMessageId, {
+      text: buffer,
+      status: status ?? "streaming",
+    });
   };
 
   const unsubscribe = agent.subscribe((event) => {
@@ -179,7 +191,8 @@ export async function processCoachReplyJob(
     await flush("done", true);
   } catch (err) {
     logger.error({ err, jobId: job.id }, "coach reply generation failed");
-    buffer = buffer.trim().length > 0 ? buffer : "我先确认一下：你是卡在题意理解、列式，还是计算这一步？";
+    buffer =
+      buffer.trim().length > 0 ? buffer : "我先确认一下：你是卡在题意理解、列式，还是计算这一步？";
     await updateAssistantMessage(supabase, assistantMessageId, { text: buffer, status: "error" });
     throw err;
   } finally {

@@ -39,7 +39,10 @@ describe("processProgressReportJob", () => {
     const model = makeModel();
 
     await expect(
-      processProgressReportJob(supabase, config, model, { ...basePayload, period_start: undefined }),
+      processProgressReportJob(supabase, config, model, {
+        ...basePayload,
+        period_start: undefined,
+      }),
     ).rejects.toThrow(/missing_report_payload/);
   });
 
@@ -138,8 +141,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const payload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const payload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(payload.metrics).toEqual(current);
     const delta = payload.delta as Record<string, any>;
     expect(delta.attempts.total).toBe(1);
@@ -170,8 +174,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const payload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const payload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(typeof payload.summary).toBe("string");
     expect(payload.plan).toBeTruthy();
   });
@@ -197,8 +202,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const notify = calls.from.find((call) => call.table === "notification_events" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const notify = calls.from.find(
+      (call) => call.table === "notification_events" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(notify.event_type).toBe("progress_report_ready");
   });
 
@@ -223,8 +229,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const payload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const payload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect((payload.summary as string).length).toBeGreaterThan(0);
   });
 
@@ -255,7 +262,9 @@ describe("processProgressReportJob", () => {
     });
     const model = makeModel();
 
-    await expect(processProgressReportJob(supabase, config, model, basePayload)).rejects.toThrow(/stats_failed/);
+    await expect(processProgressReportJob(supabase, config, model, basePayload)).rejects.toThrow(
+      /stats_failed/,
+    );
   });
 
   it("throws when insert fails", async () => {
@@ -274,7 +283,9 @@ describe("processProgressReportJob", () => {
     });
     const model = makeModel();
 
-    await expect(processProgressReportJob(supabase, config, model, basePayload)).rejects.toThrow(/insert_failed/);
+    await expect(processProgressReportJob(supabase, config, model, basePayload)).rejects.toThrow(
+      /insert_failed/,
+    );
   });
 
   it("defaults to weekly when period_kind is unknown", async () => {
@@ -299,8 +310,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, payload);
 
-    const insertPayload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const insertPayload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(insertPayload.period_kind).toBe("weekly");
   });
 
@@ -326,8 +338,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, payload);
 
-    const insertPayload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const insertPayload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(insertPayload.period_kind).toBe("monthly");
   });
 
@@ -352,8 +365,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const insertPayload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const insertPayload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     const delta = insertPayload.delta as Record<string, any>;
     expect(delta.attempts.accuracy).toBeNull();
   });
@@ -384,7 +398,9 @@ describe("processProgressReportJob", () => {
     await processProgressReportJob(supabase, config, model, payload);
 
     expect(calls.rpc[1]?.args.p_end).toBe(payload.period_start);
-    const expectedPrevStart = new Date(Date.parse(payload.period_start) - 10 * DAY_MS).toISOString();
+    const expectedPrevStart = new Date(
+      Date.parse(payload.period_start) - 10 * DAY_MS,
+    ).toISOString();
     expect(calls.rpc[1]?.args.p_start).toBe(expectedPrevStart);
   });
 
@@ -409,8 +425,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const notify = calls.from.find((call) => call.table === "notification_events" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const notify = calls.from.find(
+      (call) => call.table === "notification_events" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     const payload = notify.payload as Record<string, unknown>;
     expect(payload.report_id).toBe("report-id");
   });
@@ -458,8 +475,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const insertPayload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const insertPayload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect((insertPayload.summary as string).length).toBeGreaterThan(0);
   });
 
@@ -498,8 +516,9 @@ describe("processProgressReportJob", () => {
 
       await processProgressReportJob(supabase, liveConfig, model, payload);
 
-      const insertPayload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-        ?.payload as Record<string, unknown>;
+      const insertPayload = calls.from.find(
+        (call) => call.table === "student_reports" && call.action === "insert",
+      )?.payload as Record<string, unknown>;
       const summary = (insertPayload.summary as string | undefined)?.trim() ?? "";
       const plan = insertPayload.plan as Record<string, unknown>;
       const focus = Array.isArray(plan?.focus_areas) ? plan.focus_areas : [];
@@ -540,8 +559,9 @@ describe("processProgressReportJob", () => {
 
       await processProgressReportJob(supabase, liveConfig, model, payload);
 
-      const insertPayload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-        ?.payload as Record<string, unknown>;
+      const insertPayload = calls.from.find(
+        (call) => call.table === "student_reports" && call.action === "insert",
+      )?.payload as Record<string, unknown>;
       const summary = (insertPayload.summary as string | undefined)?.trim() ?? "";
       const plan = insertPayload.plan as Record<string, unknown>;
       const focus = Array.isArray(plan?.focus_areas) ? plan.focus_areas : [];
@@ -575,8 +595,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const payload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const payload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(payload.model).toBe("report-model");
   });
 
@@ -601,8 +622,9 @@ describe("processProgressReportJob", () => {
 
     await processProgressReportJob(supabase, config, model, basePayload);
 
-    const payload = calls.from.find((call) => call.table === "student_reports" && call.action === "insert")
-      ?.payload as Record<string, unknown>;
+    const payload = calls.from.find(
+      (call) => call.table === "student_reports" && call.action === "insert",
+    )?.payload as Record<string, unknown>;
     expect(payload.prompt_version).toBe("ai-coach-report-v1");
   });
 });

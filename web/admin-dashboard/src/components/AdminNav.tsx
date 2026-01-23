@@ -60,7 +60,8 @@ export function AdminNav() {
         <div className="flex flex-1 flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-[0.02em] text-[color:var(--ink-muted)]">
             {links.map((link) => {
-              const isActive = link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
+              const isActive =
+                link.href === "/admin" ? pathname === "/admin" : pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}

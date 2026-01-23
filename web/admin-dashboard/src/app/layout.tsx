@@ -48,7 +48,10 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={`${plexSans.variable} ${plexMono.variable} antialiased`} style={{ colorScheme: "light dark" }}>
+      <body
+        className={`${plexSans.variable} ${plexMono.variable} antialiased`}
+        style={{ colorScheme: "light dark" }}
+      >
         <a className="skip-link" href="#main">
           Skip to content
         </a>

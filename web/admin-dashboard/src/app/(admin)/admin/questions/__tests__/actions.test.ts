@@ -51,7 +51,7 @@ describe("Questions Actions", () => {
           answer_key: input.answer_key!,
         },
         options,
-        []
+        [],
       );
 
       expect(question.id).toBeDefined();
@@ -76,7 +76,7 @@ describe("Questions Actions", () => {
           answer_key: input.answer_key!,
         },
         [],
-        []
+        [],
       );
 
       expect(question.id).toBeDefined();
@@ -99,8 +99,8 @@ describe("Questions Actions", () => {
             answer_key: { correct: "A" },
           },
           [],
-          []
-        )
+          [],
+        ),
       ).rejects.toThrow("Question stem is required");
     });
 
@@ -119,8 +119,8 @@ describe("Questions Actions", () => {
             answer_key: { correct: "A" },
           },
           [],
-          []
-        )
+          [],
+        ),
       ).rejects.toThrow("Difficulty must be between 1 and 5");
     });
   });
@@ -145,7 +145,7 @@ describe("Questions Actions", () => {
           answer_key: input.answer_key!,
         },
         input.options ?? [],
-        []
+        [],
       );
     });
 
@@ -181,9 +181,7 @@ describe("Questions Actions", () => {
       });
 
       expect(result.questions.length).toBeGreaterThan(0);
-      expect(result.questions.some((q) => q.stem.includes("List test question"))).toBe(
-        true
-      );
+      expect(result.questions.some((q) => q.stem.includes("List test question"))).toBe(true);
     });
   });
 
@@ -203,7 +201,7 @@ describe("Questions Actions", () => {
           answer_key: input.answer_key!,
         },
         input.options ?? [],
-        []
+        [],
       );
 
       const question = await getQuestion(accessToken, created.id);
@@ -217,7 +215,7 @@ describe("Questions Actions", () => {
       if (skipIfNoSupabase()) return;
 
       await expect(
-        getQuestion(accessToken, "00000000-0000-0000-0000-000000000000")
+        getQuestion(accessToken, "00000000-0000-0000-0000-000000000000"),
       ).rejects.toThrow();
     });
   });
@@ -238,7 +236,7 @@ describe("Questions Actions", () => {
           answer_key: input.answer_key!,
         },
         input.options ?? [],
-        []
+        [],
       );
 
       const updated = await updateQuestion(
@@ -253,7 +251,7 @@ describe("Questions Actions", () => {
           answer_key: { correct: "B" },
         },
         input.options ?? [],
-        []
+        [],
       );
 
       expect(updated.stem).toBe("After update");
@@ -279,7 +277,7 @@ describe("Questions Actions", () => {
           answer_key: input.answer_key!,
         },
         [],
-        []
+        [],
       );
 
       await deleteQuestion(accessToken, created.id);

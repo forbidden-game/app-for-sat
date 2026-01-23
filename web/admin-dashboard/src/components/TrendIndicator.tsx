@@ -73,24 +73,17 @@ export function TrendIndicator({
     lg: "text-base px-2.5 py-1",
   };
 
-  const formattedValue = showSign
-    ? `${value > 0 ? "+" : ""}${value}%`
-    : `${Math.abs(value)}%`;
+  const formattedValue = showSign ? `${value > 0 ? "+" : ""}${value}%` : `${Math.abs(value)}%`;
 
   return (
     <div className={`inline-flex items-center gap-1 ${className}`}>
       <span
         className={`inline-flex items-center gap-0.5 rounded-full font-medium ${getBgColor()} ${getColor()} ${sizeClasses[size]}`}
       >
-        <TrendIcon
-          direction={isPositive ? "up" : isNegative ? "down" : "flat"}
-          size={size}
-        />
+        <TrendIcon direction={isPositive ? "up" : isNegative ? "down" : "flat"} size={size} />
         {formattedValue}
       </span>
-      {label && (
-        <span className="text-xs text-[color:var(--ink-muted)]">{label}</span>
-      )}
+      {label && <span className="text-xs text-[color:var(--ink-muted)]">{label}</span>}
     </div>
   );
 }
@@ -130,11 +123,7 @@ function TrendIcon({ direction, size }: TrendIconProps) {
         stroke="currentColor"
         strokeWidth={2}
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M7 17l5-5 5 5M7 7l5 5 5-5"
-        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M7 17l5-5 5 5M7 7l5 5 5-5" />
       </svg>
     );
   }
@@ -147,11 +136,7 @@ function TrendIcon({ direction, size }: TrendIconProps) {
       stroke="currentColor"
       strokeWidth={2}
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M7 7l5 5 5-5M7 12l5-5 5 5"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7l5 5 5-5M7 12l5-5 5 5" />
     </svg>
   );
 }
@@ -208,20 +193,12 @@ export function MetricCard({
 
       <div className="relative flex items-start justify-between">
         <div className="flex flex-col gap-1">
-          <p className="text-xs font-medium text-[color:var(--ink-muted)]">
-            {label}
-          </p>
+          <p className="text-xs font-medium text-[color:var(--ink-muted)]">{label}</p>
           <div className="flex items-baseline gap-2">
-            <p className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">
-              {value}
-            </p>
-            {trend !== undefined && (
-              <TrendIndicator value={trend} label={trendLabel} size="sm" />
-            )}
+            <p className="text-2xl font-semibold tracking-tight text-[color:var(--ink)]">{value}</p>
+            {trend !== undefined && <TrendIndicator value={trend} label={trendLabel} size="sm" />}
           </div>
-          {helper && (
-            <p className="mt-1 text-xs text-[color:var(--ink-muted)]">{helper}</p>
-          )}
+          {helper && <p className="mt-1 text-xs text-[color:var(--ink-muted)]">{helper}</p>}
         </div>
         {icon && (
           <div className="rounded-lg bg-[color:var(--surface-soft)] p-2.5 text-[color:var(--ink-muted)] transition-transform group-hover:scale-110">

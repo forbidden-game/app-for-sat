@@ -99,7 +99,13 @@ export async function deleteProfile(supabase: SupabaseClient, id: string): Promi
 
 export async function createQuestion(
   supabase: SupabaseClient,
-  overrides: Partial<{ id: string; subject: string; module: string; difficulty: number; stem: string }> = {},
+  overrides: Partial<{
+    id: string;
+    subject: string;
+    module: string;
+    difficulty: number;
+    stem: string;
+  }> = {},
 ): Promise<QuestionRow> {
   const question = {
     id: overrides.id ?? randomUUID(),
@@ -138,7 +144,12 @@ export async function createQuestionOptions(
 export async function createSession(
   supabase: SupabaseClient,
   studentId: string,
-  overrides: Partial<{ id: string; total_questions: number; correct_count: number; mode: string }> = {},
+  overrides: Partial<{
+    id: string;
+    total_questions: number;
+    correct_count: number;
+    mode: string;
+  }> = {},
 ): Promise<SessionRow> {
   const payload = {
     id: overrides.id ?? randomUUID(),
@@ -189,7 +200,13 @@ export async function createAttempt(
 
 export async function createProcedure(
   supabase: SupabaseClient,
-  overrides: Partial<{ id: string; subject: string; name: string; steps: string[]; steps_version: number }> = {},
+  overrides: Partial<{
+    id: string;
+    subject: string;
+    name: string;
+    steps: string[];
+    steps_version: number;
+  }> = {},
 ): Promise<ProcedureRow> {
   const payload = {
     id: overrides.id ?? randomUUID(),
@@ -202,7 +219,11 @@ export async function createProcedure(
     created_by: "test",
   };
 
-  const { data, error } = await supabase.from("procedures").insert(payload).select("id, steps_version").single();
+  const { data, error } = await supabase
+    .from("procedures")
+    .insert(payload)
+    .select("id, steps_version")
+    .single();
   if (error || !data) {
     throw new Error(`Failed to insert procedure: ${error?.message ?? "unknown"}`);
   }
@@ -237,7 +258,11 @@ export async function createAttemptInsight(
     created_at: params.createdAt ?? new Date().toISOString(),
   };
 
-  const { data, error } = await supabase.from("attempt_insights").insert(payload).select("attempt_id").single();
+  const { data, error } = await supabase
+    .from("attempt_insights")
+    .insert(payload)
+    .select("attempt_id")
+    .single();
   if (error || !data) {
     throw new Error(`Failed to insert attempt_insights: ${error?.message ?? "unknown"}`);
   }
@@ -311,19 +336,28 @@ export async function cleanupAttempts(supabase: SupabaseClient, ids: string[]): 
   if (error) throw new Error(`Failed to cleanup attempts: ${error.message}`);
 }
 
-export async function cleanupAttemptInsights(supabase: SupabaseClient, attemptIds: string[]): Promise<void> {
+export async function cleanupAttemptInsights(
+  supabase: SupabaseClient,
+  attemptIds: string[],
+): Promise<void> {
   if (attemptIds.length === 0) return;
   const { error } = await supabase.from("attempt_insights").delete().in("attempt_id", attemptIds);
   if (error) throw new Error(`Failed to cleanup attempt_insights: ${error.message}`);
 }
 
-export async function cleanupStudentSnapshots(supabase: SupabaseClient, studentIds: string[]): Promise<void> {
+export async function cleanupStudentSnapshots(
+  supabase: SupabaseClient,
+  studentIds: string[],
+): Promise<void> {
   if (studentIds.length === 0) return;
   const { error } = await supabase.from("student_snapshots").delete().in("student_id", studentIds);
   if (error) throw new Error(`Failed to cleanup student_snapshots: ${error.message}`);
 }
 
-export async function cleanupStudentReports(supabase: SupabaseClient, reportIds: string[]): Promise<void> {
+export async function cleanupStudentReports(
+  supabase: SupabaseClient,
+  reportIds: string[],
+): Promise<void> {
   await cleanupByIds(supabase, "student_reports", reportIds);
 }
 
@@ -331,6 +365,9 @@ export async function cleanupAiJobs(supabase: SupabaseClient, jobIds: string[]):
   await cleanupByIds(supabase, "ai_jobs", jobIds);
 }
 
-export async function cleanupNotificationEvents(supabase: SupabaseClient, eventIds: string[]): Promise<void> {
+export async function cleanupNotificationEvents(
+  supabase: SupabaseClient,
+  eventIds: string[],
+): Promise<void> {
   await cleanupByIds(supabase, "notification_events", eventIds);
 }

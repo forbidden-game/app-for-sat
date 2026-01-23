@@ -115,7 +115,8 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
               Admin access required
             </p>
             <p className="mt-2 text-sm text-[color:var(--ink-muted)]">
-              This area is restricted to admin accounts only. Sign in with an admin account to continue.
+              This area is restricted to admin accounts only. Sign in with an admin account to
+              continue.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link
@@ -125,7 +126,9 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
                 Go to Login
               </Link>
               {displayName ? (
-                <span className="text-xs text-[color:var(--ink-muted)]">Signed in as {displayName}</span>
+                <span className="text-xs text-[color:var(--ink-muted)]">
+                  Signed in as {displayName}
+                </span>
               ) : null}
             </div>
           </div>

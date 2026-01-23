@@ -1,4 +1,9 @@
-import { applyProviderAuth, createCoachAgent, modelForSpec, resolveJobModel } from "../../agentFactory.js";
+import {
+  applyProviderAuth,
+  createCoachAgent,
+  modelForSpec,
+  resolveJobModel,
+} from "../../agentFactory.js";
 import { createAgentLogSession } from "../../agentLogs.js";
 import { DEFAULT_PROMPT_VERSIONS, DEFAULT_SYSTEM_PROMPTS } from "../../prompts/promptOverrides.js";
 import type { JobHandlerContext } from "./types.js";

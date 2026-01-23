@@ -1,9 +1,11 @@
 # AI Coach Cloud E2E (Smoke)
+
 日期：2026-01-14
 
 Purpose: validate the per-student AI teacher loop in cloud wiring.
 
 These tests run against a **Supabase Cloud** project and validate the AI Coach integration points:
+
 - Edge Functions auth + writes (`submit_attempt`, `set_attempt_step`, `coach_chat`)
   - Note: these tests expect the **new** `submit_attempt` response shape including `attemptId`.
 - DB triggers enqueue `ai_jobs` rows
@@ -11,6 +13,7 @@ These tests run against a **Supabase Cloud** project and validate the AI Coach i
 They are intentionally **smoke-level** (no LLM assertions by default) to avoid cost/flakiness.
 
 ## Prerequisites
+
 - A **staging** Supabase project (recommended).
 - Local env vars exported (do **not** commit secrets):
 
@@ -27,6 +30,7 @@ ENV_FILE=web/admin-dashboard/.env.local ai-coach/scripts/deploy-cloud.sh
 ```
 
 Required variables:
+
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -38,6 +42,7 @@ deno test --allow-env --allow-net ai-coach/tests/cloud-e2e/
 ```
 
 ## What the tests do
+
 - Create a temporary student user.
 - Create a temporary question + question bank.
 - Start a practice session and submit a wrong attempt (verifies `ai_jobs(kind='attempt_insight')`).
@@ -45,5 +50,6 @@ deno test --allow-env --allow-net ai-coach/tests/cloud-e2e/
 - Cleanup all created data.
 
 ## Notes
+
 - These tests **write** to the target project (but cleanup after themselves).
 - If a worker is running against the same project, jobs may move from `queued` → `running`/`done` quickly; tests accept that.

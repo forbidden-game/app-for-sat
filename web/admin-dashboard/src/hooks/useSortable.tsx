@@ -73,8 +73,16 @@ export function useSortable<T extends Record<string, unknown>>(
       // Boolean comparison (true comes first in asc)
       if (typeof aValue === "boolean" && typeof bValue === "boolean") {
         return sortConfig.direction === "asc"
-          ? (aValue === bValue ? 0 : aValue ? -1 : 1)
-          : (aValue === bValue ? 0 : aValue ? 1 : -1);
+          ? aValue === bValue
+            ? 0
+            : aValue
+              ? -1
+              : 1
+          : aValue === bValue
+            ? 0
+            : aValue
+              ? 1
+              : -1;
       }
 
       // Fallback: convert to string and compare
@@ -94,23 +102,46 @@ export function useSortable<T extends Record<string, unknown>>(
 }
 
 // Helper function to render sort icon
-export function renderSortIcon(isActive: boolean, direction: SortDirection | undefined): React.ReactNode {
+export function renderSortIcon(
+  isActive: boolean,
+  direction: SortDirection | undefined,
+): React.ReactNode {
   if (!isActive) {
     return (
-      <svg className="inline-block h-3 w-3 opacity-30 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      <svg
+        className="inline-block h-3 w-3 opacity-30 ml-1"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+        />
       </svg>
     );
   }
   if (direction === "asc") {
     return (
-      <svg className="inline-block h-3 w-3 text-[color:var(--accent-strong)] ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        className="inline-block h-3 w-3 text-[color:var(--accent-strong)] ml-1"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
       </svg>
     );
   }
   return (
-    <svg className="inline-block h-3 w-3 text-[color:var(--accent-strong)] ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className="inline-block h-3 w-3 text-[color:var(--accent-strong)] ml-1"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
   );
