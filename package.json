@@ -5,6 +5,8 @@
     "prepare": "husky install",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "lint": "npm --prefix web/admin-dashboard run lint && npm --prefix web/parent-dashboard run lint && npm --prefix ai-coach run lint",
+    "typecheck": "npm --prefix web/admin-dashboard run typecheck && npm --prefix web/parent-dashboard run typecheck && npm --prefix ai-coach run typecheck",
     "setup": "npm install && npm --prefix web/admin-dashboard install && npm --prefix web/parent-dashboard install && npm --prefix ai-coach install --workspaces --include-workspace-root",
     "infra:start": "supabase start",
     "infra:stop": "supabase stop",

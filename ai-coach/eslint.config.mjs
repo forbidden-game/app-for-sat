@@ -28,6 +28,23 @@ export default [
     },
     rules: {
       ...tseslint.configs.recommended.rules,
+      "@typescript-eslint/naming-convention": [
+        "error",
+        {
+          selector: "typeLike",
+          format: ["PascalCase"],
+        },
+        {
+          selector: "enumMember",
+          format: ["PascalCase"],
+        },
+        {
+          selector: "variable",
+          modifiers: ["const"],
+          format: ["camelCase", "UPPER_CASE"],
+          leadingUnderscore: "allow",
+        },
+      ],
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       "no-undef": "off",
