@@ -21,6 +21,9 @@
     "prettier": "^3.4.2"
   },
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx,css,scss,json,md,mdx,yml,yaml}": "prettier --write"
+    "**/*.{js,jsx,ts,tsx,css,scss,json,md,mdx,yml,yaml}": "prettier --write",
+    "web/admin-dashboard/**/*.{js,jsx,ts,tsx}": "npm --prefix web/admin-dashboard run lint",
+    "web/parent-dashboard/**/*.{js,jsx,ts,tsx}": "npm --prefix web/parent-dashboard run lint",
+    "ai-coach/**/*.{js,jsx,ts,tsx}": "npm --prefix ai-coach run lint"
   }
 }

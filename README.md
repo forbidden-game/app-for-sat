@@ -21,7 +21,7 @@
 
 ## 根目录命令
 
-- 首次安装：`npm install && npm run setup`
+- 首次安装：`npm run setup`
 - 格式化：`npm run format`（检查：`npm run format:check`）
 - 前端开发：`npm run dev`（单独：`npm run dev:admin`/`npm run dev:parent`）
 - 后端开发：`npm run dev:coach` / `npm run dev:notification`
