@@ -84,31 +84,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Determine changed files
-        id: changed
+      - name: Run format check (changed files)
         run: |
           set -euo pipefail
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             git fetch origin "${{ github.base_ref }}" --depth=1
-            files=$(git diff --name-only --diff-filter=ACMRT "origin/${{ github.base_ref }}"...HEAD)
+            git diff --name-only --diff-filter=ACMRT -z "origin/${{ github.base_ref }}"...HEAD \
+              | xargs -0 -r npx prettier --check --ignore-unknown
           else
             before="${{ github.event.before }}"
             if [ -n "$before" ] && [ "$before" != "0000000000000000000000000000000000000000" ]; then
-              files=$(git diff --name-only --diff-filter=ACMRT "$before" "$GITHUB_SHA")
+              git diff --name-only --diff-filter=ACMRT -z "$before" "$GITHUB_SHA" \
+                | xargs -0 -r npx prettier --check --ignore-unknown
             else
-              files=$(git diff --name-only --diff-filter=ACMRT HEAD^ HEAD || true)
+              git diff --name-only --diff-filter=ACMRT -z HEAD^ HEAD \
+                | xargs -0 -r npx prettier --check --ignore-unknown
             fi
           fi
-          files=$(printf "%s" "$files" | tr '\n' ' ' | sed 's/  */ /g' | sed 's/^ //;s/ $//')
-          echo "files=$files" >> "$GITHUB_OUTPUT"
-
-      - name: Run format check (changed files)
-        if: steps.changed.outputs.files != ''
-        run: npx prettier --check --ignore-unknown ${{ steps.changed.outputs.files }}
-
-      - name: Skip format check (no changes)
-        if: steps.changed.outputs.files == ''
-        run: echo "No files to format."
 
   lint-typecheck:
     name: Lint + Typecheck (Root)
