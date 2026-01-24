@@ -43,7 +43,7 @@ function parseJobKinds(): AiJobKind[] | null {
   const parts = readCsvEnv("AI_COACH_JOB_KINDS");
   if (!parts) return null;
 
-  const invalid = parts.filter((value) => !allowedJobKinds.includes(value as AiJobKind));
+  const invalid = parts.filter((value: string) => !allowedJobKinds.includes(value as AiJobKind));
   if (invalid.length > 0) {
     throw new Error(`Invalid AI_COACH_JOB_KINDS entries: ${invalid.join(", ")}`);
   }
