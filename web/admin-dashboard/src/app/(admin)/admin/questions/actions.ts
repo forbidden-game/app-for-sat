@@ -96,12 +96,12 @@ function validateQuestionInput(input: QuestionInput) {
   const subject = input.subject.trim();
   const questionModule = input.module.trim();
   const stem = input.stem.trim();
-  const question_type = input.question_type.trim();
+  const questionType = input.question_type.trim();
 
   if (!subject) throw new Error("Subject is required.");
   if (!questionModule) throw new Error("Module is required.");
   if (!stem) throw new Error("Question stem is required.");
-  if (!question_type) throw new Error("Question type is required.");
+  if (!questionType) throw new Error("Question type is required.");
   if (!Number.isFinite(input.difficulty) || input.difficulty < 1 || input.difficulty > 5) {
     throw new Error("Difficulty must be between 1 and 5.");
   }
@@ -113,7 +113,7 @@ function validateQuestionInput(input: QuestionInput) {
     subject,
     module: questionModule,
     difficulty: input.difficulty,
-    question_type,
+    question_type: questionType,
     stem,
     answer_key: input.answer_key,
     metadata: input.metadata ?? {},
