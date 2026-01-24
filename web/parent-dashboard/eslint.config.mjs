@@ -15,6 +15,12 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/naming-convention": [
         "error",
         {
+          selector: "variable",
+          modifiers: ["destructured"],
+          format: ["camelCase", "snake_case", "UPPER_CASE"],
+          leadingUnderscore: "allow",
+        },
+        {
           selector: "typeLike",
           format: ["PascalCase"],
         },
@@ -25,7 +31,7 @@ const eslintConfig = defineConfig([
         {
           selector: "variable",
           modifiers: ["const"],
-          format: ["camelCase", "UPPER_CASE"],
+          format: ["camelCase", "PascalCase", "UPPER_CASE"],
           leadingUnderscore: "allow",
         },
       ],

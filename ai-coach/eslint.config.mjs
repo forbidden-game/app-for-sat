@@ -31,6 +31,12 @@ export default [
       "@typescript-eslint/naming-convention": [
         "error",
         {
+          selector: "variable",
+          modifiers: ["destructured"],
+          format: ["camelCase", "snake_case", "UPPER_CASE"],
+          leadingUnderscore: "allow",
+        },
+        {
           selector: "typeLike",
           format: ["PascalCase"],
         },
@@ -41,7 +47,7 @@ export default [
         {
           selector: "variable",
           modifiers: ["const"],
-          format: ["camelCase", "UPPER_CASE"],
+          format: ["camelCase", "PascalCase", "UPPER_CASE"],
           leadingUnderscore: "allow",
         },
       ],
