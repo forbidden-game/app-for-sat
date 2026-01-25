@@ -10,6 +10,11 @@ function getMinimaxBaseUrl(): string | undefined {
   return raw && raw.length > 0 ? raw : undefined;
 }
 
+function getOpenAIBaseUrl(): string | undefined {
+  const raw = process.env.OPENAI_BASE_URL?.trim();
+  return raw && raw.length > 0 ? raw : undefined;
+}
+
 export function parseModelSpec(
   spec: string,
   fallbackProvider: KnownProvider = "minimax",
@@ -49,8 +54,12 @@ export function resolveModel(
 
   const resolved = cloneModel(model);
   const minimaxBaseUrl = getMinimaxBaseUrl();
+  const openaiBaseUrl = getOpenAIBaseUrl();
   if (parsed.provider === "minimax" && minimaxBaseUrl) {
     resolved.baseUrl = minimaxBaseUrl;
+  }
+  if (parsed.provider === "openai" && openaiBaseUrl) {
+    resolved.baseUrl = openaiBaseUrl;
   }
   return resolved;
 }
@@ -67,5 +76,20 @@ export function applyMinimaxAuth<T extends Model<any>>(model: T, apiKey?: string
     ...model,
     headers,
     baseUrl: getMinimaxBaseUrl() ?? model.baseUrl,
+  };
+}
+
+export function applyOpenAIAuth<T extends Model<any>>(model: T, apiKey?: string | null): T {
+  if (model.provider !== "openai" || !apiKey) return model;
+
+  const headers = {
+    ...model.headers,
+    Authorization: `Bearer ${apiKey}`,
+  };
+
+  return {
+    ...model,
+    headers,
+    baseUrl: getOpenAIBaseUrl() ?? model.baseUrl,
   };
 }

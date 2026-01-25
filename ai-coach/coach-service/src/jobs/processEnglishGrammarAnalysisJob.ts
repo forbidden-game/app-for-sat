@@ -10,6 +10,8 @@ export const ENGLISH_GRAMMAR_PROMPT_VERSION = "english-grammar-v1";
 const CHUNK_SIZE = 6;
 const CHUNK_OVERLAP = 1;
 const MAX_IMPORTANT_WORDS = 20;
+const MAX_COMPONENTS_PER_SENTENCE = 60;
+const MAX_RESPONSE_CHARS = 200_000;
 
 type GrammarComponent = {
   id: string;
@@ -148,7 +150,8 @@ function sanitizeComponents(text: string, components: GrammarComponent[]): Gramm
     .map((component, index) => {
       const id = component.id?.length ? component.id : `span-${index}-${component.start}-${component.end}`;
       return { ...component, id };
-    });
+    })
+    .slice(0, MAX_COMPONENTS_PER_SENTENCE);
 }
 
 function mergeImportantWords(
@@ -171,19 +174,28 @@ function finalizeImportantWords(wordMap: Map<string, ImportantWord>): ImportantW
 
 async function collectAgentText(agent: Agent, prompt: string): Promise<string> {
   let buffer = "";
+  let exceeded = false;
   const unsubscribe = agent.subscribe((event) => {
     if (event.type !== "message_update") return;
     const message = (event as any).assistantMessageEvent;
     if (!message || message.type !== "text_delta") return;
     const delta = message.delta;
     if (typeof delta !== "string" || delta.length === 0) return;
+    if (exceeded) return;
     buffer += delta;
+    if (buffer.length > MAX_RESPONSE_CHARS) {
+      exceeded = true;
+    }
   });
 
   try {
     await agent.prompt(prompt);
   } finally {
     unsubscribe();
+  }
+
+  if (exceeded) {
+    throw new Error("english_grammar_response_too_large");
   }
 
   return buffer.trim();

@@ -225,6 +225,7 @@ export function makeConfig(overrides: Partial<CoachConfig> = {}): CoachConfig {
     modelInsight: "minimax/MiniMax-M2.1",
     modelChat: "minimax/MiniMax-M2.1",
     modelReport: "minimax/MiniMax-M2.1",
+    modelEnglishGrammar: "minimax/MiniMax-M2.1",
     ...overrides,
   };
 }

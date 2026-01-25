@@ -18,6 +18,7 @@ export type CoachConfig = {
   modelInsight: string;
   modelChat: string;
   modelReport: string;
+  modelEnglishGrammar: string;
   jobKinds: AiJobKind[] | null;
   enableScheduler: boolean;
 };
@@ -78,13 +79,14 @@ export function getConfig(): CoachConfig {
   const modelInsight = readStringEnv("AI_COACH_MODEL_INSIGHT", defaultModel);
   const modelChat = readStringEnv("AI_COACH_MODEL_CHAT", defaultModel);
   const modelReport = readStringEnv("AI_COACH_MODEL_REPORT", defaultModel);
+  const modelEnglishGrammar = readStringEnv("AI_COACH_MODEL_ENGLISH_GRAMMAR", defaultModel);
 
   const models = {
     default: defaultModel,
     attempt_insight: modelInsight,
     coach_reply: modelChat,
     progress_report: modelReport,
-    english_grammar_analysis: defaultModel,
+    english_grammar_analysis: modelEnglishGrammar,
     thread_summary: defaultModel,
     procedure_merge: defaultModel,
   };
@@ -110,6 +112,7 @@ export function getConfig(): CoachConfig {
     modelInsight,
     modelChat,
     modelReport,
+    modelEnglishGrammar,
     jobKinds,
     enableScheduler: readBoolEnv("AI_COACH_ENABLE_SCHEDULER", true),
   };

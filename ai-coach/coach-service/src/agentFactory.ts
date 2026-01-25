@@ -3,7 +3,7 @@ import { getEnvApiKey, type Model } from "@mariozechner/pi-ai";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "./config.js";
-import { applyMinimaxAuth, resolveModel } from "./model.js";
+import { applyMinimaxAuth, applyOpenAIAuth, resolveModel } from "./model.js";
 import type { AiJobRow } from "./types.js";
 import { buildCoachTools, type CoachToolOptions } from "./tools/coachTools.js";
 import { DEFAULT_PROMPT_VERSIONS, DEFAULT_SYSTEM_PROMPTS } from "./prompts/promptOverrides.js";
@@ -22,6 +22,7 @@ export function resolveJobModel(config: CoachConfig, kind: AiJobRow["kind"]): Mo
   if (kind === "attempt_insight") return modelForSpec(config.modelInsight);
   if (kind === "coach_reply") return modelForSpec(config.modelChat);
   if (kind === "progress_report") return modelForSpec(config.modelReport);
+  if (kind === "english_grammar_analysis") return modelForSpec(config.modelEnglishGrammar);
   return modelForSpec(config.modelDefault);
 }
 
@@ -62,12 +63,13 @@ export function createChatAgent(
   model: Model<any>,
   systemPrompt?: string,
   apiKeyResolver?: (provider: string) => Promise<string | undefined> | string | undefined,
+  thinkingLevel: "off" | "low" | "medium" | "high" = "off",
 ): Agent {
   return new Agent({
     initialState: {
       systemPrompt: systemPrompt ?? DEFAULT_SYSTEM_PROMPTS.coach_reply,
       model,
-      thinkingLevel: "off",
+      thinkingLevel,
       tools: [],
       messages: [],
     },
@@ -81,6 +83,9 @@ export function createChatAgent(
 export function applyProviderAuth(model: Model<any>, providerKey?: string | null): Model<any> {
   if (model.provider === "minimax") {
     return applyMinimaxAuth(model, providerKey ?? undefined);
+  }
+  if (model.provider === "openai") {
+    return applyOpenAIAuth(model, providerKey ?? undefined);
   }
   return model;
 }
