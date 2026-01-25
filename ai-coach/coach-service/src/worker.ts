@@ -102,10 +102,8 @@ async function claimJobs(
   const params: Record<string, unknown> = {
     p_worker_id: workerId,
     p_limit: limit,
+    p_kinds: jobKinds && jobKinds.length > 0 ? jobKinds : null,
   };
-  if (jobKinds && jobKinds.length > 0) {
-    params.p_kinds = jobKinds;
-  }
 
   const { data, error } = await supabase.rpc("claim_ai_jobs", params);
 
