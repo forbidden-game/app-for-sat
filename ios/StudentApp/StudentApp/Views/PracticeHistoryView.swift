@@ -8,6 +8,7 @@ struct PracticeHistoryView: View {
     let showsHeader: Bool
 
     @StateObject private var vm = PracticeHistoryViewModel()
+    @StateObject private var behaviorVM = StudyBehaviorViewModel()
     @State private var selectedSession: SessionHistoryItem?
 
     init(banks: [QuestionBank], studentId: String, showsHeader: Bool = true) {
@@ -39,6 +40,9 @@ struct PracticeHistoryView: View {
         }
         .task {
             await vm.load()
+        }
+        .task {
+            await behaviorVM.load(windowDays: 7)
         }
         .onChange(of: vm.selectedRange) { _, _ in
             Task { await vm.load() }
@@ -119,6 +123,20 @@ struct PracticeHistoryView: View {
     private var content: some View {
         ScrollView {
             VStack(spacing: 14) {
+                if behaviorVM.isLoading {
+                    ProgressView()
+                        .tint(AppTheme.accentStrong)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                } else if let behavior = behaviorVM.behavior {
+                    StudyBehaviorCard(behavior: behavior)
+                } else if let behaviorError = behaviorVM.errorMessage {
+                    Text(behaviorError)
+                        .font(.footnote)
+                        .foregroundStyle(AppTheme.statusDanger)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
                 if let error = vm.errorMessage {
                     Text(error)
                         .font(.footnote)
