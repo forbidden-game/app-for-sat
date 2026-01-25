@@ -11,6 +11,7 @@ struct QuestionAnswerContentView: View {
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
+    let questionStartedAt: Date
     @Binding var returnToOverviewOnAnswer: Bool
     let onShowOverview: () -> Void
     let onSubmissionError: (Error) -> Void
@@ -225,9 +226,11 @@ struct QuestionAnswerContentView: View {
     }
 
     private func submitAnswer(questionId: String, answer: String) {
+        let durationMs = AttemptDuration.milliseconds(from: questionStartedAt)
         submission.submit(
             question: question,
             answer: answer,
+            durationMs: durationMs,
             questionId: questionId,
             onSuccess: { _ in },
             onFailure: { error in

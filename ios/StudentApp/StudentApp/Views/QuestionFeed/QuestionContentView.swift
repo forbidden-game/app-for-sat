@@ -135,6 +135,7 @@ struct QuestionContentView: View {
                 state: state,
                 store: store,
                 submission: submission,
+                questionStartedAt: questionStartedAt,
                 returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
                 onShowOverview: onShowOverview,
                 onSubmissionError: onSubmissionError
@@ -216,6 +217,7 @@ struct QuestionContentView: View {
             state: state,
             store: store,
             submission: submission,
+            questionStartedAt: questionStartedAt,
             returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
             onShowOverview: onShowOverview,
             onSubmissionError: onSubmissionError
