@@ -1,0 +1,72 @@
+name: Deploy AI Coach
+
+on:
+  push:
+    branches: ["master"]
+    paths:
+      - "ai-coach/**"
+      - ".github/workflows/deploy-ai-coach.yml"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare SSH key
+        run: |
+          {
+            echo 'ADMIN_SSH_KEY<<EOF'
+            echo "${{ secrets.ADMIN_SSH_KEY_B64 }}" | base64 --decode
+            echo 'EOF'
+          } >> "$GITHUB_ENV"
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.ADMIN_SSH_HOST }}
+          username: ${{ secrets.ADMIN_SSH_USER }}
+          key: ${{ env.ADMIN_SSH_KEY }}
+          port: ${{ secrets.ADMIN_SSH_PORT }}
+          script: |
+            set -euo pipefail
+            cd /root/apps/app-for-sat
+            if [ -n "$(git status --porcelain)" ]; then
+              echo "Working tree is dirty. Backing up local changes before deploy."
+              git status --porcelain
+              TS="$(date +%Y%m%d-%H%M%S)"
+              PATCH_PATH="/root/apps/app-for-sat/.dirty-${TS}.patch"
+              UNTRACKED_TGZ="/root/apps/app-for-sat/.dirty-${TS}-untracked.tgz"
+              git diff > "$PATCH_PATH"
+              git diff --cached >> "$PATCH_PATH"
+              if [ -n "$(git ls-files --others --exclude-standard)" ]; then
+                git ls-files --others --exclude-standard -z | tar -czf "$UNTRACKED_TGZ" --null -T -
+              fi
+              git reset --hard
+              git clean -fd
+              echo "Dirty changes saved to ${PATCH_PATH}"
+              if [ -f "$UNTRACKED_TGZ" ]; then
+                echo "Untracked files archived to ${UNTRACKED_TGZ}"
+              fi
+            fi
+            PREV_HEAD="$(git rev-parse HEAD)"
+            git fetch origin master
+            git checkout master
+            git pull --ff-only origin master
+            if ! git diff --name-only "$PREV_HEAD..HEAD" -- ai-coach | grep -q .; then
+              echo "No ai-coach changes detected. Skipping deploy."
+              exit 0
+            fi
+            cd /root/apps/app-for-sat/ai-coach
+            NEED_INSTALL=0
+            if [ ! -d node_modules ]; then
+              NEED_INSTALL=1
+            fi
+            if git diff --name-only "$PREV_HEAD..HEAD" -- ai-coach/package.json ai-coach/package-lock.json ai-coach/coach-service/package.json ai-coach/coach-service/package-lock.json ai-coach/notification-sender/package.json ai-coach/notification-sender/package-lock.json ai-coach/shared/package.json ai-coach/shared/package-lock.json | grep -q .; then
+              NEED_INSTALL=1
+            fi
+            if [ "$NEED_INSTALL" -eq 1 ]; then
+              npm install --workspaces --include-workspace-root --no-fund --no-audit
+            else
+              echo "Dependencies unchanged; skipping npm install."
+            fi
+            npm run build
+            systemctl restart ai-coach-worker.service
+            systemctl restart ai-coach-notification-sender.service
