@@ -22,6 +22,12 @@ function formatDelta(value: number, digits = 1) {
   return `${sign}${value.toFixed(digits)}`;
 }
 
+function formatPercentDelta(value: number | null) {
+  if (value === null || Number.isNaN(value)) return "N/A";
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${Math.round(value * 100)}%`;
+}
+
 function Metric({ label, value, delta }: { label: string; value: string; delta?: string }) {
   return (
     <div className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
@@ -62,7 +68,7 @@ function BehaviorCard({ item, windowDays }: { item: StudyBehaviorItem; windowDay
           <Metric
             label="Outcome improvement"
             value={formatPercent(item.behavior.metrics.accuracy)}
-            delta={`${formatDelta(item.behavior.metrics.accuracy_delta ?? 0, 0)}% vs prior ${windowDays}d`}
+            delta={`${formatPercentDelta(item.behavior.metrics.accuracy_delta)} vs prior ${windowDays}d`}
           />
           <Metric
             label="Consistency"
