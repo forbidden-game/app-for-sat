@@ -105,6 +105,15 @@ begin
     and a.created_at >= v_prev_start
     and a.created_at < v_window_start;
 
+  v_attempts_cur := coalesce(v_attempts_cur, 0);
+  v_correct_cur := coalesce(v_correct_cur, 0);
+  v_duration_ms_cur := coalesce(v_duration_ms_cur, 0);
+  v_active_days_cur := coalesce(v_active_days_cur, 0);
+  v_attempts_prev := coalesce(v_attempts_prev, 0);
+  v_correct_prev := coalesce(v_correct_prev, 0);
+  v_duration_ms_prev := coalesce(v_duration_ms_prev, 0);
+  v_active_days_prev := coalesce(v_active_days_prev, 0);
+
   v_accuracy_cur := case when v_attempts_cur > 0 then v_correct_cur::numeric / v_attempts_cur else null end;
   v_accuracy_prev := case when v_attempts_prev > 0 then v_correct_prev::numeric / v_attempts_prev else null end;
   v_accuracy_delta := case
