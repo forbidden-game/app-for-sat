@@ -402,7 +402,7 @@
 
 ### `public.get_study_behavior(target_student_id uuid, window_days int, history_weeks int)`
 
-**用途**：返回学习行为状态与趋势（时间投入/正确率变化/活跃天数 + 日/周序列），供家长/学生/管理员展示。
+**用途**：返回学习行为状态与趋势（时间投入/正确率变化/活跃天数 + 日/周序列），供家长/学生/管理员展示。学生端可省略 `target_student_id`（默认 `auth.uid()`）。
 
 **鉴权**
 

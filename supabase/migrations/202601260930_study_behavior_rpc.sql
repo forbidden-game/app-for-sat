@@ -1,5 +1,5 @@
 create or replace function public.get_study_behavior(
-  target_student_id uuid,
+  target_student_id uuid default null,
   window_days int default 7,
   history_weeks int default 8
 )

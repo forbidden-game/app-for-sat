@@ -1371,7 +1371,7 @@ export type Database = {
         Returns: Json
       }
       get_study_behavior: {
-        Args: { target_student_id: string; window_days?: number; history_weeks?: number }
+        Args: { target_student_id?: string; window_days?: number; history_weeks?: number }
         Returns: Json
       }
       get_session_history: {
