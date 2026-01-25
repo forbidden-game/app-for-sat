@@ -358,6 +358,21 @@ public final class SupabasePracticeService {
         return items
     }
 
+    public func fetchStudyBehavior(windowDays: Int = 7, historyWeeks: Int = 8) async throws -> StudyBehavior {
+        let params = StudyBehaviorParams(
+            target_student_id: nil,
+            window_days: windowDays,
+            history_weeks: historyWeeks
+        )
+
+        let behavior: StudyBehavior = try await client
+            .rpc("get_study_behavior", params: params)
+            .execute()
+            .value
+
+        return behavior
+    }
+
     private func encodedAnswer(for question: Question, answer: String?) -> FunctionAnswerValue? {
         guard let answer, !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return nil
@@ -574,6 +589,12 @@ private struct EmptyParams: Encodable {}
 private struct StartPracticeSessionParams: Encodable {
     let bank_slug: String
     let override_limit: Int?
+}
+
+private struct StudyBehaviorParams: Encodable {
+    let target_student_id: String?
+    let window_days: Int?
+    let history_weeks: Int?
 }
 
 private struct StartPracticeSessionResponse: Decodable {
