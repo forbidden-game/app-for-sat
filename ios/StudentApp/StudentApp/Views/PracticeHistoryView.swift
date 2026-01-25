@@ -168,6 +168,7 @@ struct PracticeHistoryView: View {
         }
         .refreshable {
             await vm.refresh()
+            await behaviorVM.load(windowDays: 7)
         }
     }
 
