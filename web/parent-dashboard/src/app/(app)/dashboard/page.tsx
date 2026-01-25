@@ -372,7 +372,9 @@ export default function DashboardPage() {
                 {formatPercentOrNA(behavior.metrics.accuracy)}
               </p>
               <p className="mt-1 text-xs text-zinc-400">
-                {formatDeltaPercent(behavior.metrics.accuracy_delta)} vs prior {behavior.window_days}d
+                {behavior.metrics.accuracy_delta === null
+                  ? "N/A"
+                  : `${formatDeltaPercent(behavior.metrics.accuracy_delta)} vs prior ${behavior.window_days}d`}
               </p>
             </div>
             <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">

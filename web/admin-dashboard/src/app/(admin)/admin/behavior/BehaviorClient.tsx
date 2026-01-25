@@ -68,7 +68,11 @@ function BehaviorCard({ item, windowDays }: { item: StudyBehaviorItem; windowDay
           <Metric
             label="Outcome improvement"
             value={formatPercent(item.behavior.metrics.accuracy)}
-            delta={`${formatPercentDelta(item.behavior.metrics.accuracy_delta)} vs prior ${windowDays}d`}
+            delta={
+              item.behavior.metrics.accuracy_delta === null
+                ? "N/A"
+                : `${formatPercentDelta(item.behavior.metrics.accuracy_delta)} vs prior ${windowDays}d`
+            }
           />
           <Metric
             label="Consistency"
