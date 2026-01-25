@@ -26,8 +26,12 @@ struct QuestionContentView: View {
     @State private var layoutSignature: LayoutSignature?
     @State private var lastLayoutSize: CGSize = .zero
 
+    // Resets when the question becomes active so the user sees time spent on the current question.
+    @State private var questionStartedAt: Date = .now
+
     var body: some View {
         let progress = total > 0 ? Double(index + 1) / Double(total) : 0
+        let isCurrentQuestion = index == state.currentIndex
 
         VStack(spacing: AppMetrics.sectionSpacing) {
             PracticeTopBar(
@@ -37,6 +41,14 @@ struct QuestionContentView: View {
                 onBack: onBack,
                 onOverview: onShowOverview
             )
+
+            if isCurrentQuestion {
+                HStack {
+                    Spacer()
+                    QuestionTimerPill(startedAt: questionStartedAt)
+                }
+                .padding(.horizontal, AppMetrics.screenHorizontalPadding)
+            }
 
             GeometryReader { proxy in
                 let size = proxy.size
@@ -59,8 +71,19 @@ struct QuestionContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.bottom, AppMetrics.pageBottomPadding)
+        .onAppear {
+            if index == state.currentIndex {
+                questionStartedAt = .now
+            }
+        }
         .onChange(of: question.id) { _, _ in
+            questionStartedAt = .now
             resetLayout()
+        }
+        .onChange(of: state.currentIndex) { _, newIndex in
+            if newIndex == index {
+                questionStartedAt = .now
+            }
         }
         .onChange(of: colorScheme) { _, _ in
             resetLayout()
@@ -328,6 +351,39 @@ struct QuestionContentView: View {
 
     // MARK: - Helper Methods
 
+}
+
+private struct QuestionTimerPill: View {
+    let startedAt: Date
+
+    var body: some View {
+        TimelineView(.periodic(from: startedAt, by: 1.0)) { timeline in
+            let text = Self.formatElapsed(from: startedAt, now: timeline.date)
+            Text(text)
+                .font(.caption.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(AppTheme.textSecondary)
+                .padding(.vertical, 6)
+                .padding(.horizontal, 10)
+                .background(AppTheme.surface.opacity(0.9))
+                .clipShape(Capsule())
+                .overlay(
+                    Capsule().stroke(AppTheme.divider, lineWidth: 1)
+                )
+                .accessibilityLabel("Time \(text)")
+        }
+    }
+
+    private static func formatElapsed(from start: Date, now: Date) -> String {
+        let seconds = max(0, Int(now.timeIntervalSince(start)))
+        let hours = seconds / 3600
+        let minutes = (seconds % 3600) / 60
+        let remainder = seconds % 60
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, remainder)
+        }
+        return String(format: "%02d:%02d", minutes, remainder)
+    }
 }
 
 private struct LayoutSignature: Equatable {
