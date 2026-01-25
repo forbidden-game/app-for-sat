@@ -35,9 +35,49 @@ type ParentDashboard = {
   }>;
 };
 
+type StudyBehavior = {
+  student_id: string;
+  window_days: number;
+  state: {
+    label: string;
+    confidence: number | null;
+  };
+  drivers: string[];
+  metrics: {
+    minutes: number;
+    minutes_delta: number;
+    accuracy: number | null;
+    accuracy_delta: number | null;
+    active_days: number;
+    active_days_delta: number;
+    attempts: number;
+  };
+  daily: Array<{
+    date: string;
+    minutes: number;
+    attempts: number;
+    accuracy: number | null;
+  }>;
+  weekly: Array<{
+    week_start: string;
+    minutes: number;
+    attempts: number;
+    accuracy: number | null;
+    active_days: number;
+  }>;
+};
+
 const chartWidth = 520;
 const chartHeight = 180;
 const chartPadding = 16;
+
+const behaviorStateStyles: Record<string, string> = {
+  "On Track": "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Catching Up": "border-sky-200 bg-sky-50 text-sky-700",
+  "Inconsistent": "border-amber-200 bg-amber-50 text-amber-700",
+  "At Risk": "border-rose-200 bg-rose-50 text-rose-700",
+  "No Data": "border-zinc-200 bg-zinc-50 text-zinc-500",
+};
 
 function buildLinePoints(values: number[], width: number, height: number) {
   if (values.length === 0) return "";
@@ -66,6 +106,23 @@ function formatShortDate(value: string) {
   });
 }
 
+function formatShortDay(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+function formatDelta(value: number, digits = 1) {
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${value.toFixed(digits)}`;
+}
+
+function formatDeltaPercent(value: number | null) {
+  if (value === null || Number.isNaN(value)) return "N/A";
+  const sign = value >= 0 ? "+" : "";
+  return `${sign}${Math.round(value * 100)}%`;
+}
+
 function formatSupabaseError(
   error: {
     message?: string;
@@ -82,6 +139,8 @@ function formatSupabaseError(
 export default function DashboardPage() {
   const supabase = getSupabaseClient();
   const [dashboard, setDashboard] = useState<ParentDashboard | null>(null);
+  const [behavior, setBehavior] = useState<StudyBehavior | null>(null);
+  const [behaviorError, setBehaviorError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasLinkedStudent, setHasLinkedStudent] = useState(true);
@@ -99,6 +158,8 @@ export default function DashboardPage() {
 
       setLoading(true);
       setError(null);
+      setBehaviorError(null);
+      setBehavior(null);
 
       const { data: links, error: linksError } = await supabase
         .from("parent_student_links")
@@ -124,22 +185,39 @@ export default function DashboardPage() {
       }
 
       const targetStudentId = links[0].student_id;
-      const { data, error: rpcError } = await supabase.rpc("get_parent_dashboard", {
-        target_student_id: targetStudentId,
-        window_days: 7,
-      });
+      const [dashboardResult, behaviorResult] = await Promise.all([
+        supabase.rpc("get_parent_dashboard", {
+          target_student_id: targetStudentId,
+          window_days: 7,
+        }),
+        supabase.rpc("get_study_behavior", {
+          target_student_id: targetStudentId,
+          window_days: 7,
+          history_weeks: 8,
+        }),
+      ]);
 
-      if (rpcError) {
-        console.error("[dashboard] Failed to load parent dashboard", rpcError);
+      if (dashboardResult.error) {
+        console.error("[dashboard] Failed to load parent dashboard", dashboardResult.error);
         if (isActive) {
-          setError(`Failed to load dashboard data. ${formatSupabaseError(rpcError)}`);
+          setError(`Failed to load dashboard data. ${formatSupabaseError(dashboardResult.error)}`);
           setLoading(false);
         }
         return;
       }
 
+      if (behaviorResult.error) {
+        console.warn("[dashboard] Failed to load study behavior", behaviorResult.error);
+        if (isActive) {
+          setBehaviorError(`Behavior data unavailable. ${formatSupabaseError(behaviorResult.error)}`);
+        }
+      }
+
       if (isActive) {
-        setDashboard(data as ParentDashboard);
+        setDashboard(dashboardResult.data as ParentDashboard);
+        if (behaviorResult.data) {
+          setBehavior(behaviorResult.data as StudyBehavior);
+        }
         setLoading(false);
       }
     }
@@ -167,6 +245,16 @@ export default function DashboardPage() {
     if (!dashboard) return [] as Array<number | null>;
     return dashboard.trend.map((point) => point.rank_percentile);
   }, [dashboard]);
+
+  const behaviorDaily = useMemo(() => {
+    if (!behavior) return [] as StudyBehavior["daily"];
+    return behavior.daily.slice(-7);
+  }, [behavior]);
+
+  const behaviorMaxMinutes = useMemo(() => {
+    if (behaviorDaily.length === 0) return 0;
+    return Math.max(...behaviorDaily.map((point) => point.minutes));
+  }, [behaviorDaily]);
 
   const hasRankSeries = rankSeries.some((value) => value !== null);
   const accuracyPoints = buildLinePoints(accuracySeries, chartWidth, chartHeight);
@@ -251,6 +339,85 @@ export default function DashboardPage() {
           <p className="mt-1 text-xs text-zinc-400">All users · min 20 attempts</p>
         </div>
       </div>
+
+      {behavior ? (
+        <section className="mt-8 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-base font-semibold text-zinc-900">Study behavior</h2>
+              <p className="mt-1 text-xs text-zinc-400">Last {behavior.window_days} days</p>
+            </div>
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+                behaviorStateStyles[behavior.state.label] ?? behaviorStateStyles["No Data"]
+              }`}
+            >
+              {behavior.state.label}
+            </span>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+              <p className="text-xs text-zinc-500">Time spent</p>
+              <p className="mt-2 text-lg font-semibold text-zinc-900">
+                {behavior.metrics.minutes.toFixed(1)} min
+              </p>
+              <p className="mt-1 text-xs text-zinc-400">
+                {formatDelta(behavior.metrics.minutes_delta)} min vs prior {behavior.window_days}d
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+              <p className="text-xs text-zinc-500">Outcome improvement</p>
+              <p className="mt-2 text-lg font-semibold text-zinc-900">
+                {formatPercentOrNA(behavior.metrics.accuracy)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-400">
+                {formatDeltaPercent(behavior.metrics.accuracy_delta)} vs prior {behavior.window_days}d
+              </p>
+            </div>
+            <div className="rounded-lg border border-zinc-100 bg-zinc-50 p-3">
+              <p className="text-xs text-zinc-500">Consistency</p>
+              <p className="mt-2 text-lg font-semibold text-zinc-900">
+                {behavior.metrics.active_days}/{behavior.window_days} days
+              </p>
+              <p className="mt-1 text-xs text-zinc-400">
+                {formatDelta(behavior.metrics.active_days_delta, 0)} days vs prior {behavior.window_days}d
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-semibold uppercase text-zinc-500">Daily consistency</p>
+            <div className="mt-3 grid grid-cols-7 gap-2">
+              {behaviorDaily.map((point) => {
+                const height =
+                  behaviorMaxMinutes > 0
+                    ? Math.max(8, (point.minutes / behaviorMaxMinutes) * 32)
+                    : 8;
+                return (
+                  <div key={point.date} className="flex flex-col items-center gap-1">
+                    <span
+                      className="w-2 rounded-full bg-zinc-900"
+                      style={{ height: `${height}px` }}
+                    />
+                    <span className="text-[10px] text-zinc-400">{formatShortDay(point.date)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-1 text-xs text-zinc-500">
+            {behavior.drivers.slice(0, 3).map((driver) => (
+              <p key={driver}>{driver}</p>
+            ))}
+          </div>
+        </section>
+      ) : behaviorError ? (
+        <section className="mt-8 rounded-xl border border-zinc-200 bg-white p-5 text-sm text-zinc-500 shadow-sm">
+          {behaviorError}
+        </section>
+      ) : null}
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[2fr,1fr]">
         <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
