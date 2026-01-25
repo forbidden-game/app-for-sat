@@ -400,6 +400,18 @@
 
 ---
 
+### `public.get_study_behavior(target_student_id uuid, window_days int, history_weeks int)`
+
+**用途**：返回学习行为状态与趋势（时间投入/正确率变化/活跃天数 + 日/周序列），供家长/学生/管理员展示。
+
+**鉴权**
+
+- 学生：仅能读取自己。
+- 家长：仅能读取已绑定学生。
+- 管理员/服务角色：可读取所有学生。
+
+---
+
 ### `public.start_practice_session(bank_slug text, override_limit int)`
 
 **用途**：创建练习 session，按题库生成题目列表并返回（不包含答案）。

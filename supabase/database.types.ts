@@ -1370,6 +1370,10 @@ export type Database = {
         Args: { target_student_id: string; window_days?: number }
         Returns: Json
       }
+      get_study_behavior: {
+        Args: { target_student_id: string; window_days?: number; history_weeks?: number }
+        Returns: Json
+      }
       get_session_history: {
         Args: {
           p_bank_id?: string
