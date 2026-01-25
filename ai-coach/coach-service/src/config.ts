@@ -29,6 +29,7 @@ const allowedJobKinds: AiJobKind[] = [
   "coach_reply",
   "snapshot_refresh",
   "progress_report",
+  "english_grammar_analysis",
 ];
 
 const llmJobKinds = new Set<AiJobKind>([
@@ -37,6 +38,7 @@ const llmJobKinds = new Set<AiJobKind>([
   "procedure_merge",
   "coach_reply",
   "progress_report",
+  "english_grammar_analysis",
 ]);
 
 function parseJobKinds(): AiJobKind[] | null {
@@ -82,6 +84,7 @@ export function getConfig(): CoachConfig {
     attempt_insight: modelInsight,
     coach_reply: modelChat,
     progress_report: modelReport,
+    english_grammar_analysis: defaultModel,
     thread_summary: defaultModel,
     procedure_merge: defaultModel,
   };

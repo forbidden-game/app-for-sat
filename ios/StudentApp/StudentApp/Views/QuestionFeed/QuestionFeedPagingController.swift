@@ -42,6 +42,7 @@ final class QuestionFeedPagingController: UIViewController {
     private var state: QuestionFeedState
     private var store: InMemoryAnswerStore
     private var submission: AnswerSubmissionCoordinator
+    private var analysisEnabled: Bool
     private var returnToOverviewOnAnswer: Binding<Bool>
     private var onBack: () -> Void
     private var onShowOverview: () -> Void
@@ -61,6 +62,7 @@ final class QuestionFeedPagingController: UIViewController {
         state: QuestionFeedState,
         store: InMemoryAnswerStore,
         submission: AnswerSubmissionCoordinator,
+        analysisEnabled: Bool,
         returnToOverviewOnAnswer: Binding<Bool>,
         onBack: @escaping () -> Void,
         onShowOverview: @escaping () -> Void,
@@ -70,6 +72,7 @@ final class QuestionFeedPagingController: UIViewController {
         self.state = state
         self.store = store
         self.submission = submission
+        self.analysisEnabled = analysisEnabled
         self.returnToOverviewOnAnswer = returnToOverviewOnAnswer
         self.onBack = onBack
         self.onShowOverview = onShowOverview
@@ -103,6 +106,7 @@ final class QuestionFeedPagingController: UIViewController {
         state: QuestionFeedState,
         store: InMemoryAnswerStore,
         submission: AnswerSubmissionCoordinator,
+        analysisEnabled: Bool,
         returnToOverviewOnAnswer: Binding<Bool>,
         onBack: @escaping () -> Void,
         onShowOverview: @escaping () -> Void,
@@ -112,6 +116,7 @@ final class QuestionFeedPagingController: UIViewController {
         self.state = state
         self.store = store
         self.submission = submission
+        self.analysisEnabled = analysisEnabled
         self.returnToOverviewOnAnswer = returnToOverviewOnAnswer
         self.onBack = onBack
         self.onShowOverview = onShowOverview
@@ -209,6 +214,7 @@ extension QuestionFeedPagingController: UICollectionViewDataSource {
             total: total,
             isOverview: isOverview,
             isActive: indexPath.item == currentPageIndex,
+            analysisEnabled: analysisEnabled,
             state: state,
             store: store,
             submission: submission,

@@ -5,11 +5,14 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
     let question: QuestionResult
     let studentId: String
     @ObservedObject var flowModel: FlowModel
+    let analysisEnabled: Bool
+    let isEnglishQuestion: Bool
     let onBack: () -> Void
 
     @State private var coachAttempt: CoachAttemptContext?
     @State private var showCoachChat = false
     @State private var coachChatAttemptId: String?
+    @State private var showGrammarAnalysis = false
 
     private let correctColor = AppTheme.statusSuccess
     private let incorrectColor = AppTheme.statusDanger
@@ -32,6 +35,10 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
                     }
 
                     explanationSection
+
+                    if shouldShowGrammarAnalysis {
+                        grammarAnalysisSection
+                    }
                 }
                 .padding(.horizontal, AppMetrics.screenHorizontalPadding)
                 .padding(.top, AppMetrics.screenTopPadding)
@@ -48,6 +55,9 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
                 attemptId: ctx.id,
                 onContinue: {}
             )
+        }
+        .sheet(isPresented: $showGrammarAnalysis) {
+            EnglishGrammarAnalysisSheet(questionId: question.questionId)
         }
         .fullScreenCover(isPresented: $showCoachChat) {
             CoachChatView(studentId: studentId, linkedAttemptId: coachChatAttemptId)
@@ -259,6 +269,49 @@ struct QuestionDetailView<FlowModel: AttemptInsightProviding>: View {
                     shadowRadius: AppMetrics.cardShadowRadius,
                     shadowY: AppMetrics.cardShadowY
                 )
+        }
+    }
+
+    private var shouldShowGrammarAnalysis: Bool {
+        analysisEnabled && isEnglishQuestion
+    }
+
+    private var grammarAnalysisSection: some View {
+        VStack(alignment: .leading, spacing: AppMetrics.rowSpacing) {
+            Text("语法分析 Grammar")
+                .font(.headline)
+                .foregroundStyle(AppTheme.textSecondary)
+                .padding(.leading, 4)
+
+            Button {
+                showGrammarAnalysis = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 14, weight: .semibold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("打开语法分析")
+                            .font(.subheadline.weight(.semibold))
+                        Text("Bilingual grammar breakdown")
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.textMuted)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppTheme.textMuted)
+                }
+                .foregroundStyle(AppTheme.textPrimary)
+                .padding(AppMetrics.cardPadding)
+                .appSurface(
+                    fill: AppTheme.surfaceRaised,
+                    stroke: AppTheme.dividerStrong,
+                    cornerRadius: AppMetrics.cardCornerRadius,
+                    shadowRadius: AppMetrics.cardShadowRadius,
+                    shadowY: AppMetrics.cardShadowY
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
 

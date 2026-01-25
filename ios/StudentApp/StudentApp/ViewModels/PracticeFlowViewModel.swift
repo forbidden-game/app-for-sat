@@ -32,6 +32,7 @@ final class PracticeFlowViewModel: ObservableObject {
     private let insightCache = AttemptInsightCache.shared
     private var insightPrefetchTasks: [String: Task<Void, Never>] = [:]
     private var attemptIdsByQuestion: [String: String] = [:]
+    private let subjectByQuestionId: [String: String]
     private let pendingStore = PendingAnswerStore.shared
     private var isFlushingPending = false
 
@@ -39,6 +40,7 @@ final class PracticeFlowViewModel: ObservableObject {
         self.session = session
         self.sessionId = sessionId
         self.practiceService = practiceService
+        self.subjectByQuestionId = Dictionary(uniqueKeysWithValues: session.questions.map { ($0.id, $0.subject ?? "") })
         pendingStore.loadIfNeeded()
         refreshPendingCount()
     }
@@ -92,6 +94,10 @@ final class PracticeFlowViewModel: ObservableObject {
             return result.questions.first(where: { $0.questionId == questionId })?.attemptId
         }
         return nil
+    }
+
+    func isEnglishQuestion(questionId: String) -> Bool {
+        subjectByQuestionId[questionId] == "reading"
     }
 
     func setAttemptStepSelection(attemptId: String, selectedStepIndex: Int?, isUnknown: Bool) async throws {

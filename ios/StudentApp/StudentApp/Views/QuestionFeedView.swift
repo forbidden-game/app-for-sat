@@ -3,6 +3,7 @@ import StudentCore
 
 struct QuestionFeedView: View {
     let session: PracticeSession
+    let analysisEnabled: Bool
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
@@ -22,6 +23,7 @@ struct QuestionFeedView: View {
 
             QuestionFeedContainerView(
                 session: session,
+                analysisEnabled: analysisEnabled,
                 state: state,
                 store: store,
                 submission: submission,

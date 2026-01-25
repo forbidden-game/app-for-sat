@@ -2,13 +2,22 @@ import Foundation
 
 public struct Question: Codable, Equatable {
     public let id: String
+    public let subject: String?
     public let questionType: String
     public let stem: String
     public let options: [QuestionOption]?
     public let answerKey: AnswerKey?
 
-    public init(id: String, questionType: String, stem: String, options: [QuestionOption]?, answerKey: AnswerKey? = nil) {
+    public init(
+        id: String,
+        questionType: String,
+        stem: String,
+        options: [QuestionOption]?,
+        answerKey: AnswerKey? = nil,
+        subject: String? = nil
+    ) {
         self.id = id
+        self.subject = subject
         self.questionType = questionType
         self.stem = stem
         self.options = options

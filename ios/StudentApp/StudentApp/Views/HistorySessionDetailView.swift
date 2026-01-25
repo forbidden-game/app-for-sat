@@ -21,6 +21,8 @@ struct HistorySessionDetailView: View {
                     question: question,
                     studentId: studentId,
                     flowModel: vm,
+                    analysisEnabled: false,
+                    isEnglishQuestion: false,
                     onBack: {
                         selectedQuestion = nil
                     }

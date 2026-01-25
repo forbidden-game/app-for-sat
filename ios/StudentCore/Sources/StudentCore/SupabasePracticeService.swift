@@ -77,7 +77,8 @@ public final class SupabasePracticeService {
                 questionType: payload.questionType,
                 stem: payload.stem,
                 options: payload.options,
-                answerKey: nil
+                answerKey: nil,
+                subject: payload.subject
             )
         }
 
@@ -96,7 +97,8 @@ public final class SupabasePracticeService {
                 questionType: payload.questionType,
                 stem: payload.stem,
                 options: payload.options,
-                answerKey: nil
+                answerKey: nil,
+                subject: payload.subject
             )
         }
 
@@ -229,6 +231,82 @@ public final class SupabasePracticeService {
             attemptId: row.attempt_id.uuidString,
             explanationShort: row.explanation_short,
             followups: row.followups
+        )
+    }
+
+    public func requestEnglishGrammarAnalysis(questionId: String) async throws -> EnglishGrammarAnalysisRecord {
+        guard let uuid = UUID(uuidString: questionId) else {
+            throw NSError(domain: "SupabasePracticeService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid question ID format"])
+        }
+
+        struct RequestParams: Encodable {
+            let p_question_id: UUID
+            let p_prompt_version: String
+        }
+
+        struct RequestRow: Decodable {
+            let question_id: UUID
+            let status: String
+            let prompt_version: String
+            let updated_at: String
+        }
+
+        let rows: [RequestRow] = try await client
+            .rpc(
+                "request_english_grammar_analysis",
+                params: RequestParams(
+                    p_question_id: uuid,
+                    p_prompt_version: EnglishGrammarAnalysisDefaults.promptVersion
+                )
+            )
+            .execute()
+            .value
+
+        guard let row = rows.first else {
+            throw NSError(domain: "SupabasePracticeService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Empty grammar analysis response"])
+        }
+
+        let status = EnglishGrammarAnalysisStatus(rawValue: row.status) ?? .queued
+        return EnglishGrammarAnalysisRecord(
+            status: status,
+            analysis: nil,
+            error: nil,
+            promptVersion: row.prompt_version,
+            updatedAt: row.updated_at
+        )
+    }
+
+    public func fetchEnglishGrammarAnalysis(questionId: String) async throws -> EnglishGrammarAnalysisRecord? {
+        guard let uuid = UUID(uuidString: questionId) else {
+            throw NSError(domain: "SupabasePracticeService", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid question ID format"])
+        }
+
+        struct AnalysisRow: Decodable {
+            let status: String
+            let result: EnglishGrammarAnalysis?
+            let error: String?
+            let prompt_version: String
+            let updated_at: String
+        }
+
+        let rows: [AnalysisRow] = try await client
+            .from("english_grammar_analyses")
+            .select("status, result, error, prompt_version, updated_at")
+            .eq("question_id", value: uuid)
+            .eq("prompt_version", value: EnglishGrammarAnalysisDefaults.promptVersion)
+            .order("updated_at", ascending: false)
+            .limit(1)
+            .execute()
+            .value
+
+        guard let row = rows.first else { return nil }
+        let status = EnglishGrammarAnalysisStatus(rawValue: row.status) ?? .queued
+        return EnglishGrammarAnalysisRecord(
+            status: status,
+            analysis: row.result,
+            error: row.error,
+            promptVersion: row.prompt_version,
+            updatedAt: row.updated_at
         )
     }
 
@@ -514,12 +592,14 @@ private struct StartPracticeSessionResponse: Decodable {
 
 private struct QuestionPayload: Decodable {
     let id: String
+    let subject: String?
     let questionType: String
     let stem: String
     let options: [QuestionOption]?
 
     enum CodingKeys: String, CodingKey {
         case id
+        case subject
         case questionType = "question_type"
         case stem
         case options

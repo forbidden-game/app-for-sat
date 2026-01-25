@@ -21,7 +21,12 @@ struct AppShellView: View {
                 .ignoresSafeArea()
 
             if let session = vm.session, let sessionId = vm.sessionId, let studentId = vm.user?.id {
-                PracticeFlowView(session: session, sessionId: sessionId, studentId: studentId) {
+                PracticeFlowView(
+                    session: session,
+                    sessionId: sessionId,
+                    studentId: studentId,
+                    selectedBank: vm.selectedBank
+                ) {
                     vm.exitSession()
                 }
             } else {

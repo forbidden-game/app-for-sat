@@ -3,6 +3,7 @@ import StudentCore
 
 struct QuestionFeedContainerView: UIViewControllerRepresentable {
     let session: PracticeSession
+    let analysisEnabled: Bool
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
@@ -17,6 +18,7 @@ struct QuestionFeedContainerView: UIViewControllerRepresentable {
             state: state,
             store: store,
             submission: submission,
+            analysisEnabled: analysisEnabled,
             returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
             onBack: onBack,
             onShowOverview: onShowOverview,
@@ -30,6 +32,7 @@ struct QuestionFeedContainerView: UIViewControllerRepresentable {
             state: state,
             store: store,
             submission: submission,
+            analysisEnabled: analysisEnabled,
             returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
             onBack: onBack,
             onShowOverview: onShowOverview,

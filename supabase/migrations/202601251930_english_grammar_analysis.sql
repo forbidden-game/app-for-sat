@@ -1,0 +1,208 @@
+-- English grammar analysis cache + jobs
+
+create table if not exists public.english_grammar_analyses (
+  question_id uuid references public.questions(id) on delete cascade,
+  text_hash text not null,
+  prompt_version text not null,
+  status text not null check (status in ('queued', 'running', 'done', 'error')),
+  result jsonb,
+  error text,
+  model text,
+  cost_usd numeric,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  primary key (question_id, text_hash, prompt_version)
+);
+
+create index if not exists english_grammar_analyses_status_idx
+  on public.english_grammar_analyses (status, updated_at desc);
+
+alter table public.english_grammar_analyses enable row level security;
+
+drop policy if exists english_grammar_analyses_read on public.english_grammar_analyses;
+create policy english_grammar_analyses_read on public.english_grammar_analyses
+  for select using (auth.role() = 'authenticated' or auth.role() = 'service_role');
+
+drop policy if exists english_grammar_analyses_write_service on public.english_grammar_analyses;
+create policy english_grammar_analyses_write_service on public.english_grammar_analyses
+  for all using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');
+
+create or replace function public.normalize_english_grammar_text(p_text text)
+returns text
+language sql
+immutable
+as $$
+  select trim(regexp_replace(coalesce(p_text, ''), '\s+', ' ', 'g'));
+$$;
+
+create or replace function public.english_grammar_text_hash(p_text text)
+returns text
+language sql
+immutable
+as $$
+  select md5(public.normalize_english_grammar_text(p_text));
+$$;
+
+create or replace function public.request_english_grammar_analysis(
+  p_question_id uuid,
+  p_student_id uuid default null,
+  p_prompt_version text default 'english-grammar-v1'
+)
+returns table (question_id uuid, status text, prompt_version text, updated_at timestamptz)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_question record;
+  v_text_hash text;
+  v_now timestamptz := now();
+  v_student uuid;
+  v_status text;
+begin
+  select id, subject, stem
+  into v_question
+  from public.questions
+  where id = p_question_id;
+
+  if v_question.id is null then
+    raise exception 'question_not_found';
+  end if;
+
+  if v_question.subject is null or v_question.subject <> 'reading' then
+    raise exception 'unsupported_subject';
+  end if;
+
+  v_text_hash := public.english_grammar_text_hash(v_question.stem);
+  v_student := coalesce(p_student_id, auth.uid());
+
+  insert into public.english_grammar_analyses (
+    question_id,
+    text_hash,
+    prompt_version,
+    status,
+    created_at,
+    updated_at
+  )
+  values (p_question_id, v_text_hash, p_prompt_version, 'queued', v_now, v_now)
+  on conflict (question_id, text_hash, prompt_version) do update
+    set status = case
+        when public.english_grammar_analyses.status = 'done' then 'done'
+        when public.english_grammar_analyses.status = 'running' then 'running'
+        else 'queued'
+      end,
+      updated_at = v_now;
+
+  select status
+  into v_status
+  from public.english_grammar_analyses
+  where question_id = p_question_id
+    and text_hash = v_text_hash
+    and prompt_version = p_prompt_version;
+
+  if v_status <> 'done' then
+    insert into public.ai_jobs (
+      kind,
+      status,
+      attempt_id,
+      student_id,
+      payload,
+      dedupe_key
+    )
+    values (
+      'english_grammar_analysis',
+      'queued',
+      null,
+      v_student,
+      jsonb_build_object(
+        'question_id', p_question_id,
+        'text_hash', v_text_hash,
+        'prompt_version', p_prompt_version
+      ),
+      'english_grammar_analysis:' || p_question_id::text || ':' || v_text_hash || ':' || p_prompt_version
+    )
+    on conflict do nothing;
+  end if;
+
+  return query
+  select question_id, status, prompt_version, updated_at
+  from public.english_grammar_analyses
+  where question_id = p_question_id
+    and text_hash = v_text_hash
+    and prompt_version = p_prompt_version;
+end;
+$$;
+
+grant execute on function public.request_english_grammar_analysis(uuid, uuid, text) to authenticated;
+
+create or replace function public.enqueue_daily_mix_english_grammar_analysis()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_bank_mode text;
+  v_student_id uuid;
+  v_subject text;
+begin
+  select s.student_id, qb.mode
+  into v_student_id, v_bank_mode
+  from public.sessions s
+  join public.question_banks qb on qb.id = s.bank_id
+  where s.id = new.session_id;
+
+  if v_bank_mode is null or v_bank_mode <> 'daily_mix' then
+    return new;
+  end if;
+
+  select subject
+  into v_subject
+  from public.questions
+  where id = new.question_id;
+
+  if v_subject is null or v_subject <> 'reading' then
+    return new;
+  end if;
+
+  perform public.request_english_grammar_analysis(new.question_id, v_student_id, 'english-grammar-v1');
+
+  return new;
+end;
+$$;
+
+drop trigger if exists session_questions_enqueue_english_grammar_analysis on public.session_questions;
+create trigger session_questions_enqueue_english_grammar_analysis
+  after insert on public.session_questions
+  for each row
+  execute function public.enqueue_daily_mix_english_grammar_analysis();
+
+-- Expand ai_jobs kind constraint
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'ai_jobs_kind_check'
+      AND conrelid = 'public.ai_jobs'::regclass
+  ) THEN
+    ALTER TABLE public.ai_jobs DROP CONSTRAINT ai_jobs_kind_check;
+  END IF;
+
+  ALTER TABLE public.ai_jobs
+    ADD CONSTRAINT ai_jobs_kind_check
+    CHECK (kind in (
+      'attempt_insight',
+      'thread_summary',
+      'procedure_merge',
+      'coach_reply',
+      'snapshot_refresh',
+      'progress_report',
+      'english_grammar_analysis'
+    ));
+EXCEPTION
+  WHEN undefined_table THEN
+    -- Running before ai_jobs exists (shouldn't happen), ignore.
+    NULL;
+END $$;

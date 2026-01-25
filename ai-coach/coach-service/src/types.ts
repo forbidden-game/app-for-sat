@@ -4,7 +4,8 @@ export type AiJobKind =
   | "procedure_merge"
   | "coach_reply"
   | "snapshot_refresh"
-  | "progress_report";
+  | "progress_report"
+  | "english_grammar_analysis";
 
 export type AiJobStatus = "queued" | "running" | "done" | "error";
 

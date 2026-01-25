@@ -7,6 +7,7 @@ struct QuestionContentView: View {
     let index: Int
     let total: Int
     let questionProvider: (Int) -> Question?
+    let analysisEnabled: Bool
     @ObservedObject var state: QuestionFeedState
     @ObservedObject var store: InMemoryAnswerStore
     @ObservedObject var submission: AnswerSubmissionCoordinator
@@ -25,6 +26,7 @@ struct QuestionContentView: View {
     @State private var prefetchTask: Task<Void, Never>?
     @State private var layoutSignature: LayoutSignature?
     @State private var lastLayoutSize: CGSize = .zero
+    @State private var showGrammarAnalysis = false
 
     // Resets when the question becomes active so the user sees time spent on the current question.
     @State private var questionStartedAt: Date = .now
@@ -71,6 +73,9 @@ struct QuestionContentView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.bottom, AppMetrics.pageBottomPadding)
+        .sheet(isPresented: $showGrammarAnalysis) {
+            EnglishGrammarAnalysisSheet(questionId: question.id)
+        }
         .onAppear {
             if index == state.currentIndex {
                 questionStartedAt = .now
@@ -108,8 +113,19 @@ struct QuestionContentView: View {
         }
     }
 
+    private var shouldShowAnalysisButton: Bool {
+        analysisEnabled && question.subject == "reading"
+    }
+
     private func shortBodyLayout() -> some View {
         VStack(spacing: AppMetrics.sectionSpacing) {
+            if shouldShowAnalysisButton {
+                HStack {
+                    Spacer()
+                    analyzeButton
+                }
+            }
+
             questionCard(text: question.stem)
             QuestionAnswerContentView(
                 question: question,
@@ -155,6 +171,12 @@ struct QuestionContentView: View {
 
             if pageCount > 1 {
                 pageIndicator(current: currentIndex + 1, total: pageCount)
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            if shouldShowAnalysisButton {
+                analyzeButton
+                    .padding(8)
             }
         }
         .overlay(alignment: .bottomLeading) {
@@ -347,6 +369,28 @@ struct QuestionContentView: View {
                 shadowRadius: AppMetrics.cardShadowRadius,
                 shadowY: AppMetrics.cardShadowY
             )
+    }
+
+    private var analyzeButton: some View {
+        Button {
+            showGrammarAnalysis = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 12, weight: .semibold))
+                Text("Analyze")
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(AppTheme.textPrimary)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 10)
+            .background(AppTheme.surface)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule().stroke(AppTheme.divider, lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helper Methods

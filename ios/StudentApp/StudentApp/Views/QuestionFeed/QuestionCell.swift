@@ -8,6 +8,7 @@ struct QuestionCellConfiguration {
     let total: Int
     let isOverview: Bool
     let isActive: Bool
+    let analysisEnabled: Bool
     let state: QuestionFeedState
     let store: InMemoryAnswerStore
     let submission: AnswerSubmissionCoordinator
@@ -52,6 +53,7 @@ final class QuestionCell: UICollectionViewCell {
                     index: config.index,
                     total: config.total,
                     questionProvider: config.questionProvider,
+                    analysisEnabled: config.analysisEnabled,
                     state: config.state,
                     store: config.store,
                     submission: config.submission,
