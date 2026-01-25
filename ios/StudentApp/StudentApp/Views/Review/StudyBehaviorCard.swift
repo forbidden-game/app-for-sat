@@ -43,7 +43,7 @@ struct StudyBehaviorCard: View {
 
             Spacer()
 
-            Text(behavior.state.label)
+            Text(localizedStateLabel(behavior.state.label))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppTheme.textOnAccent)
                 .padding(.vertical, AppMetrics.headerSpacing / 2)
@@ -95,6 +95,23 @@ struct StudyBehaviorCard: View {
             return AppTheme.statusWarning
         default:
             return AppTheme.textMuted
+        }
+    }
+
+    private func localizedStateLabel(_ label: String) -> String {
+        switch label {
+        case "On Track":
+            return "状态良好"
+        case "At Risk":
+            return "需要关注"
+        case "Catching Up":
+            return "有所提升"
+        case "Inconsistent":
+            return "不够稳定"
+        case "No Data":
+            return "暂无数据"
+        default:
+            return label
         }
     }
 
