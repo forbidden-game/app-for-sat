@@ -12,6 +12,7 @@ const links = [
   { href: "/admin/ai-config", label: "AI Config" },
   { href: "/admin/ai-logs", label: "AI Logs" },
   { href: "/admin/users", label: "Users" },
+  { href: "/admin/behavior", label: "Behavior" },
   { href: "/admin/questions", label: "Questions" },
   { href: "/admin/banks", label: "Banks" },
   { href: "/admin/tags", label: "Tags" },
