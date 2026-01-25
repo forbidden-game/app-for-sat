@@ -19,19 +19,19 @@ struct StudyBehaviorCard: View {
     }()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: AppMetrics.sectionSpacing) {
             header
             metrics
             StudyBehaviorStrip(daily: Array(behavior.daily.suffix(7)))
             drivers
         }
-        .padding(16)
+        .padding(AppMetrics.cardPadding)
         .appSurface(
             fill: AppTheme.surfaceRaised,
             stroke: AppTheme.dividerStrong,
-            cornerRadius: 18,
-            shadowRadius: 10,
-            shadowY: 6
+            cornerRadius: AppMetrics.cardCornerRadius,
+            shadowRadius: AppMetrics.shadowRadiusCard,
+            shadowY: AppMetrics.shadowYCard
         )
     }
 
@@ -46,15 +46,15 @@ struct StudyBehaviorCard: View {
             Text(behavior.state.label)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(AppTheme.textOnAccent)
-                .padding(.vertical, 4)
-                .padding(.horizontal, 10)
+                .padding(.vertical, AppMetrics.headerSpacing / 2)
+                .padding(.horizontal, AppMetrics.rowPaddingHorizontal / 2)
                 .background(stateColor(behavior.state.label))
                 .clipShape(Capsule())
         }
     }
 
     private var metrics: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppMetrics.gridSpacing) {
             BehaviorMetric(
                 title: "用时",
                 value: String(format: "%.1f min", behavior.metrics.minutes),
@@ -74,7 +74,7 @@ struct StudyBehaviorCard: View {
     }
 
     private var drivers: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppMetrics.headerSpacing / 2) {
             ForEach(behavior.drivers.prefix(2), id: \.self) { driver in
                 Text(driver)
                     .font(.footnote)
@@ -126,7 +126,7 @@ private struct BehaviorMetric: View {
     let delta: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: AppMetrics.headerSpacing / 2) {
             Text(title)
                 .font(.caption)
                 .foregroundStyle(AppTheme.textMuted)
@@ -141,7 +141,7 @@ private struct BehaviorMetric: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .appSurface(fill: AppTheme.surface, stroke: AppTheme.divider)
-        .padding(8)
+        .padding(AppMetrics.headerSpacing)
     }
 }
 
@@ -151,12 +151,14 @@ private struct StudyBehaviorStrip: View {
     var body: some View {
         let maxMinutes = daily.map(\.minutes).max() ?? 0
 
-        HStack(spacing: 6) {
+        let barWidth = AppMetrics.selectionIndicatorWidth * 2.5
+
+        HStack(spacing: AppMetrics.headerSpacing) {
             ForEach(daily) { point in
-                VStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                VStack(spacing: AppMetrics.headerSpacing / 2) {
+                    RoundedRectangle(cornerRadius: AppMetrics.selectionIndicatorCornerRadius, style: .continuous)
                         .fill(AppTheme.accentSoft)
-                        .frame(width: 10, height: barHeight(minutes: point.minutes, maxMinutes: maxMinutes))
+                        .frame(width: barWidth, height: barHeight(minutes: point.minutes, maxMinutes: maxMinutes))
 
                     Text(label(for: point.date))
                         .font(.caption2)
@@ -169,9 +171,11 @@ private struct StudyBehaviorStrip: View {
     }
 
     private func barHeight(minutes: Double, maxMinutes: Double) -> CGFloat {
-        if maxMinutes <= 0 { return 8 }
-        let scaled = 8 + (minutes / maxMinutes) * 18
-        return CGFloat(max(8, scaled))
+        let minHeight = AppMetrics.badgeSizeMini / 3
+        let maxExtra = AppMetrics.badgeSizeMini * 0.75
+        if maxMinutes <= 0 { return minHeight }
+        let scaled = minHeight + (minutes / maxMinutes) * maxExtra
+        return max(minHeight, scaled)
     }
 
     private func label(for dateString: String) -> String {
