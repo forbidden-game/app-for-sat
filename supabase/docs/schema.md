@@ -8,7 +8,7 @@
 
 - 表数量：17
 - 视图数量：1
-- 函数/RPC：12（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC、3 个 AI Coach 统计/队列 RPC）
+- 函数/RPC：13（1 个 auth hook、2 个邀请 RPC、1 个家长端聚合 RPC、1 个学习行为 RPC、2 个练习 session RPC、1 个 admin helper、2 个题库管理 RPC、3 个 AI Coach 统计/队列 RPC）
 
 ## 表结构
 
