@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 import UIKit
 import StudentCore
@@ -21,12 +22,15 @@ final class QuestionLayoutEngine {
     private init() {
         cache.countLimit = 120
         NotificationCenter.default.addObserver(
-            forName: UIApplication.didReceiveMemoryWarningNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.cache.removeAllObjects()
-        }
+            self,
+            selector: #selector(handleMemoryWarning),
+            name: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil
+        )
+    }
+
+    @objc private func handleMemoryWarning() {
+        cache.removeAllObjects()
     }
 
     private func cacheKey(
