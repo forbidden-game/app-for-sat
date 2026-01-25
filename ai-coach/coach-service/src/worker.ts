@@ -124,8 +124,7 @@ async function runJob(config: CoachConfig, supabase: SupabaseClient, job: AiJobR
 
   const handler = jobHandlers[job.kind];
   if (!handler) {
-    logger.info({ kind: job.kind }, "job kind not implemented, skipping");
-    return;
+    throw new Error(`job kind not implemented: ${job.kind}`);
   }
 
   await handler({ config, supabase, job, promptOverrides, resolveApiKey });
