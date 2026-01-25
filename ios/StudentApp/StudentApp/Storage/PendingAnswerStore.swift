@@ -5,6 +5,7 @@ struct PendingAnswerRecord: Codable, Identifiable, Equatable {
     let sessionId: String
     let questionId: String
     let answer: String?
+    let durationMs: Int?
     let clientSubmissionId: String
     let createdAt: Date
     var retryCount: Int

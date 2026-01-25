@@ -45,13 +45,19 @@ final class PracticeFlowViewModel: ObservableObject {
         refreshPendingCount()
     }
 
-    func submitAnswer(question: Question, answer: String, allowCoach: Bool) async throws -> SubmitAttemptResult {
+    func submitAnswer(
+        question: Question,
+        answer: String,
+        allowCoach: Bool,
+        durationMs: Int?
+    ) async throws -> SubmitAttemptResult {
         let clientSubmissionId = UUID().uuidString
         let record = PendingAnswerRecord(
             id: clientSubmissionId,
             sessionId: sessionId,
             questionId: question.id,
             answer: answer,
+            durationMs: durationMs,
             clientSubmissionId: clientSubmissionId,
             createdAt: Date(),
             retryCount: 0
@@ -64,7 +70,8 @@ final class PracticeFlowViewModel: ObservableObject {
                 question: question,
                 answer: answer,
                 sessionId: sessionId,
-                clientSubmissionId: clientSubmissionId
+                clientSubmissionId: clientSubmissionId,
+                durationMs: durationMs
             )
 
             correctByQuestion[question.id] = result.isCorrect
@@ -157,7 +164,8 @@ final class PracticeFlowViewModel: ObservableObject {
                     question: question,
                     answer: record.answer,
                     sessionId: sessionId,
-                    clientSubmissionId: record.clientSubmissionId
+                    clientSubmissionId: record.clientSubmissionId,
+                    durationMs: record.durationMs
                 )
                 correctByQuestion[question.id] = result.isCorrect
                 attemptIdsByQuestion[question.id] = result.attemptId
