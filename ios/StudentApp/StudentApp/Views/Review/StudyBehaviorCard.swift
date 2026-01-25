@@ -139,9 +139,9 @@ private struct BehaviorMetric: View {
                     .foregroundStyle(AppTheme.textSecondary)
             }
         }
+        .padding(AppMetrics.headerSpacing)
         .frame(maxWidth: .infinity, alignment: .leading)
         .appSurface(fill: AppTheme.surface, stroke: AppTheme.divider)
-        .padding(AppMetrics.headerSpacing)
     }
 }
 
