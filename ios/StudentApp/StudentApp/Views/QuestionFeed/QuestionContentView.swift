@@ -45,7 +45,7 @@ struct QuestionContentView: View {
             if isCurrentQuestion {
                 HStack {
                     Spacer()
-                    QuestionTimerPill(startedAt: questionStartedAt)
+                    QuestionTimerPill(questionStartedAt: questionStartedAt, bankStartedAt: state.sessionStartedAt)
                 }
                 .padding(.horizontal, AppMetrics.screenHorizontalPadding)
             }
@@ -354,11 +354,17 @@ struct QuestionContentView: View {
 }
 
 private struct QuestionTimerPill: View {
-    let startedAt: Date
+    let questionStartedAt: Date
+    let bankStartedAt: Date
 
     var body: some View {
-        TimelineView(.periodic(from: startedAt, by: 1.0)) { timeline in
-            let text = Self.formatElapsed(from: startedAt, now: timeline.date)
+        let start = min(questionStartedAt, bankStartedAt)
+        TimelineView(.periodic(from: start, by: 1.0)) { timeline in
+            let now = timeline.date
+            let questionText = Self.formatElapsed(from: questionStartedAt, now: now)
+            let bankText = Self.formatElapsed(from: bankStartedAt, now: now)
+            let text = "\(questionText)/\(bankText)"
+
             Text(text)
                 .font(.caption.weight(.semibold))
                 .monospacedDigit()
@@ -370,18 +376,14 @@ private struct QuestionTimerPill: View {
                 .overlay(
                     Capsule().stroke(AppTheme.divider, lineWidth: 1)
                 )
-                .accessibilityLabel("Time \(text)")
+                .accessibilityLabel("Question time \(questionText), total time \(bankText)")
         }
     }
 
     private static func formatElapsed(from start: Date, now: Date) -> String {
         let seconds = max(0, Int(now.timeIntervalSince(start)))
-        let hours = seconds / 3600
-        let minutes = (seconds % 3600) / 60
+        let minutes = seconds / 60
         let remainder = seconds % 60
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, remainder)
-        }
         return String(format: "%02d:%02d", minutes, remainder)
     }
 }

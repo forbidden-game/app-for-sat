@@ -8,6 +8,9 @@ final class QuestionFeedState: ObservableObject {
     @Published private(set) var inputState: QuestionInputState
     @Published private(set) var autoAdvanceState: AutoAdvanceState
 
+    /// Start time for the overall practice session ("time bank").
+    private(set) var sessionStartedAt: Date
+
     private var stemPageByQuestionId: [String: Int] = [:]
     private var stemPageCountByQuestionId: [String: Int] = [:]
     private var stemSwipeHintSeenQuestionIds: Set<String> = []
@@ -17,6 +20,7 @@ final class QuestionFeedState: ObservableObject {
         currentIndex = initialIndex
         inputState = QuestionInputState()
         autoAdvanceState = AutoAdvanceState()
+        sessionStartedAt = .now
     }
 
     func jump(to index: Int, total: Int) {
