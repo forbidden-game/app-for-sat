@@ -7,9 +7,10 @@ import { getStudyBehaviorList, type StudyBehaviorList, type StudyBehaviorItem } 
 const stateStyles: Record<string, string> = {
   "On Track": "border-emerald-200 bg-emerald-50 text-emerald-700",
   "Catching Up": "border-sky-200 bg-sky-50 text-sky-700",
-  "Inconsistent": "border-amber-200 bg-amber-50 text-amber-700",
+  Inconsistent: "border-amber-200 bg-amber-50 text-amber-700",
   "At Risk": "border-rose-200 bg-rose-50 text-rose-700",
-  "No Data": "border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[color:var(--ink-muted)]",
+  "No Data":
+    "border-[color:var(--border)] bg-[color:var(--surface-soft)] text-[color:var(--ink-muted)]",
 };
 
 function formatPercent(value: number | null) {
@@ -155,9 +156,7 @@ export default function BehaviorClient({
         </button>
       </div>
 
-      {error ? (
-        <p className="mt-6 text-sm text-[color:var(--danger-strong)]">{error}</p>
-      ) : null}
+      {error ? <p className="mt-6 text-sm text-[color:var(--danger-strong)]">{error}</p> : null}
 
       {loading ? (
         <p className="mt-6 text-sm text-[color:var(--ink-muted)]">Loading study behavior…</p>

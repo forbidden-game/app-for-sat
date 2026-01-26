@@ -74,7 +74,7 @@ const chartPadding = 16;
 const behaviorStateStyles: Record<string, string> = {
   "On Track": "border-emerald-200 bg-emerald-50 text-emerald-700",
   "Catching Up": "border-sky-200 bg-sky-50 text-sky-700",
-  "Inconsistent": "border-amber-200 bg-amber-50 text-amber-700",
+  Inconsistent: "border-amber-200 bg-amber-50 text-amber-700",
   "At Risk": "border-rose-200 bg-rose-50 text-rose-700",
   "No Data": "border-zinc-200 bg-zinc-50 text-zinc-500",
 };
@@ -209,7 +209,9 @@ export default function DashboardPage() {
       if (behaviorResult.error) {
         console.warn("[dashboard] Failed to load study behavior", behaviorResult.error);
         if (isActive) {
-          setBehaviorError(`Behavior data unavailable. ${formatSupabaseError(behaviorResult.error)}`);
+          setBehaviorError(
+            `Behavior data unavailable. ${formatSupabaseError(behaviorResult.error)}`,
+          );
         }
       }
 
@@ -383,7 +385,8 @@ export default function DashboardPage() {
                 {behavior.metrics.active_days}/{behavior.window_days} days
               </p>
               <p className="mt-1 text-xs text-zinc-400">
-                {formatDelta(behavior.metrics.active_days_delta, 0)} days vs prior {behavior.window_days}d
+                {formatDelta(behavior.metrics.active_days_delta, 0)} days vs prior{" "}
+                {behavior.window_days}d
               </p>
             </div>
           </div>
