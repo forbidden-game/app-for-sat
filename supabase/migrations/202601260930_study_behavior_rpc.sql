@@ -133,19 +133,19 @@ begin
   end;
 
   v_minutes_delta_text := case
-    when v_minutes_delta >= 0 then format('+%.1f', v_minutes_delta)
-    else format('%.1f', v_minutes_delta)
+    when v_minutes_delta >= 0 then concat('+', to_char(v_minutes_delta, 'FM999990.0'))
+    else to_char(v_minutes_delta, 'FM999990.0')
   end;
 
   v_days_delta_text := case
-    when v_active_days_delta >= 0 then format('+%s', v_active_days_delta)
-    else format('%s', v_active_days_delta)
+    when v_active_days_delta >= 0 then concat('+', v_active_days_delta::text)
+    else v_active_days_delta::text
   end;
 
   v_accuracy_delta_text := case
     when v_accuracy_delta is null then ''
-    when v_accuracy_delta >= 0 then format('+%.0f%%', v_accuracy_delta * 100)
-    else format('%.0f%%', v_accuracy_delta * 100)
+    when v_accuracy_delta >= 0 then concat('+', round(v_accuracy_delta * 100)::int, '%')
+    else concat(round(v_accuracy_delta * 100)::int, '%')
   end;
 
   if v_attempts_cur = 0 then
@@ -166,13 +166,29 @@ begin
   end if;
 
   v_drivers := jsonb_build_array(
-    format('Time spent %.1f min (%s vs prior %sd)', v_minutes_cur, v_minutes_delta_text, v_window_days),
+    concat(
+      'Time spent ',
+      to_char(v_minutes_cur, 'FM999990.0'),
+      ' min (',
+      v_minutes_delta_text,
+      ' vs prior ',
+      v_window_days,
+      'd)'
+    ),
     case
       when v_accuracy_cur is null then 'Accuracy N/A'
-      when v_accuracy_delta is null then format('Accuracy %.0f%%', v_accuracy_cur * 100)
-      else format('Accuracy %.0f%% (%s vs prior %sd)', v_accuracy_cur * 100, v_accuracy_delta_text, v_window_days)
+      when v_accuracy_delta is null then concat('Accuracy ', round(v_accuracy_cur * 100)::int, '%')
+      else concat(
+        'Accuracy ',
+        round(v_accuracy_cur * 100)::int,
+        '% (',
+        v_accuracy_delta_text,
+        ' vs prior ',
+        v_window_days,
+        'd)'
+      )
     end,
-    format('Active days %s/%s (%s)', v_active_days_cur, v_window_days, v_days_delta_text)
+    concat('Active days ', v_active_days_cur, '/', v_window_days, ' (', v_days_delta_text, ')')
   );
 
   with days as (
