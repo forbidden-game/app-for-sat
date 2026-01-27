@@ -168,9 +168,14 @@ function normalizeForm(
   };
 }
 
+function isPromptKind(value: string): value is AiPromptKind {
+  return value in KIND_META;
+}
+
 function buildForms(configs: AiPromptConfig[]) {
   const publishedByKind: Partial<Record<AiPromptKind, AiPromptConfig>> = {};
   for (const row of configs) {
+    if (!isPromptKind(row.kind)) continue;
     if (row.status === "published" && !publishedByKind[row.kind]) {
       publishedByKind[row.kind] = row;
     }
@@ -312,6 +317,7 @@ export default function AiConfigClient({
       english_grammar_analysis: [],
     };
     for (const row of configs) {
+      if (!isPromptKind(row.kind)) continue;
       grouped[row.kind].push(row);
     }
     return grouped;
