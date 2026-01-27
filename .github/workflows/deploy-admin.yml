@@ -25,6 +25,7 @@ jobs:
           username: ${{ secrets.ADMIN_SSH_USER }}
           key: ${{ env.ADMIN_SSH_KEY }}
           port: ${{ secrets.ADMIN_SSH_PORT }}
+          command_timeout: 20m
           script: |
             set -euo pipefail
             cd /root/apps/app-for-sat
