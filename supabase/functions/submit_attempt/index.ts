@@ -19,7 +19,8 @@ type SubmitAttemptBody = {
 
 type QuestionRow = {
   question_type: "mcq" | "numeric";
-  answer_key: { correct: string | number | null };
+  // answer_key is stored as jsonb and can include an optional accepted list for numeric.
+  answer_key: { correct: string | number | null; accepted?: number[] | null };
 };
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
@@ -154,7 +155,7 @@ serve(async (req) => {
     : scoreAttempt(
         {
           questionType: typedQuestion.question_type,
-          answerKey: { correct: correctValue },
+          answerKey: typedQuestion.answer_key as { correct: string | number; accepted?: number[] },
         },
         { answer: attemptAnswer },
       );
