@@ -560,10 +560,11 @@ export default function AiConfigClient({
             const allowEnqueue = control?.allow_enqueue ?? true;
             const allowProcess = control?.allow_process ?? true;
             const toggleClass = (enabled: boolean) =>
-              `rounded-full border px-3 py-1 text-xs font-medium transition ${
+              `rounded-full border px-3 py-1 text-xs font-medium transition-colors duration-200 cursor-pointer shadow-sm
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)] focus-visible:ring-offset-2 active:translate-y-px ${
                 enabled
-                  ? "border-[color:var(--accent)] text-[color:var(--ink)]"
-                  : "border-[color:var(--border)] text-[color:var(--ink-muted)]"
+                  ? "border-[color:var(--accent)] bg-[color:var(--accent)]/10 text-[color:var(--ink)] hover:bg-[color:var(--accent)]/15"
+                  : "border-[color:var(--border)] bg-[color:var(--surface)] text-[color:var(--ink-muted)] hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] hover:bg-[color:var(--surface-soft)]"
               }`;
 
             return (
