@@ -100,12 +100,31 @@ This allows re-importing to update prompts/answers/options without creating dupl
 
 ## Running The Import
 
+### Local / Manual
+
 ```bash
 export SUPABASE_URL=...
 export SUPABASE_SERVICE_ROLE_KEY=...
 
 python supabase/seed/import_satpdf.py --input-dir /Users/fg/work/justwater/out/all
 ```
+
+### CI (GitHub Actions) From Release Asset
+
+This repo includes a workflow `Import SAT/PSAT PDF Dataset (From GitHub Release)`.
+
+1) Create a GitHub Release and upload a zip asset (default name: `satpdf-out-all.zip`).
+2) Run the workflow with:
+   - `release_tag`
+   - `asset_name`
+
+Recommended zip contents (either layout is accepted):
+
+- `out/all/*.questions.json` (and optionally `out/all/index.json`)
+
+or
+
+- `*.questions.json` at the zip root
 
 Dry run:
 

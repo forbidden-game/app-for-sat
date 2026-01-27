@@ -1,0 +1,47 @@
+name: Deploy Supabase Edge Functions
+
+on:
+  workflow_dispatch:
+    inputs:
+      functions:
+        description: "Comma-separated list of function names to deploy (e.g. submit_attempt,generate_explanation)."
+        required: true
+        default: "submit_attempt"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: 1.200.3
+
+      - name: Link Supabase Project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      - name: Deploy Edge Functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          IFS=',' read -r -a FUNCS <<< "${{ inputs.functions }}"
+          for f in "${FUNCS[@]}"; do
+            f="$(echo "$f" | xargs)"
+            if [ -z "$f" ]; then
+              continue
+            fi
+            echo "Deploying function: $f"
+            supabase functions deploy "$f"
+          done
+
+      - name: Refresh PostgREST schema cache
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: supabase db execute "select pg_notify('pgrst', 'reload schema');"

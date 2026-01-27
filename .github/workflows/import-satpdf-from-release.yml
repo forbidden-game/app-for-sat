@@ -1,0 +1,92 @@
+name: Import SAT/PSAT PDF Dataset (From GitHub Release)
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "GitHub Release tag to download dataset from (e.g. satpdf-2026-01-28)"
+        required: true
+      asset_name:
+        description: "Release asset filename (zip). Example: satpdf-out-all.zip"
+        required: true
+        default: "satpdf-out-all.zip"
+      dry_run:
+        description: "Run importer in dry-run mode (no writes)"
+        required: true
+        default: "false"
+      only_test:
+        description: "Optional test_id to import (e.g. sat-practice-test-4). Leave empty for all."
+        required: false
+        default: ""
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Download Release Asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p satpdf-data
+          gh release download "${{ inputs.release_tag }}" --pattern "${{ inputs.asset_name }}" --dir satpdf-data
+          ls -lah satpdf-data
+
+      - name: Extract Dataset
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd satpdf-data
+          unzip -q "${{ inputs.asset_name }}" -d extracted
+          echo "Extracted files:"
+          find extracted -maxdepth 4 -type f | head -n 200
+
+      - name: Resolve Input Directory
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          root="satpdf-data/extracted"
+          if [ -d "$root/out/all" ]; then
+            echo "input_dir=$root/out/all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -d "$root/all" ]; then
+            echo "input_dir=$root/all" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ls "$root"/*.questions.json >/dev/null 2>&1; then
+            echo "input_dir=$root" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Could not find *.questions.json under $root" >&2
+          find "$root" -maxdepth 4 -type f | head -n 200
+          exit 1
+
+      - name: Import Into Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=("--input-dir" "${{ steps.resolve.outputs.input_dir }}")
+
+          if [ -n "${{ inputs.only_test }}" ]; then
+            args+=("--only-test" "${{ inputs.only_test }}")
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            args+=("--dry-run")
+          fi
+
+          python supabase/seed/import_satpdf.py "${args[@]}"
