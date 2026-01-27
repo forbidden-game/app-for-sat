@@ -1,60 +1,36 @@
-export type GrammarSentenceInput = {
-  sentence_index: number;
-  source: "passage" | "prompt";
+export type EnglishGrammarPromptParams = {
   text: string;
-};
-
-type EnglishGrammarPromptParams = {
-  sentences: GrammarSentenceInput[];
   language: "bilingual";
 };
 
 export function buildEnglishGrammarPrompt(params: EnglishGrammarPromptParams): string {
-  const sentencesJson = JSON.stringify(params.sentences, null, 2);
+  const text = params.text.trim();
 
   return [
-    "You are an expert English grammar analyst for SAT reading.",
-    "Analyze each sentence and return a strict JSON object only.",
-    "All text spans must use UTF-16 indices within sentence.text (start inclusive, end exclusive).",
-    "Provide bilingual labels and explanations in English and Chinese.",
-    "Do not include markdown fences.",
+    "You are an expert English sentence simplifier for SAT reading.",
+    "Given an English passage that may contain multiple sentences, do two tasks:",
+    "1) Provide one core simple sentence capturing the main idea.",
+    "2) Rewrite the passage into multiple simple sentences.",
+    "Each sentence must be a single sentence in both Chinese and English.",
+    "Use concise wording and keep the meaning faithful.",
+    "Return a strict JSON object only. Do not include markdown fences.",
+    "Do not add numbering or extra keys.",
     "",
     "Output schema:",
     "{",
-    "  \"sentences\": [",
+    "  \"core_sentence\": {",
+    "    \"zh\": string,",
+    "    \"en\": string",
+    "  },",
+    "  \"simple_sentences\": [",
     "    {",
-    "      \"sentence_index\": number,",
-    "      \"components\": [",
-    "        {",
-    "          \"id\": string,",
-    "          \"type\": string,",
-    "          \"start\": number,",
-    "          \"end\": number,",
-    "          \"label_en\": string,",
-    "          \"label_zh\": string,",
-    "          \"explanation_en\": string,",
-    "          \"explanation_zh\": string",
-    "        }",
-    "      ]",
-    "    }",
-    "  ],",
-    "  \"important_words\": [",
-    "    {",
-    "      \"word\": string,",
-    "      \"lemma\": string,",
-    "      \"pos\": string,",
-    "      \"meaning_en\": string,",
-    "      \"meaning_zh\": string,",
-    "      \"why_en\": string,",
-    "      \"why_zh\": string",
+    "      \"zh\": string,",
+    "      \"en\": string",
     "    }",
     "  ]",
     "}",
     "",
-    "Components should cover clause structure, subject/predicate, objects, modifiers, phrases, and key grammar roles.",
-    "Use concise explanations (1-2 sentences).",
-    "",
-    "Sentences:",
-    sentencesJson,
+    "Text:",
+    text,
   ].join("\n");
 }

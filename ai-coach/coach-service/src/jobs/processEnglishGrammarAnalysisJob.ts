@@ -2,47 +2,13 @@ import { createHash } from "node:crypto";
 import type { Agent } from "@mariozechner/pi-agent-core";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { buildEnglishGrammarPrompt, type GrammarSentenceInput } from "../prompts/englishGrammarPrompt.js";
+import { buildEnglishGrammarPrompt } from "../prompts/englishGrammarPrompt.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
 
-export const ENGLISH_GRAMMAR_PROMPT_VERSION = "english-grammar-v1";
-const CHUNK_SIZE = 6;
-const CHUNK_OVERLAP = 1;
-const MAX_IMPORTANT_WORDS = 20;
-const MAX_COMPONENTS_PER_SENTENCE = 60;
+export const ENGLISH_GRAMMAR_PROMPT_VERSION = "english-grammar-v2";
 const MAX_RESPONSE_CHARS = 200_000;
-
-type GrammarComponent = {
-  id: string;
-  type: string;
-  start: number;
-  end: number;
-  label_en: string;
-  label_zh: string;
-  explanation_en?: string;
-  explanation_zh?: string;
-};
-
-type SentenceResult = {
-  sentence_index: number;
-  components?: GrammarComponent[];
-};
-
-type ImportantWord = {
-  word: string;
-  lemma?: string;
-  pos?: string;
-  meaning_en?: string;
-  meaning_zh?: string;
-  why_en?: string;
-  why_zh?: string;
-};
-
-type ChunkResult = {
-  sentences?: SentenceResult[];
-  important_words?: ImportantWord[];
-};
+const MAX_SIMPLE_SENTENCES = 30;
 
 type QuestionRow = {
   id: string;
@@ -50,11 +16,14 @@ type QuestionRow = {
   stem: string;
 };
 
-type AnalysisSentence = {
-  sentence_index: number;
-  source: "passage" | "prompt";
-  text: string;
-  components: GrammarComponent[];
+type SentencePair = {
+  zh: string;
+  en: string;
+};
+
+type AnalysisPayload = {
+  core_sentence?: SentencePair;
+  simple_sentences?: SentencePair[];
 };
 
 type AnalysisResult = {
@@ -62,10 +31,8 @@ type AnalysisResult = {
   text_hash: string;
   prompt_version: string;
   language: "bilingual";
-  passage: string | null;
-  prompt: string;
-  sentences: AnalysisSentence[];
-  important_words: ImportantWord[];
+  core_sentence: SentencePair;
+  simple_sentences: SentencePair[];
 };
 
 export type EnglishGrammarAnalysisLogSink = {
@@ -112,64 +79,34 @@ function preferredPromptEndIndex(text: string): number {
   return text.lastIndexOf(".");
 }
 
-function splitSentences(text: string): string[] {
-  const normalized = normalizeWhitespace(text);
-  if (!normalized) return [];
-  const parts = normalized.split(/(?<=[.!?])\s+/g);
-  return parts.map((part) => part.trim()).filter((part) => part.length > 0);
-}
-
-function chunkSentences<T>(sentences: T[], size: number, overlap: number): T[][] {
-  const chunks: T[][] = [];
-  if (sentences.length === 0) return chunks;
-
-  for (let start = 0; start < sentences.length; start += size) {
-    const sliceStart = Math.max(0, start - (start === 0 ? 0 : overlap));
-    const sliceEnd = Math.min(sentences.length, start + size);
-    chunks.push(sentences.slice(sliceStart, sliceEnd));
-  }
-
-  return chunks;
-}
-
 function stripJsonFence(text: string): string {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenced && fenced[1]) return fenced[1].trim();
   return text.trim();
 }
 
-function sanitizeComponents(text: string, components: GrammarComponent[]): GrammarComponent[] {
-  const length = text.length;
-  return components
-    .filter((component) => {
-      if (!component) return false;
-      if (typeof component.start !== "number" || typeof component.end !== "number") return false;
-      if (component.start < 0 || component.end > length || component.end <= component.start) return false;
-      return true;
-    })
-    .map((component, index) => {
-      const id = component.id?.length ? component.id : `span-${index}-${component.start}-${component.end}`;
-      return { ...component, id };
-    })
-    .slice(0, MAX_COMPONENTS_PER_SENTENCE);
+function normalizeSentencePair(pair: SentencePair | null | undefined): SentencePair | null {
+  if (!pair) return null;
+  const zh = typeof pair.zh === "string" ? pair.zh.trim() : "";
+  const en = typeof pair.en === "string" ? pair.en.trim() : "";
+  if (!zh && !en) return null;
+  return { zh, en };
 }
 
-function mergeImportantWords(
-  existing: Map<string, ImportantWord>,
-  incoming: ImportantWord[] | undefined,
-): void {
-  if (!incoming) return;
-  for (const word of incoming) {
-    if (!word?.word) continue;
-    const key = (word.lemma || word.word).toLowerCase();
-    if (!existing.has(key)) {
-      existing.set(key, word);
-    }
+function requireBilingualPair(pair: SentencePair | null, errorCode: string): SentencePair {
+  if (!pair || !pair.zh || !pair.en) {
+    throw new Error(errorCode);
   }
+  return pair;
 }
 
-function finalizeImportantWords(wordMap: Map<string, ImportantWord>): ImportantWord[] {
-  return Array.from(wordMap.values()).slice(0, MAX_IMPORTANT_WORDS);
+function finalizeSimpleSentences(items: SentencePair[] | undefined): SentencePair[] {
+  if (!items || items.length === 0) return [];
+  const sanitized = items
+    .map((item) => normalizeSentencePair(item))
+    .filter((pair): pair is SentencePair => Boolean(pair && pair.zh && pair.en));
+
+  return sanitized.slice(0, MAX_SIMPLE_SENTENCES);
 }
 
 async function collectAgentText(agent: Agent, prompt: string): Promise<string> {
@@ -273,7 +210,19 @@ export async function processEnglishGrammarAnalysisJob(
   }
 
   const { prompt, passage } = derivePromptAndPassage(question.stem);
+  const analysisText = normalizeWhitespace([passage, prompt].filter(Boolean).join(" "));
   const textHash = hashText(question.stem);
+
+  if (!analysisText) {
+    await updateAnalysisRow(supabase, {
+      questionId,
+      textHash,
+      promptVersion,
+      status: "error",
+      error: "no_analysis_text",
+    });
+    return;
+  }
 
   const { data: existingRow } = await supabase
     .from("english_grammar_analyses")
@@ -295,84 +244,33 @@ export async function processEnglishGrammarAnalysisJob(
   });
 
   try {
-    const sentenceInputs: GrammarSentenceInput[] = [];
-    let sentenceIndex = 0;
+    const promptText = buildEnglishGrammarPrompt({ text: analysisText, language: "bilingual" });
+    log?.recordPrompt?.(promptText);
 
-    const passageSentences = passage ? splitSentences(passage) : [];
-    for (const sentence of passageSentences) {
-      sentenceInputs.push({ sentence_index: sentenceIndex, source: "passage", text: sentence });
-      sentenceIndex += 1;
+    const responseText = await collectAgentText(agent, promptText);
+    const cleaned = stripJsonFence(responseText);
+
+    let parsed: AnalysisPayload;
+    try {
+      parsed = JSON.parse(cleaned) as AnalysisPayload;
+    } catch (err) {
+      logger.warn({ err, jobId: job.id }, "english grammar analysis json parse failed");
+      throw new Error("english_grammar_invalid_json");
     }
 
-    const promptSentences = splitSentences(prompt);
-    for (const sentence of promptSentences) {
-      sentenceInputs.push({ sentence_index: sentenceIndex, source: "prompt", text: sentence });
-      sentenceIndex += 1;
-    }
-
-    if (sentenceInputs.length === 0) {
-      throw new Error("no_sentence_inputs");
-    }
-
-    const chunks = chunkSentences(sentenceInputs, CHUNK_SIZE, CHUNK_OVERLAP);
-    const sentenceMap = new Map<number, AnalysisSentence>();
-    const wordMap = new Map<string, ImportantWord>();
-
-    for (const chunk of chunks) {
-      const promptText = buildEnglishGrammarPrompt({ sentences: chunk, language: "bilingual" });
-      log?.recordPrompt?.(promptText);
-
-      const responseText = await collectAgentText(agent, promptText);
-      const cleaned = stripJsonFence(responseText);
-
-      let parsed: ChunkResult;
-      try {
-        parsed = JSON.parse(cleaned) as ChunkResult;
-      } catch (err) {
-        logger.warn({ err, jobId: job.id }, "english grammar analysis json parse failed");
-        throw new Error("english_grammar_invalid_json");
-      }
-
-      const sentenceResults = parsed.sentences ?? [];
-      for (const result of sentenceResults) {
-        if (typeof result?.sentence_index !== "number") continue;
-        const input = sentenceInputs.find((item) => item.sentence_index === result.sentence_index);
-        if (!input) continue;
-
-        const sanitized = sanitizeComponents(input.text, result.components ?? []);
-        const current = sentenceMap.get(result.sentence_index);
-        const merged = current ? current.components.concat(sanitized) : sanitized;
-
-        sentenceMap.set(result.sentence_index, {
-          sentence_index: result.sentence_index,
-          source: input.source,
-          text: input.text,
-          components: merged,
-        });
-      }
-
-      mergeImportantWords(wordMap, parsed.important_words);
-    }
-
-    const sentences: AnalysisSentence[] = sentenceInputs.map((input) => {
-      const stored = sentenceMap.get(input.sentence_index);
-      return {
-        sentence_index: input.sentence_index,
-        source: input.source,
-        text: input.text,
-        components: stored?.components ?? [],
-      };
-    });
+    const coreSentence = requireBilingualPair(
+      normalizeSentencePair(parsed.core_sentence),
+      "english_grammar_missing_core_sentence",
+    );
+    const simpleSentences = finalizeSimpleSentences(parsed.simple_sentences);
 
     const result: AnalysisResult = {
       question_id: questionId,
       text_hash: textHash,
       prompt_version: promptVersion,
       language: "bilingual",
-      passage,
-      prompt,
-      sentences,
-      important_words: finalizeImportantWords(wordMap),
+      core_sentence: coreSentence,
+      simple_sentences: simpleSentences,
     };
 
     await updateAnalysisRow(supabase, {
