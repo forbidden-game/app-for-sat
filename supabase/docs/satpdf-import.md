@@ -12,6 +12,7 @@ Input files come from the PDF extractor repo and look like:
 - `index.json` (optional)
 
 Each question includes:
+
 - `id` (stable external id like `sat-practice-test-4:rw:m1:q1`)
 - `section` (`Reading and Writing` or `Math`)
 - `module` (`1` or `2` in DSAT meaning)
@@ -24,6 +25,7 @@ Each question includes:
 ## Mapping To Supabase Schema
 
 Tables:
+
 - `public.questions`
 - `public.question_options`
 - `public.question_banks` (fixed banks)
@@ -55,13 +57,13 @@ Note: iOS uses `question.subject == "reading"` to decide if grammar analysis UI 
 For `mcq`:
 
 ```json
-{"correct":"B"}
+{ "correct": "B" }
 ```
 
 For `numeric`:
 
 ```json
-{"correct":45.12,"accepted":[45.125,45.12,45.13]}
+{ "correct": 45.12, "accepted": [45.125, 45.12, 45.13] }
 ```
 
 - `correct` remains for backwards compatibility.
@@ -113,8 +115,8 @@ python supabase/seed/import_satpdf.py --input-dir /Users/fg/work/justwater/out/a
 
 This repo includes a workflow `Import SAT/PSAT PDF Dataset (From GitHub Release)`.
 
-1) Create a GitHub Release and upload a zip asset (default name: `satpdf-out-all.zip`).
-2) Run the workflow with:
+1. Create a GitHub Release and upload a zip asset (default name: `satpdf-out-all.zip`).
+2. Run the workflow with:
    - `release_tag`
    - `asset_name`
 
