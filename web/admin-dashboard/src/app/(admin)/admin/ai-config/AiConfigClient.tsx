@@ -5,10 +5,16 @@ import Link from "next/link";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import {
   archiveAiPromptConfig,
+  getAiJobStatusSummary,
   getAiProviderKeyStatus,
+  listAiJobControls,
   listAiPromptConfigs,
   publishAiPromptConfig,
+  updateAiJobControl,
   upsertAiProviderKey,
+  type AiJobControl,
+  type AiJobKind,
+  type AiJobStatusSummary,
   type AiPromptConfig,
   type AiPromptConfigInput,
   type AiPromptKind,
@@ -29,7 +35,52 @@ const KIND_META: Record<AiPromptKind, { label: string; description: string }> = 
     label: "Progress Report",
     description: "Weekly/monthly report generation.",
   },
+  english_grammar_analysis: {
+    label: "English Grammar Analysis",
+    description: "Grammar analysis cache + job pipeline for reading questions.",
+  },
 };
+
+const JOB_KIND_META: Record<AiJobKind, { label: string; description: string }> = {
+  attempt_insight: {
+    label: "Attempt Insight",
+    description: "Wrong-answer insight pipeline.",
+  },
+  coach_reply: {
+    label: "Coach Reply",
+    description: "AI coach replies in student chat.",
+  },
+  progress_report: {
+    label: "Progress Report",
+    description: "Weekly/monthly report generation.",
+  },
+  english_grammar_analysis: {
+    label: "English Grammar Analysis",
+    description: "Grammar analysis for reading questions.",
+  },
+  snapshot_refresh: {
+    label: "Snapshot Refresh",
+    description: "Rebuild student snapshot summaries.",
+  },
+  thread_summary: {
+    label: "Thread Summary",
+    description: "Summarize long coach threads.",
+  },
+  procedure_merge: {
+    label: "Procedure Merge",
+    description: "Merge duplicate procedures.",
+  },
+};
+
+const JOB_KIND_ORDER: AiJobKind[] = [
+  "attempt_insight",
+  "coach_reply",
+  "progress_report",
+  "english_grammar_analysis",
+  "snapshot_refresh",
+  "thread_summary",
+  "procedure_merge",
+];
 
 const MODEL_DEFAULTS: Record<AiPromptConfigInput["model_provider"], string> = {
   minimax: "MiniMax-M2.1",
@@ -75,7 +126,28 @@ const DEFAULT_PROMPTS: Record<AiPromptKind, AiPromptConfigInput> = {
     model_provider: "minimax",
     model_id: MODEL_DEFAULTS.minimax,
   },
+  english_grammar_analysis: {
+    kind: "english_grammar_analysis",
+    prompt_version: "english-grammar-v2",
+    system_prompt:
+      "You are an expert English grammar analyst. Output only valid JSON per the schema.",
+    model_provider: "minimax",
+    model_id: MODEL_DEFAULTS.minimax,
+  },
 };
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
 
 function normalizeForm(
   config: AiPromptConfig | undefined,
@@ -107,24 +179,35 @@ function buildForms(configs: AiPromptConfig[]) {
     attempt_insight: normalizeForm(publishedByKind.attempt_insight, "attempt_insight"),
     coach_reply: normalizeForm(publishedByKind.coach_reply, "coach_reply"),
     progress_report: normalizeForm(publishedByKind.progress_report, "progress_report"),
+    english_grammar_analysis: normalizeForm(
+      publishedByKind.english_grammar_analysis,
+      "english_grammar_analysis",
+    ),
   };
 }
 
 type AiConfigClientProps = {
   initialConfigs?: AiPromptConfig[];
   initialKeyStatuses?: Partial<Record<AiProvider, AiProviderKeyStatus>>;
+  initialJobControls?: AiJobControl[];
+  initialJobStatus?: AiJobStatusSummary[];
   initialError?: string | null;
 };
 
 export default function AiConfigClient({
   initialConfigs,
   initialKeyStatuses,
+  initialJobControls,
+  initialJobStatus,
   initialError = null,
 }: AiConfigClientProps) {
   const supabase = getSupabaseClient();
   const hasInitialConfigs = initialConfigs !== undefined;
   const hasInitialKeyStatuses = initialKeyStatuses !== undefined;
+  const hasInitialJobControls = initialJobControls !== undefined;
+  const hasInitialJobStatus = initialJobStatus !== undefined;
   const hasInitialData = hasInitialConfigs && hasInitialKeyStatuses;
+  const hasInitialJobData = hasInitialJobControls && hasInitialJobStatus;
   const [configs, setConfigs] = useState<AiPromptConfig[]>(initialConfigs ?? []);
   const [loading, setLoading] = useState(!hasInitialConfigs && !initialError);
   const [error, setError] = useState<string | null>(initialError);
@@ -134,10 +217,16 @@ export default function AiConfigClient({
     initialKeyStatuses ?? {},
   );
   const [keyLoading, setKeyLoading] = useState(!hasInitialKeyStatuses && !initialError);
+  const [jobControls, setJobControls] = useState<AiJobControl[]>(initialJobControls ?? []);
+  const [jobStatus, setJobStatus] = useState<AiJobStatusSummary[]>(initialJobStatus ?? []);
+  const [jobLoading, setJobLoading] = useState(!hasInitialJobControls && !initialError);
+  const [jobStatusLoading, setJobStatusLoading] = useState(!hasInitialJobStatus && !initialError);
+  const [jobError, setJobError] = useState<string | null>(null);
   const [keyInputs, setKeyInputs] = useState<Record<AiPromptKind, string>>({
     attempt_insight: "",
     coach_reply: "",
     progress_report: "",
+    english_grammar_analysis: "",
   });
   const [keyErrors, setKeyErrors] = useState<Partial<Record<AiPromptKind, string | null>>>({});
   const [forms, setForms] = useState<Record<AiPromptKind, AiPromptConfigInput>>(() =>
@@ -145,7 +234,7 @@ export default function AiConfigClient({
   );
 
   useEffect(() => {
-    if (hasInitialData || initialError) return;
+    if ((hasInitialData && hasInitialJobData) || initialError) return;
     let active = true;
 
     async function load() {
@@ -153,6 +242,8 @@ export default function AiConfigClient({
         setError("Supabase not configured.");
         setLoading(false);
         setKeyLoading(false);
+        setJobLoading(false);
+        setJobStatusLoading(false);
         return;
       }
       const { data: sessionData } = await supabase.auth.getSession();
@@ -161,15 +252,19 @@ export default function AiConfigClient({
         setError("You are not signed in.");
         setLoading(false);
         setKeyLoading(false);
+        setJobLoading(false);
+        setJobStatusLoading(false);
         return;
       }
 
       try {
-        const [data, providerStatuses] = await Promise.all([
+        const [data, providerStatuses, controls, statusSummary] = await Promise.all([
           listAiPromptConfigs(session.access_token),
           Promise.all(
             PROVIDERS.map((provider) => getAiProviderKeyStatus(session.access_token, provider)),
           ),
+          listAiJobControls(session.access_token),
+          getAiJobStatusSummary(session.access_token),
         ]);
         if (!active) return;
         setConfigs(data);
@@ -185,6 +280,9 @@ export default function AiConfigClient({
         );
         setKeyErrors({});
         setForms(buildForms(data));
+        setJobControls(controls);
+        setJobStatus(statusSummary);
+        setJobError(null);
       } catch (err) {
         if (active) {
           setError(err instanceof Error ? err.message : "Failed to load configs.");
@@ -193,6 +291,8 @@ export default function AiConfigClient({
         if (active) {
           setLoading(false);
           setKeyLoading(false);
+          setJobLoading(false);
+          setJobStatusLoading(false);
         }
       }
     }
@@ -202,19 +302,36 @@ export default function AiConfigClient({
     return () => {
       active = false;
     };
-  }, [hasInitialData, initialError, supabase]);
+  }, [hasInitialData, hasInitialJobData, initialError, supabase]);
 
   const configsByKind = useMemo(() => {
     const grouped: Record<AiPromptKind, AiPromptConfig[]> = {
       attempt_insight: [],
       coach_reply: [],
       progress_report: [],
+      english_grammar_analysis: [],
     };
     for (const row of configs) {
       grouped[row.kind].push(row);
     }
     return grouped;
   }, [configs]);
+
+  const jobControlByKind = useMemo(() => {
+    const map: Partial<Record<AiJobKind, AiJobControl>> = {};
+    for (const row of jobControls) {
+      map[row.kind] = row;
+    }
+    return map;
+  }, [jobControls]);
+
+  const jobStatusByKind = useMemo(() => {
+    const map: Partial<Record<AiJobKind, AiJobStatusSummary>> = {};
+    for (const row of jobStatus) {
+      map[row.kind] = row;
+    }
+    return map;
+  }, [jobStatus]);
 
   function updateForm(kind: AiPromptKind, next: Partial<AiPromptConfigInput>) {
     setForms((prev) => ({
@@ -324,6 +441,50 @@ export default function AiConfigClient({
     }
   }
 
+  async function refreshJobStatus() {
+    if (!supabase) return;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return;
+
+    setJobStatusLoading(true);
+    setJobError(null);
+
+    try {
+      const statusSummary = await getAiJobStatusSummary(session.access_token);
+      setJobStatus(statusSummary);
+    } catch (err) {
+      setJobError(err instanceof Error ? err.message : "Failed to load AI job status.");
+    } finally {
+      setJobStatusLoading(false);
+    }
+  }
+
+  async function handleJobControlChange(
+    kind: AiJobKind,
+    updates: Pick<AiJobControl, "allow_enqueue" | "allow_process">,
+  ) {
+    if (!supabase) return;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const session = sessionData.session;
+    if (!session) return;
+
+    setJobLoading(true);
+    setJobError(null);
+
+    try {
+      const updated = await updateAiJobControl(session.access_token, kind, updates);
+      setJobControls((prev) => {
+        const next = prev.filter((row) => row.kind !== kind);
+        return [...next, updated].sort((a, b) => a.kind.localeCompare(b.kind));
+      });
+    } catch (err) {
+      setJobError(err instanceof Error ? err.message : "Failed to update job control.");
+    } finally {
+      setJobLoading(false);
+    }
+  }
+
   if (loading) {
     return (
       <main className="mx-auto max-w-[1280px] px-6 py-12">
@@ -359,6 +520,119 @@ export default function AiConfigClient({
           {error}
         </div>
       ) : null}
+
+      <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-balance text-lg font-semibold tracking-tight text-[color:var(--ink)]">
+              Service Controls & Status
+            </h2>
+            <p className="text-sm text-[color:var(--ink-muted)]">
+              Toggle enqueue/processing per job kind and review current queue status.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => void refreshJobStatus()}
+            disabled={jobStatusLoading}
+            className="mt-2 inline-flex items-center rounded-full border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-xs font-medium text-[color:var(--ink-muted)] transition hover:border-[color:var(--accent)] hover:text-[color:var(--ink)] disabled:opacity-60"
+          >
+            {jobStatusLoading ? "Refreshing…" : "Refresh Status"}
+          </button>
+        </div>
+
+        {jobError ? (
+          <p className="mt-4 text-sm text-[color:var(--danger-strong)]" role="alert">
+            {jobError}
+          </p>
+        ) : null}
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {JOB_KIND_ORDER.map((kind) => {
+            const control = jobControlByKind[kind];
+            const status = jobStatusByKind[kind];
+            const allowEnqueue = control?.allow_enqueue ?? true;
+            const allowProcess = control?.allow_process ?? true;
+            const toggleClass = (enabled: boolean) =>
+              `rounded-full border px-3 py-1 text-xs font-medium transition ${
+                enabled
+                  ? "border-[color:var(--accent)] text-[color:var(--ink)]"
+                  : "border-[color:var(--border)] text-[color:var(--ink-muted)]"
+              }`;
+
+            return (
+              <div
+                key={kind}
+                className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-medium text-[color:var(--ink-muted)]">
+                      {JOB_KIND_META[kind].label}
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-[color:var(--ink)]">
+                      {JOB_KIND_META[kind].description}
+                    </p>
+                  </div>
+                  <span className="rounded-full border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-2 py-1 text-[11px] font-medium text-[color:var(--ink-muted)]">
+                    {kind}
+                  </span>
+                </div>
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={allowEnqueue}
+                    onClick={() =>
+                      handleJobControlChange(kind, {
+                        allow_enqueue: !allowEnqueue,
+                        allow_process: allowProcess,
+                      })
+                    }
+                    disabled={jobLoading}
+                    className={toggleClass(allowEnqueue)}
+                  >
+                    Enqueue: {allowEnqueue ? "Enabled" : "Disabled"}
+                  </button>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={allowProcess}
+                    onClick={() =>
+                      handleJobControlChange(kind, {
+                        allow_enqueue: allowEnqueue,
+                        allow_process: !allowProcess,
+                      })
+                    }
+                    disabled={jobLoading}
+                    className={toggleClass(allowProcess)}
+                  >
+                    Process: {allowProcess ? "Enabled" : "Disabled"}
+                  </button>
+                </div>
+
+                <div className="mt-4 grid gap-2 text-xs text-[color:var(--ink-muted)] sm:grid-cols-3">
+                  <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+                    queued {status?.queued_count ?? 0}
+                  </div>
+                  <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+                    running {status?.running_count ?? 0}
+                  </div>
+                  <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-soft)] px-3 py-2">
+                    error {status?.error_count ?? 0}
+                  </div>
+                </div>
+
+                <p className="mt-3 text-xs text-[color:var(--ink-muted)]">
+                  Updated {formatDateTime(status?.last_updated_at)} · Last success{" "}
+                  {formatDateTime(status?.last_success_at)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="rounded-xl border border-[color:var(--border)] bg-[color:var(--surface)] p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">

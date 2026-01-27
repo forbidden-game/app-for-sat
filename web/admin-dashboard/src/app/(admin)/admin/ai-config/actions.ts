@@ -4,7 +4,37 @@ import "server-only";
 import { requireAdmin } from "@/lib/adminAuth";
 import { recordAdminEvent } from "@/lib/adminAudit";
 
-export type AiPromptKind = "attempt_insight" | "coach_reply" | "progress_report";
+export type AiPromptKind =
+  | "attempt_insight"
+  | "coach_reply"
+  | "progress_report"
+  | "english_grammar_analysis";
+
+export type AiJobKind =
+  | "attempt_insight"
+  | "thread_summary"
+  | "procedure_merge"
+  | "coach_reply"
+  | "snapshot_refresh"
+  | "progress_report"
+  | "english_grammar_analysis";
+
+export type AiJobControl = {
+  kind: AiJobKind;
+  allow_enqueue: boolean;
+  allow_process: boolean;
+  updated_at: string | null;
+  updated_by: string | null;
+};
+
+export type AiJobStatusSummary = {
+  kind: AiJobKind;
+  queued_count: number;
+  running_count: number;
+  error_count: number;
+  last_updated_at: string | null;
+  last_success_at: string | null;
+};
 
 export type AiPromptConfig = {
   id: string;
@@ -250,4 +280,71 @@ export async function upsertAiProviderKey(
     last4: trimmed.slice(-4),
     updatedAt: now,
   };
+}
+
+export async function listAiJobControls(accessToken: string): Promise<AiJobControl[]> {
+  const { supabase } = await requireAdmin(accessToken);
+
+  const { data, error } = await supabase
+    .from("ai_job_controls")
+    .select("kind, allow_enqueue, allow_process, updated_at, updated_by")
+    .order("kind", { ascending: true });
+
+  if (error) {
+    throw new Error("Failed to load AI job controls.");
+  }
+
+  return (data ?? []) as AiJobControl[];
+}
+
+export async function updateAiJobControl(
+  accessToken: string,
+  kind: AiJobKind,
+  updates: Pick<AiJobControl, "allow_enqueue" | "allow_process">,
+): Promise<AiJobControl> {
+  const context = await requireAdmin(accessToken);
+  const now = new Date().toISOString();
+
+  const payload = {
+    allow_enqueue: updates.allow_enqueue,
+    allow_process: updates.allow_process,
+    updated_at: now,
+    updated_by: context.admin.id,
+  } as unknown as never;
+
+  const { data, error } = await context.supabase
+    .from("ai_job_controls")
+    .update(payload)
+    .eq("kind", kind)
+    .select("kind, allow_enqueue, allow_process, updated_at, updated_by")
+    .single();
+
+  if (error || !data) {
+    throw new Error("Failed to update AI job control.");
+  }
+
+  await recordAdminEvent(context, {
+    action: "ai_job_controls.update",
+    resourceType: "ai_job_controls",
+    resourceId: kind,
+    metadata: {
+      kind,
+      allow_enqueue: updates.allow_enqueue,
+      allow_process: updates.allow_process,
+    },
+  });
+
+  return data as AiJobControl;
+}
+
+export async function getAiJobStatusSummary(accessToken: string): Promise<AiJobStatusSummary[]> {
+  const { supabase } = await requireAdmin(accessToken);
+
+  const { data, error } = await supabase.rpc("get_ai_job_status_summary");
+
+  if (error) {
+    throw new Error("Failed to load AI job status summary.");
+  }
+
+  return (data ?? []) as AiJobStatusSummary[];
 }
