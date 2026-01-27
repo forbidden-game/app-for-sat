@@ -100,6 +100,34 @@ def chunked(items: List[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, A
         yield items[i : i + size]
 
 
+def _dedupe_rows(rows: List[Dict[str, Any]], on_conflict: str) -> Tuple[List[Dict[str, Any]], int]:
+    """Remove duplicates by conflict key within a single upsert command.
+
+    Postgres can raise:
+      ON CONFLICT DO UPDATE command cannot affect row a second time
+    when the input payload contains multiple rows with the same conflict key.
+
+    We keep the *last* occurrence to preserve deterministic updates.
+    """
+
+    cols = [c.strip() for c in on_conflict.split(",") if c.strip()]
+    if not cols or len(rows) <= 1:
+        return rows, 0
+
+    seen: set[Tuple[Any, ...]] = set()
+    out_rev: List[Dict[str, Any]] = []
+
+    for r in reversed(rows):
+        key = tuple(r.get(c) for c in cols)
+        if key in seen:
+            continue
+        seen.add(key)
+        out_rev.append(r)
+
+    out = list(reversed(out_rev))
+    return out, (len(rows) - len(out))
+
+
 def upsert_rows(
     base_url: str,
     api_key: str,
@@ -110,6 +138,10 @@ def upsert_rows(
 ) -> int:
     if not rows:
         return 0
+
+    rows, dropped = _dedupe_rows(rows, on_conflict)
+    if dropped > 0:
+        print(f"Warning: dropped {dropped} duplicate rows for {table} on_conflict={on_conflict}")
 
     prefer = "resolution=merge-duplicates,return=minimal"
     total = 0
@@ -217,18 +249,29 @@ def parse_numeric_value(raw: str) -> Optional[float]:
 def infer_question_type(row: dict) -> str:
     """Infer MCQ vs SPR from content.
 
-    We prefer robustness over trusting upstream labels, since PDF extraction can occasionally
-    misclassify questions.
+    We treat numeric/non-choice answers as authoritative:
+    - If correct_answer is a list -> numeric (SPR) accepted answers
+    - If correct_answer is a non A-D string -> numeric (SPR)
+
+    This avoids misclassifying SPR items that might carry stray A-D tokens in extracted text.
     """
 
     correct = row.get("correct_answer")
-    if isinstance(correct, str) and re.fullmatch(r"[A-D]", correct.strip()):
-        return "MCQ"
 
+    if isinstance(correct, list):
+        return "SPR"
+
+    if isinstance(correct, str):
+        c = correct.strip()
+        if re.fullmatch(r"[A-D]", c):
+            return "MCQ"
+        return "SPR"
+
+    # Fall back to choices structure.
     choices = row.get("choices")
     if isinstance(choices, list) and len(choices) >= 2:
         labels = [str(c.get("label") or "").strip() for c in choices if isinstance(c, dict)]
-        if any(re.fullmatch(r"[A-D]", lab) for lab in labels):
+        if all(re.fullmatch(r"[A-D]", lab) for lab in labels if lab):
             return "MCQ"
 
     return "SPR"
