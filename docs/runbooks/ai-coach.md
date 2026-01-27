@@ -6,10 +6,11 @@
 
 - AI Coach workers：`coach-service` 与 `notification-sender`
 - 默认环境变量文件：`/etc/app-for-sat/ai-coach.env`
+- 通知服务环境变量文件：`/etc/ai-coach/notification-sender.env`
 
 ## 服务与健康检查
 
-- systemd 服务（默认）：`ai-coach-chat-worker.service`、`ai-coach-insight-worker.service`
+- systemd 服务（默认）：`ai-coach-chat-worker.service`、`ai-coach-insight-worker.service`、`ai-coach-grammar-worker.service`
 - 额外服务（如部署通知）：`ai-coach-notification-sender.service`
 - 健康检查：`/usr/local/bin/ai-coach-healthcheck.sh`（timer: `ai-coach-healthcheck.timer`）
 
@@ -24,6 +25,32 @@
 - 查看 service 配置：`systemctl cat ai-coach-insight-worker.service`
 - 关注字段：`WorkingDirectory`、`ExecStart`（通常包含 repo 路径）
 - 如果 service 里没有路径，查看进程：`ps aux | rg "ai-coach/coach-service"`
+
+## English Grammar Worker
+
+- 目的：只处理 `english_grammar_analysis`
+- 注意：分工模式下应保持 `ai-coach-worker.service` 处于 disabled/stopped，避免与 chat/insight/grammar 竞争任务导致重复 claim。
+- service 示例（`/etc/systemd/system/ai-coach-grammar-worker.service`）：
+
+```ini
+[Unit]
+Description=AI Coach Grammar Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/root/apps/app-for-sat/ai-coach/coach-service
+EnvironmentFile=/etc/app-for-sat/ai-coach.env
+Environment=AI_COACH_WORKER_ID=alibaba_vps_grammar
+Environment=AI_COACH_JOB_KINDS=english_grammar_analysis
+Environment=AI_COACH_ENABLE_SCHEDULER=false
+ExecStart=/usr/bin/node /root/apps/app-for-sat/ai-coach/coach-service/dist/index.js
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
 
 ## 常见问题与处理
 
