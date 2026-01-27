@@ -60,6 +60,7 @@ WantedBy=multi-user.target
 - 排查：确认 `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` 有效；检查 Supabase 状态
 - 处理：重启对应 worker；必要时在 Supabase 查看 `ai_jobs` 状态
 - 英语语法分析：`select id, status, updated_at from ai_jobs where kind = 'english_grammar_analysis' order by updated_at desc limit 20;`
+- 检查开关：`select kind, allow_enqueue, allow_process from ai_job_controls;`
 
 ### 2) 模型调用失败
 

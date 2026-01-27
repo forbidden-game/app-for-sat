@@ -66,7 +66,7 @@
 关键字段：
 
 - `id` uuid PK default `gen_random_uuid()`
-- `kind` text（attempt_insight|thread_summary|procedure_merge|coach_reply|snapshot_refresh|progress_report）
+- `kind` text（attempt_insight|thread_summary|procedure_merge|coach_reply|snapshot_refresh|progress_report|english_grammar_analysis）
 - `status` text（queued|running|done|error）
 - `attempt_id` uuid nullable
 - `student_id` uuid nullable
@@ -105,9 +105,25 @@
 - `locked_by` text nullable
 - `created_at`/`updated_at`
 
+### 2.4 `public.ai_job_controls`
+
+用途：AI job 的入队/执行开关（仅服务端/管理端）。
+
+关键字段：
+
+- `kind` text（attempt_insight|thread_summary|procedure_merge|coach_reply|snapshot_refresh|progress_report|english_grammar_analysis）
+- `allow_enqueue` boolean
+- `allow_process` boolean
+- `updated_at` timestamptz
+- `updated_by` uuid nullable
+
 ---
 
 ## 3. RPC / SQL 函数（关键）
+
+### 3.0 `get_ai_job_status_summary()`
+
+用途：汇总各 `ai_jobs` kind 的队列状态（queued/running/error）与最近更新时间。
 
 ### 3.1 `claim_ai_jobs(p_worker_id, p_limit, p_kinds)`
 

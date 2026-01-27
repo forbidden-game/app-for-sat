@@ -114,7 +114,7 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 字段：
 
 - `id` uuid PK
-- `kind` text
+- `kind` text（attempt_insight|thread_summary|procedure_merge|coach_reply|snapshot_refresh|progress_report|english_grammar_analysis）
 - `status` text (queued|running|done|error)
 - `attempt_id` uuid nullable
 - `student_id` uuid nullable
@@ -175,7 +175,19 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `locked_by` text nullable
 - `created_at`/`updated_at`
 
-## 9) `public.ai_provider_keys`
+## 9) `public.ai_job_controls`
+
+AI job 开关（入队/执行）。
+
+字段：
+
+- `kind` text（attempt_insight|thread_summary|procedure_merge|coach_reply|snapshot_refresh|progress_report|english_grammar_analysis）
+- `allow_enqueue` boolean
+- `allow_process` boolean
+- `updated_at` timestamptz
+- `updated_by` uuid nullable
+
+## 10) `public.ai_provider_keys`
 
 Provider key（服务端读取）。
 
@@ -187,7 +199,7 @@ Provider key（服务端读取）。
 - `created_by` / `updated_by` uuid
 - `created_at` / `updated_at` timestamptz
 
-## 10) `public.ai_agent_logs`
+## 11) `public.ai_agent_logs`
 
 AI Coach agent 执行日志（prompt + tool 轨迹，用于 debug）。
 

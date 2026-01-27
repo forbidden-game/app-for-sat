@@ -55,6 +55,6 @@ npm run dev
 - 管理端从 `parent-dashboard` 中拆分，迁移为独立的 `admin-dashboard`。
 - 管理端路由保持 `/admin`，并使用 server-side service role 访问后端。
 - 管理端新增题库管理（question_banks）的增删改查页面。
-- 管理端新增 AI Config（ai_prompt_configs）、OpenRouter key 配置（ai_provider_keys）与 AI Logs（ai_agent_logs）。
+- 管理端新增 AI Config（ai_prompt_configs，含 english_grammar_analysis）、服务开关（ai_job_controls）、OpenRouter key 配置（ai_provider_keys）与 AI Logs（ai_agent_logs）。
 - 管理端 UI/UX 统一更新（排版、表格、表单、面板与 AI Logs 视图样式）。
 - 管理端品牌文案更新为 “Backside of Meng’s Dream”。

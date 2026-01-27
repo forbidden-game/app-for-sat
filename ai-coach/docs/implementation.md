@@ -44,7 +44,8 @@ Run:
 Notes:
 
 - Worker will periodically enqueue `snapshot_refresh` + `progress_report` jobs (interval via `AI_COACH_SCHEDULE_INTERVAL_MS`).
-- Published rows in `ai_prompt_configs` override system prompts + model routing (env defaults are fallback).
+- Published rows in `ai_prompt_configs` override system prompts + model routing (env defaults are fallback), including `english_grammar_analysis`.
+- `ai_job_controls` can disable enqueue vs process per kind; worker only claims allowed kinds.
 
 ## Notification Sender
 
@@ -66,8 +67,8 @@ Run:
 ## Edge Functions
 
 - `submit_attempt`: scores + inserts an `attempts` row and returns `{ isCorrect, attemptId }`.
-- `set_attempt_step`: updates `attempts.student_selected_step_*` after the student selects a step, and bumps `ai_jobs.run_after` to speed up processing.
-- `coach_chat`: appends a user message to the per-student global coach thread and enqueues an `ai_jobs(kind='coach_reply')` job.
+- `set_attempt_step`: updates `attempts.student_selected_step_*` after the student selects a step, and bumps `ai_jobs.run_after` to speed up processing (respects `ai_job_controls.allow_enqueue`).
+- `coach_chat`: appends a user message to the per-student global coach thread and enqueues an `ai_jobs(kind='coach_reply')` job (respects `ai_job_controls.allow_enqueue`).
 
 ## Trigger
 
