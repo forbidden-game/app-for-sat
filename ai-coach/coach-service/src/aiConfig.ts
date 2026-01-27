@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type AiPromptKind = "attempt_insight" | "coach_reply" | "progress_report";
+export type AiPromptKind =
+  | "attempt_insight"
+  | "coach_reply"
+  | "progress_report"
+  | "english_grammar_analysis";
 
 export type AiPromptConfig = {
   id: string;
@@ -18,7 +22,12 @@ let cachedAt = 0;
 let cachedConfigs: Partial<Record<AiPromptKind, AiPromptConfig>> | null = null;
 
 function isAiPromptKind(value: string): value is AiPromptKind {
-  return value === "attempt_insight" || value === "coach_reply" || value === "progress_report";
+  return (
+    value === "attempt_insight" ||
+    value === "coach_reply" ||
+    value === "progress_report" ||
+    value === "english_grammar_analysis"
+  );
 }
 
 export async function getPublishedAiPromptConfigs(

@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { CoachConfig } from "./config.js";
 import { logger } from "./logger.js";
+import { getAiJobControls, isEnqueueEnabled } from "./jobControls.js";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const BATCH_SIZE = 200;
@@ -98,13 +99,22 @@ export async function scheduleRecurringJobs(
 
   const periodEnd = startOfDayUtc(new Date());
   const payloads: JobInsertPayload[] = [];
+  const controls = await getAiJobControls(supabase);
+  const allowSnapshot = isEnqueueEnabled("snapshot_refresh", controls);
+  const allowReport = isEnqueueEnabled("progress_report", controls);
 
   for (const studentId of studentIds) {
-    payloads.push(buildSnapshotRefreshJob(studentId, periodEnd));
-    payloads.push(buildProgressReportJob(studentId, "weekly", config.reportWeeklyDays, periodEnd));
-    payloads.push(
-      buildProgressReportJob(studentId, "monthly", config.reportMonthlyDays, periodEnd),
-    );
+    if (allowSnapshot) {
+      payloads.push(buildSnapshotRefreshJob(studentId, periodEnd));
+    }
+    if (allowReport) {
+      payloads.push(
+        buildProgressReportJob(studentId, "weekly", config.reportWeeklyDays, periodEnd),
+      );
+      payloads.push(
+        buildProgressReportJob(studentId, "monthly", config.reportMonthlyDays, periodEnd),
+      );
+    }
   }
 
   for (let i = 0; i < payloads.length; i += BATCH_SIZE) {

@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildCoachContext, type CoachContextPacket } from "../context/coachContext.js";
 import { errorModeEnum, type ErrorModeEnum } from "../domain/errorModes.js";
 import { logger } from "../logger.js";
+import { getAiJobControls, isEnqueueEnabled } from "../jobControls.js";
 
 type SearchProcedureCandidate = {
   procedure_id: string;
@@ -34,6 +35,11 @@ export type CoachToolOptions = {
 };
 
 async function enqueueSnapshotRefresh(supabase: SupabaseClient, studentId: string): Promise<void> {
+  const controls = await getAiJobControls(supabase);
+  if (!isEnqueueEnabled("snapshot_refresh", controls)) {
+    return;
+  }
+
   const dedupeKey = `snapshot:${studentId}:${new Date().toISOString().slice(0, 10)}`;
   const { error } = await supabase.from("ai_jobs").insert({
     kind: "snapshot_refresh",

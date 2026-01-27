@@ -8,12 +8,15 @@ export const DEFAULT_SYSTEM_PROMPTS: Record<AiPromptKind, string> = {
   coach_reply:
     "你是一位严格、精要的 SAT 全科老师。默认用中文，先给最小可执行下一步，再问一个澄清问题。避免长篇大论。",
   progress_report: "你是严格、精要的 SAT 一对一老师，只输出 JSON。",
+  english_grammar_analysis:
+    "You are an expert English grammar analyst. Output only valid JSON per the schema.",
 };
 
 export const DEFAULT_PROMPT_VERSIONS: Record<AiPromptKind, string> = {
   attempt_insight: "ai-coach-insight-v2",
   coach_reply: "ai-coach-chat-v2",
   progress_report: "ai-coach-report-v1",
+  english_grammar_analysis: "english-grammar-v2",
 };
 
 export type PromptOverrides = {
@@ -31,7 +34,12 @@ export function resolvePromptOverrides(
     >
   > | null,
 ): PromptOverrides | null {
-  if (kind !== "attempt_insight" && kind !== "coach_reply" && kind !== "progress_report") {
+  if (
+    kind !== "attempt_insight" &&
+    kind !== "coach_reply" &&
+    kind !== "progress_report" &&
+    kind !== "english_grammar_analysis"
+  ) {
     return null;
   }
 

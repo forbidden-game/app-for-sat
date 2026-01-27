@@ -10,6 +10,7 @@ import { JobDeferredError } from "./jobs/jobErrors.js";
 import { resolvePromptOverrides } from "./prompts/promptOverrides.js";
 import { getProviderApiKey } from "./providerKeys.js";
 import { scheduleRecurringJobs } from "./scheduler.js";
+import { getAllowedProcessKinds } from "./jobControls.js";
 import type { AiJobRow } from "./types.js";
 
 async function resolveProviderKey(
@@ -102,7 +103,7 @@ async function claimJobs(
   const params: Record<string, unknown> = {
     p_worker_id: workerId,
     p_limit: limit,
-    p_kinds: jobKinds && jobKinds.length > 0 ? jobKinds : null,
+    p_kinds: jobKinds === null ? null : jobKinds,
   };
 
   const { data, error } = await supabase.rpc("claim_ai_jobs", params);
@@ -196,11 +197,12 @@ export async function runWorker(config: CoachConfig, supabase: SupabaseClient): 
     let jobs: AiJobRow[] = [];
 
     try {
+      const allowedKinds = await getAllowedProcessKinds(supabase, config.jobKinds);
       jobs = await claimJobs(
         supabase,
         config.workerId,
         Math.min(config.claimLimit, capacity),
-        config.jobKinds,
+        allowedKinds,
       );
     } catch (err) {
       logger.error({ err }, "failed to claim jobs");
