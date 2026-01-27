@@ -69,7 +69,10 @@ For `numeric`:
 
 ## Bank Structure (Fixed)
 
-We create fixed banks per test and module:
+We create fixed banks per test and module (icons follow the existing seed conventions):
+
+- Reading & Writing banks: `book.closed.fill`
+- Math banks: `function`
 
 - `...-rw-m1`
 - `...-rw-m2`

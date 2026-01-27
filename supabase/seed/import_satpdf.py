@@ -398,12 +398,14 @@ def main() -> int:
                 else:
                     bank_id = stable_uuid(f"satpdf:bank:{slug}")
 
+            icon = "book.closed.fill" if section == "Reading and Writing" else "function"
+
             bank_row = {
                 "id": bank_id,
                 "slug": slug,
                 "title": title,
                 "subtitle": subtitle,
-                "icon": None,
+                "icon": icon,
                 "mode": "fixed",
                 "question_limit": question_limit,
                 "rule_json": {},
