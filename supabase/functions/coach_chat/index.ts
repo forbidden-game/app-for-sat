@@ -29,6 +29,17 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+async function isEnqueueEnabled(kind: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("ai_job_controls")
+    .select("allow_enqueue")
+    .eq("kind", kind)
+    .maybeSingle();
+
+  if (error) return true;
+  return data?.allow_enqueue ?? true;
+}
+
 serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -113,6 +124,11 @@ serve(async (req) => {
 
   if (insertError || !userMessage) {
     return jsonResponse({ error: "message_insert_failed" }, 500);
+  }
+
+  const allowEnqueue = await isEnqueueEnabled("coach_reply");
+  if (!allowEnqueue) {
+    return jsonResponse({ ok: true, userMessageId: userMessage.id, enqueue: "disabled" }, 200);
   }
 
   const { error: jobError } = await supabase.from("ai_jobs").insert({

@@ -29,6 +29,17 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
+async function isEnqueueEnabled(kind: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("ai_job_controls")
+    .select("allow_enqueue")
+    .eq("kind", kind)
+    .maybeSingle();
+
+  if (error) return true;
+  return data?.allow_enqueue ?? true;
+}
+
 serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
@@ -84,6 +95,11 @@ serve(async (req) => {
 
   if (!updated) {
     return jsonResponse({ error: "attempt_not_found" }, 404);
+  }
+
+  const allowEnqueue = await isEnqueueEnabled("attempt_insight");
+  if (!allowEnqueue) {
+    return jsonResponse({ ok: true, enqueue: "disabled" }, 200);
   }
 
   const now = new Date().toISOString();

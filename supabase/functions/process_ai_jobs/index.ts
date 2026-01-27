@@ -56,6 +56,23 @@ function clampLimit(value: number | undefined, fallback = 3) {
   return Math.min(Math.max(Math.trunc(value), 1), 10);
 }
 
+const PROCESS_KINDS = ["attempt_insight", "coach_reply"];
+
+async function listAllowedProcessKinds(): Promise<string[] | null> {
+  const { data, error } = await supabase
+    .from("ai_job_controls")
+    .select("kind, allow_process")
+    .in("kind", PROCESS_KINDS);
+
+  if (error) return null;
+
+  const allowed = (data ?? [])
+    .filter((row) => row.allow_process)
+    .map((row) => row.kind as string);
+
+  return allowed;
+}
+
 serve(async (req) => {
   if (req.method !== "POST") {
     return jsonResponse({ error: "method_not_allowed" }, 405);
@@ -80,9 +97,15 @@ serve(async (req) => {
   const workerId = body.worker_id ?? `worker-${crypto.randomUUID()}`;
   const limit = clampLimit(body.limit);
 
+  const allowedKinds = await listAllowedProcessKinds();
+  if (Array.isArray(allowedKinds) && allowedKinds.length === 0) {
+    return jsonResponse({ ok: true, workerId, processed: [] }, 200);
+  }
+
   const { data: jobs, error: jobError } = await supabase.rpc("claim_ai_jobs", {
     p_worker_id: workerId,
     p_limit: limit,
+    p_kinds: allowedKinds === null ? null : allowedKinds,
   });
 
   if (jobError) {
