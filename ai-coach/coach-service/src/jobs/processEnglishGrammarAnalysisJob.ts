@@ -6,7 +6,6 @@ import { buildEnglishGrammarPrompt } from "../prompts/englishGrammarPrompt.js";
 import { logger } from "../logger.js";
 import type { AiJobRow } from "../types.js";
 
-export const ENGLISH_GRAMMAR_PROMPT_VERSION = "english-grammar-v2";
 const MAX_RESPONSE_CHARS = 200_000;
 const MAX_SIMPLE_SENTENCES = 30;
 
@@ -181,9 +180,10 @@ export async function processEnglishGrammarAnalysisJob(
   const promptVersion =
     typeof payload.prompt_version === "string" && payload.prompt_version.length > 0
       ? payload.prompt_version
-      : ENGLISH_GRAMMAR_PROMPT_VERSION;
+      : null;
 
   if (!questionId) throw new Error("missing question_id");
+  if (!promptVersion) throw new Error("missing_prompt_version");
 
   const { data: questionRow, error: questionError } = await supabase
     .from("questions")
