@@ -73,6 +73,3 @@ public struct EnglishGrammarAnalysis: Codable, Equatable {
     }
 }
 
-public enum EnglishGrammarAnalysisDefaults {
-    public static let promptVersion = "english-grammar-v2"
-}

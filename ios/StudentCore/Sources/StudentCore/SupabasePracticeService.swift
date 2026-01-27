@@ -241,7 +241,6 @@ public final class SupabasePracticeService {
 
         struct RequestParams: Encodable {
             let p_question_id: UUID
-            let p_prompt_version: String
         }
 
         struct RequestRow: Decodable {
@@ -255,8 +254,7 @@ public final class SupabasePracticeService {
             .rpc(
                 "request_english_grammar_analysis",
                 params: RequestParams(
-                    p_question_id: uuid,
-                    p_prompt_version: EnglishGrammarAnalysisDefaults.promptVersion
+                    p_question_id: uuid
                 )
             )
             .execute()
@@ -293,7 +291,6 @@ public final class SupabasePracticeService {
             .from("english_grammar_analyses")
             .select("status, result, error, prompt_version, updated_at")
             .eq("question_id", value: uuid)
-            .eq("prompt_version", value: EnglishGrammarAnalysisDefaults.promptVersion)
             .order("updated_at", ascending: false)
             .limit(1)
             .execute()
