@@ -68,5 +68,7 @@ jobs:
               echo "Dependencies unchanged; skipping npm install."
             fi
             npm run build
-            systemctl restart ai-coach-worker.service
+            systemctl restart ai-coach-chat-worker.service
+            systemctl restart ai-coach-insight-worker.service
+            systemctl restart ai-coach-grammar-worker.service
             systemctl restart ai-coach-notification-sender.service
