@@ -151,22 +151,20 @@ async function updateAnalysisRow(
     costUsd?: number | null;
   },
 ): Promise<void> {
-  const { error } = await supabase
-    .from("english_grammar_analyses")
-    .upsert(
-      {
-        question_id: params.questionId,
-        text_hash: params.textHash,
-        prompt_version: params.promptVersion,
-        status: params.status,
-        result: params.result ?? null,
-        error: params.error ?? null,
-        model: params.model ?? null,
-        cost_usd: params.costUsd ?? null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "question_id,text_hash,prompt_version" },
-    );
+  const { error } = await supabase.from("english_grammar_analyses").upsert(
+    {
+      question_id: params.questionId,
+      text_hash: params.textHash,
+      prompt_version: params.promptVersion,
+      status: params.status,
+      result: params.result ?? null,
+      error: params.error ?? null,
+      model: params.model ?? null,
+      cost_usd: params.costUsd ?? null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "question_id,text_hash,prompt_version" },
+  );
 
   if (error) throw new Error(error.message);
 }

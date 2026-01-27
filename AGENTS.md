@@ -19,6 +19,13 @@
 - `web/parent-dashboard`：家长端（Next.js）
 - `ios/StudentApp` + `ios/StudentCore`：iOS App 与共享 Core
 
+## 提交规范
+
+- 使用 Conventional Commits 格式，例如：`fix(supabase): ...`
+- 允许的 type：`feat|fix|perf|refactor|test|build|ci|docs|chore|revert`
+- subject 规范：小写动词开头、现在时、不要句号、<= 72 字符
+- breaking change：使用 `!` 或 footer `BREAKING CHANGE: ...`
+
 ## 本地开发
 
 ### Web 应用
