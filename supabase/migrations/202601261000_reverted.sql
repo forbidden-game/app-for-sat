@@ -1,0 +1,2 @@
+-- Reverted migration placeholder.
+-- This file exists to keep local migrations in sync with remote history.
