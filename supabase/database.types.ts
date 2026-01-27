@@ -283,6 +283,30 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_job_controls: {
+        Row: {
+          allow_enqueue: boolean
+          allow_process: boolean
+          kind: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          allow_enqueue?: boolean
+          allow_process?: boolean
+          kind: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          allow_enqueue?: boolean
+          allow_process?: boolean
+          kind?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       ai_provider_keys: {
         Row: {
           api_key: string
@@ -1340,6 +1364,17 @@ export type Database = {
               isSetofReturn: true
             }
           }
+      get_ai_job_status_summary: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          error_count: number
+          kind: string
+          last_success_at: string | null
+          last_updated_at: string | null
+          queued_count: number
+          running_count: number
+        }[]
+      }
       claim_notification_events: {
         Args: { p_limit?: number; p_worker_id: string }
         Returns: {

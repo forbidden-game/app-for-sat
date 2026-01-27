@@ -793,7 +793,7 @@
 **字段**（摘要）
 
 - `id` uuid, PK
-- `kind` text (`attempt_insight` | `coach_reply` | `progress_report`)
+- `kind` text (`attempt_insight` | `coach_reply` | `progress_report` | `english_grammar_analysis`)
 - `prompt_version` text
 - `system_prompt` text
 - `model_provider` text (`minimax` | `openai` | `openrouter`)
@@ -818,6 +818,20 @@
 - `api_key` text
 - `created_by` / `updated_by` uuid
 - `created_at` / `updated_at` timestamptz
+
+---
+
+### `public.ai_job_controls`
+
+**用途**：AI job 的入队/执行开关（仅 Admin/服务端使用）。
+
+**字段**（摘要）
+
+- `kind` text (`attempt_insight` | `coach_reply` | `progress_report` | `english_grammar_analysis` | `thread_summary` | `procedure_merge` | `snapshot_refresh`)
+- `allow_enqueue` boolean
+- `allow_process` boolean
+- `updated_at` timestamptz
+- `updated_by` uuid
 
 ---
 
@@ -901,6 +915,10 @@
 ### `public.claim_ai_jobs(p_worker_id text, p_limit int, p_kinds text[] default null)`
 
 **用途**：worker 原子性 claim `ai_jobs`（`queued` -> `running`，`for update skip locked`）。`p_kinds` 可选，用于仅领取指定 kind 的任务。
+
+### `public.get_ai_job_status_summary()`
+
+**用途**：汇总各 `ai_jobs` kind 的队列状态（queued/running/error）与最近更新时间。
 
 ### `public.search_procedure_candidates(p_subject text, p_query text, p_limit int)`
 
