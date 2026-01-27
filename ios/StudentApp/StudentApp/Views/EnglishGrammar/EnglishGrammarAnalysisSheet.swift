@@ -5,7 +5,6 @@ struct EnglishGrammarAnalysisSheet: View {
     let questionId: String
 
     @StateObject private var viewModel: EnglishGrammarAnalysisViewModel
-    @State private var selectedComponentId: String?
 
     init(questionId: String) {
         self.questionId = questionId
@@ -103,53 +102,22 @@ struct EnglishGrammarAnalysisSheet: View {
     private func analysisView(_ analysis: EnglishGrammarAnalysis) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("语法分析 Grammar Analysis")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(AppTheme.textPrimary)
-
-                if let passage = analysis.passage, !passage.isEmpty {
-                    textCard(title: "段落 / Passage", body: passage)
-                }
-
-                textCard(title: "题干 / Prompt", body: analysis.prompt)
-
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("句子结构 / Sentences")
-                        .font(.headline)
-                        .foregroundStyle(AppTheme.textSecondary)
-
-                    ForEach(analysis.sentences) { sentence in
-                        EnglishGrammarSentenceCard(
-                            sentence: sentence,
-                            selectedComponentId: $selectedComponentId
-                        )
-                    }
-                }
-
-                if !analysis.importantWords.isEmpty {
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("重点词汇 / Important Words")
-                            .font(.headline)
-                            .foregroundStyle(AppTheme.textSecondary)
-
-                        ForEach(analysis.importantWords) { word in
-                            ImportantWordCard(word: word)
-                        }
-                    }
-                }
+                analysisCard(analysis)
             }
             .padding(.bottom, 24)
         }
     }
 
-    private func textCard(title: String, body: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-                .foregroundStyle(AppTheme.textSecondary)
-            Text(body)
-                .font(.body)
-                .foregroundStyle(AppTheme.textPrimary)
+    private func analysisCard(_ analysis: EnglishGrammarAnalysis) -> some View {
+        VStack(alignment: .leading, spacing: 20) {
+            sectionTitle("主干核心 / Core")
+            sentencePairView(analysis.coreSentence)
+
+            Divider()
+                .overlay(AppTheme.divider)
+
+            sectionTitle("简单句还原 / Simple Sentences")
+            simpleSentenceList(analysis.simpleSentences ?? [])
         }
         .padding(AppMetrics.cardPadding)
         .appSurface(
@@ -160,145 +128,69 @@ struct EnglishGrammarAnalysisSheet: View {
             shadowY: AppMetrics.cardShadowY
         )
     }
-}
 
-private struct EnglishGrammarSentenceCard: View {
-    let sentence: EnglishGrammarSentence
-    @Binding var selectedComponentId: String?
+    private func sectionTitle(_ text: String) -> some View {
+        Text(text)
+            .font(.headline)
+            .foregroundStyle(AppTheme.textSecondary)
+    }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(attributedSentence())
-                .font(.body)
-                .foregroundStyle(AppTheme.textPrimary)
+    private func sentencePairView(_ pair: EnglishGrammarSentencePair?) -> some View {
+        let zh = pair?.zh.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let en = pair?.en.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
 
-            ForEach(sentence.components) { component in
-                componentRow(component)
+        return VStack(alignment: .leading, spacing: 6) {
+            if !zh.isEmpty {
+                Text(zh)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(AppTheme.textPrimary)
+            }
+            if !en.isEmpty {
+                Text(en)
+                    .font(.subheadline)
+                    .foregroundStyle(AppTheme.textSecondary)
+            }
+            if zh.isEmpty && en.isEmpty {
+                Text("暂无 / Not available")
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.textMuted)
             }
         }
-        .padding(AppMetrics.cardPadding)
-        .appSurface(
-            fill: AppTheme.surfaceRaised,
-            stroke: AppTheme.divider,
-            cornerRadius: AppMetrics.cardCornerRadius,
-            shadowRadius: AppMetrics.cardShadowRadius,
-            shadowY: AppMetrics.cardShadowY
-        )
     }
 
-    private func attributedSentence() -> AttributedString {
-        var attributed = AttributedString(sentence.text)
-        guard let selected = sentence.components.first(where: { $0.id == selectedComponentId }) else {
-            return attributed
+    private func simpleSentenceList(_ sentences: [EnglishGrammarSentencePair]) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if sentences.isEmpty {
+                Text("暂无 / Not available")
+                    .font(.footnote)
+                    .foregroundStyle(AppTheme.textMuted)
+            } else {
+                ForEach(Array(sentences.enumerated()), id: \.offset) { index, sentence in
+                    simpleSentenceRow(index: index + 1, sentence: sentence)
+                }
+            }
         }
-
-        if let stringRange = stringRange(for: selected),
-           let attrRange = Range(stringRange, in: attributed) {
-            attributed[attrRange].backgroundColor = AppTheme.accentStrong.opacity(0.25)
-            attributed[attrRange].foregroundColor = AppTheme.textPrimary
-        }
-        return attributed
     }
 
-    private func stringRange(for component: EnglishGrammarComponent) -> Range<String.Index>? {
-        guard component.start >= 0, component.end > component.start else { return nil }
-        let utf16Count = sentence.text.utf16.count
-        guard component.start <= utf16Count, component.end <= utf16Count else { return nil }
-        let startIndex = String.Index(utf16Offset: component.start, in: sentence.text)
-        let endIndex = String.Index(utf16Offset: component.end, in: sentence.text)
-        return startIndex..<endIndex
-    }
+    private func simpleSentenceRow(index: Int, sentence: EnglishGrammarSentencePair) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Text("\(index).")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.textSecondary)
+                .frame(width: 24, alignment: .leading)
 
-    private func componentRow(_ component: EnglishGrammarComponent) -> some View {
-        Button {
-            selectedComponentId = component.id
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(spacing: 8) {
-                    Text(component.labelZh)
-                        .font(.subheadline.weight(.semibold))
+            VStack(alignment: .leading, spacing: 4) {
+                if !sentence.zh.isEmpty {
+                    Text(sentence.zh)
+                        .font(.body)
                         .foregroundStyle(AppTheme.textPrimary)
-                    Text(component.labelEn)
+                }
+                if !sentence.en.isEmpty {
+                    Text(sentence.en)
                         .font(.subheadline)
                         .foregroundStyle(AppTheme.textSecondary)
-                    Spacer()
-                    Text(component.type)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppTheme.textMuted)
-                        .padding(.vertical, 4)
-                        .padding(.horizontal, 8)
-                        .background(AppTheme.surface)
-                        .clipShape(Capsule())
                 }
-
-                if let zh = component.explanationZh, !zh.isEmpty {
-                    Text(zh)
-                        .font(.footnote)
-                        .foregroundStyle(AppTheme.textSecondary)
-                }
-                if let en = component.explanationEn, !en.isEmpty {
-                    Text(en)
-                        .font(.footnote)
-                        .foregroundStyle(AppTheme.textMuted)
-                }
-            }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 10)
-            .background(selectedComponentId == component.id ? AppTheme.accentStrong.opacity(0.1) : AppTheme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct ImportantWordCard: View {
-    let word: EnglishImportantWord
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Text(word.word)
-                    .font(.headline)
-                    .foregroundStyle(AppTheme.textPrimary)
-                if let pos = word.partOfSpeech, !pos.isEmpty {
-                    Text(pos)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppTheme.textMuted)
-                        .padding(.vertical, 3)
-                        .padding(.horizontal, 8)
-                        .background(AppTheme.surface)
-                        .clipShape(Capsule())
-                }
-            }
-
-            if let zh = word.meaningZh, !zh.isEmpty {
-                Text(zh)
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.textSecondary)
-            }
-            if let en = word.meaningEn, !en.isEmpty {
-                Text(en)
-                    .font(.footnote)
-                    .foregroundStyle(AppTheme.textMuted)
-            }
-            if let zh = word.whyZh, !zh.isEmpty {
-                Text(zh)
-                    .font(.caption)
-                    .foregroundStyle(AppTheme.textSecondary)
-            }
-            if let en = word.whyEn, !en.isEmpty {
-                Text(en)
-                    .font(.caption)
-                    .foregroundStyle(AppTheme.textMuted)
             }
         }
-        .padding(AppMetrics.cardPadding)
-        .appSurface(
-            fill: AppTheme.surfaceRaised,
-            stroke: AppTheme.divider,
-            cornerRadius: AppMetrics.cardCornerRadius,
-            shadowRadius: AppMetrics.cardShadowRadius,
-            shadowY: AppMetrics.cardShadowY
-        )
     }
 }
