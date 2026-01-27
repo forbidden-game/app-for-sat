@@ -761,6 +761,29 @@
 
 ---
 
+### `public.english_grammar_analyses`
+
+**用途**：英语语法分析缓存 + 任务状态（Analyze 按钮与自动分析共用）。
+
+**字段**（摘要）
+
+- `question_id` uuid
+- `text_hash` text
+- `prompt_version` text
+- `status` text (`queued` | `running` | `done` | `error`)
+- `result` jsonb
+- `error` text
+- `model` text
+- `cost_usd` numeric
+- `created_at` / `updated_at` timestamptz
+
+**入口函数**
+
+- `request_english_grammar_analysis(question_id, student_id)`
+- `prompt_version` 由服务端决定，客户端不传参；函数负责入队 `ai_jobs`。
+
+---
+
 ## AI Coach Config（Admin）
 
 ### `public.ai_prompt_configs`

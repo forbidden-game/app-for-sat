@@ -137,7 +137,29 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `(status, updated_at)`
 - unique(kind, dedupe_key) where dedupe_key is not null
 
-## 7) `public.notification_events`
+## 7) `public.english_grammar_analyses`
+
+英语语法分析请求与结果缓存（Analyze 按钮与自动分析共用）。
+
+字段：
+
+- `question_id` uuid
+- `text_hash` text
+- `prompt_version` text
+- `status` text (queued|running|done|error)
+- `result` jsonb
+- `error` text
+- `model` text
+- `cost_usd` numeric
+- `created_at` / `updated_at`
+
+入口 RPC：
+
+- `request_english_grammar_analysis(question_id, student_id)`
+- `prompt_version` 由服务端统一决定，客户端不传。
+- RPC 负责写入 `ai_jobs`。
+
+## 8) `public.notification_events`
 
 通知发送队列。
 
@@ -153,7 +175,7 @@ AI 自增长的“解题套路库”（procedure taxonomy）。
 - `locked_by` text nullable
 - `created_at`/`updated_at`
 
-## 8) `public.ai_provider_keys`
+## 9) `public.ai_provider_keys`
 
 Provider key（服务端读取）。
 
@@ -165,7 +187,7 @@ Provider key（服务端读取）。
 - `created_by` / `updated_by` uuid
 - `created_at` / `updated_at` timestamptz
 
-## 9) `public.ai_agent_logs`
+## 10) `public.ai_agent_logs`
 
 AI Coach agent 执行日志（prompt + tool 轨迹，用于 debug）。
 
