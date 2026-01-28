@@ -1,5 +1,33 @@
 import Foundation
 
+public struct QuestionMedia: Codable, Equatable {
+    public let type: String?
+    public let path: String?
+    public let storagePath: String?
+    public let publicUrl: String?
+    public let page: Int?
+    public let bbox: [Double]?
+
+    enum CodingKeys: String, CodingKey {
+        case type
+        case path
+        case storagePath = "storage_path"
+        case publicUrl = "public_url"
+        case page
+        case bbox
+    }
+}
+
+public struct QuestionMetadata: Codable, Equatable {
+    public let promptMedia: [QuestionMedia]?
+    public let choiceMedia: [String: QuestionMedia]?
+
+    enum CodingKeys: String, CodingKey {
+        case promptMedia = "prompt_media"
+        case choiceMedia = "choice_media"
+    }
+}
+
 public struct Question: Codable, Equatable {
     public let id: String
     public let subject: String?
@@ -7,6 +35,7 @@ public struct Question: Codable, Equatable {
     public let stem: String
     public let options: [QuestionOption]?
     public let answerKey: AnswerKey?
+    public let metadata: QuestionMetadata?
 
     public init(
         id: String,
@@ -14,7 +43,8 @@ public struct Question: Codable, Equatable {
         stem: String,
         options: [QuestionOption]?,
         answerKey: AnswerKey? = nil,
-        subject: String? = nil
+        subject: String? = nil,
+        metadata: QuestionMetadata? = nil
     ) {
         self.id = id
         self.subject = subject
@@ -22,6 +52,7 @@ public struct Question: Codable, Equatable {
         self.stem = stem
         self.options = options
         self.answerKey = answerKey
+        self.metadata = metadata
     }
 }
 

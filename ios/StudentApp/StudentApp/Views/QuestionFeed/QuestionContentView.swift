@@ -105,6 +105,9 @@ struct QuestionContentView: View {
     }
 
     private func bodyLayout() -> some View {
+        if hasPromptMedia {
+            return AnyView(mediaBodyLayout())
+        }
         switch layout {
         case .short:
             return AnyView(shortBodyLayout())
@@ -115,6 +118,17 @@ struct QuestionContentView: View {
 
     private var shouldShowAnalysisButton: Bool {
         analysisEnabled && question.subject == "reading"
+    }
+
+    private var promptMediaUrls: [URL] {
+        question.metadata?.promptMedia?.compactMap { media in
+            guard let urlString = media.publicUrl else { return nil }
+            return URL(string: urlString)
+        } ?? []
+    }
+
+    private var hasPromptMedia: Bool {
+        !promptMediaUrls.isEmpty
     }
 
     private func shortBodyLayout() -> some View {
@@ -291,6 +305,14 @@ struct QuestionContentView: View {
         layoutTask?.cancel()
         layoutTask = nil
 
+        if hasPromptMedia {
+            layout = .short
+            layoutReady = true
+            state.setStemPageCount(1, for: question.id)
+            state.setStemPage(0, for: question.id)
+            return
+        }
+
         if let cached = QuestionLayoutEngine.shared.cachedLayout(
             question: question,
             size: size,
@@ -355,6 +377,53 @@ struct QuestionContentView: View {
             colorScheme: colorScheme,
             displayScale: displayScale,
             textColor: AppTheme.textPrimary
+        )
+    }
+
+    // MARK: - Media Question Body
+
+    private func mediaBodyLayout() -> some View {
+        ScrollView {
+            VStack(spacing: AppMetrics.sectionSpacing) {
+                if shouldShowAnalysisButton {
+                    HStack {
+                        Spacer()
+                        analyzeButton
+                    }
+                }
+
+                mediaQuestionCard()
+                QuestionAnswerContentView(
+                    question: question,
+                    answerPage: nil,
+                    questionIndex: index,
+                    total: total,
+                    state: state,
+                    store: store,
+                    submission: submission,
+                    questionStartedAt: questionStartedAt,
+                    returnToOverviewOnAnswer: $returnToOverviewOnAnswer,
+                    onShowOverview: onShowOverview,
+                    onSubmissionError: onSubmissionError
+                )
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func mediaQuestionCard() -> some View {
+        VStack(spacing: 12) {
+            ForEach(promptMediaUrls, id: \.absoluteString) { url in
+                RemoteImageView(url: url, cornerRadius: AppMetrics.cardCornerRadius)
+            }
+        }
+        .padding(AppMetrics.cardPadding)
+        .appSurface(
+            fill: AppTheme.surface,
+            stroke: AppTheme.divider,
+            cornerRadius: AppMetrics.cardCornerRadius,
+            shadowRadius: AppMetrics.cardShadowRadius,
+            shadowY: AppMetrics.cardShadowY
         )
     }
 
