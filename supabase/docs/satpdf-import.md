@@ -21,8 +21,6 @@ Each question includes:
 - `choices[]` (for MCQ)
 - `correct_answer` (string for MCQ, string or list for SPR)
 - `source.pages` (for PDF audit)
-- `prompt_media[]` (optional; prompt image crops)
-- `choices[].media` (optional; per-choice image crops)
 
 ## Mapping To Supabase Schema
 
@@ -53,9 +51,6 @@ Note: iOS uses `question.subject == "reading"` to decide if grammar analysis UI 
   - imported from `question_text`
 - `metadata`:
   - includes `external_id`, `test_id`, `section`, `dsat_module`, `question_number`, and PDF `pages`
-  - adds media references when present:
-    - `prompt_media[]`
-    - `choice_media` (map from `A/B/C/D` to media)
 
 ### answer_key
 
@@ -73,15 +68,6 @@ For `numeric`:
 
 - `correct` remains for backwards compatibility.
 - `accepted` is used by the `submit_attempt` function to score numeric responses.
-
-## Media Assets
-
-- Prompt/choice images are uploaded to Supabase Storage bucket `question-media`.
-- The importer writes `metadata.prompt_media` and `metadata.choice_media` with:
-  - `storage_path`: object path in the bucket
-  - `public_url`: public URL used by iOS
-
-The dataset zip must include the media files referenced by `prompt_media[].path` and `choices[].media.path` (typically under `media/`).
 
 ## Bank Structure (Fixed)
 

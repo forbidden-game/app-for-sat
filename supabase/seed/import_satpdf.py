@@ -27,7 +27,6 @@ import json
 import os
 import re
 import time
-import mimetypes
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -94,46 +93,6 @@ def rest_url(base_url: str, table: str, params: Optional[Dict[str, str]] = None)
     if not params:
         return base
     return base + "?" + urllib.parse.urlencode(params)
-
-
-def storage_url(base_url: str, path: str) -> str:
-    return base_url.rstrip("/") + f"/storage/v1/{path.lstrip('/')}"
-
-
-def ensure_storage_bucket(base_url: str, api_key: str, bucket: str) -> None:
-    buckets = request_json(storage_url(base_url, "bucket"), "GET", api_key)
-    if isinstance(buckets, list) and any(b.get("name") == bucket for b in buckets):
-        return
-    payload = json.dumps({"name": bucket, "public": True}).encode("utf-8")
-    request_json(storage_url(base_url, "bucket"), "POST", api_key, payload=payload)
-
-
-def upload_storage_object(
-    base_url: str,
-    api_key: str,
-    bucket: str,
-    object_path: str,
-    data: bytes,
-    content_type: str,
-) -> None:
-    url = storage_url(base_url, f"object/{bucket}/{object_path}")
-    request = urllib.request.Request(url, data=data, method="POST")
-    request.add_header("apikey", api_key)
-    request.add_header("Authorization", f"Bearer {api_key}")
-    request.add_header("Content-Type", content_type)
-    request.add_header("x-upsert", "true")
-
-    with urllib.request.urlopen(request, timeout=120) as response:
-        response.read()
-
-
-def public_storage_url(base_url: str, bucket: str, object_path: str) -> str:
-    return storage_url(base_url, f"object/public/{bucket}/{object_path}")
-
-
-def guess_content_type(path: str) -> str:
-    ctype, _ = mimetypes.guess_type(path)
-    return ctype or "application/octet-stream"
 
 
 def chunked(items: List[Dict[str, Any]], size: int) -> Iterable[List[Dict[str, Any]]]:
@@ -354,51 +313,7 @@ def build_answer_key(question_type: str, correct_answer: Any) -> Dict[str, Any]:
     return {"correct": accepted_unique[0], "accepted": accepted_unique}
 
 
-def normalize_media_entry(
-    entry: dict,
-    *,
-    input_dir: str,
-    base_url: str,
-    api_key: str,
-    bucket: str,
-    uploaded: set[str],
-    upload_enabled: bool,
-) -> dict:
-    path = str(entry.get("path") or "").strip()
-    if not path:
-        return entry
-
-    object_path = path.replace("\\", "/").lstrip("/")
-    if object_path.startswith(".."):
-        raise RuntimeError(f"Invalid media path (must be relative): {path}")
-
-    local_path = object_path if os.path.isabs(path) else os.path.join(input_dir, object_path)
-    if not os.path.exists(local_path):
-        raise RuntimeError(f"Media file not found: {local_path}")
-
-    if upload_enabled and object_path not in uploaded:
-        with open(local_path, "rb") as f:
-            data = f.read()
-        content_type = guess_content_type(local_path)
-        upload_storage_object(base_url, api_key, bucket, object_path, data, content_type)
-        uploaded.add(object_path)
-
-    out = dict(entry)
-    out["storage_path"] = object_path
-    out["public_url"] = public_storage_url(base_url, bucket, object_path)
-    return out
-
-
-def build_question_rows(
-    questions: List[dict],
-    *,
-    input_dir: str,
-    base_url: str,
-    api_key: str,
-    media_bucket: str,
-    uploaded: set[str],
-    upload_enabled: bool,
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
+def build_question_rows(questions: List[dict]) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     q_rows: List[Dict[str, Any]] = []
     opt_rows: List[Dict[str, Any]] = []
 
@@ -419,38 +334,6 @@ def build_question_rows(
 
         answer_key = build_answer_key(qtype, q.get("correct_answer"))
 
-        prompt_media: List[dict] = []
-        for entry in q.get("prompt_media") or []:
-            if isinstance(entry, dict):
-                prompt_media.append(
-                    normalize_media_entry(
-                        entry,
-                        input_dir=input_dir,
-                        base_url=base_url,
-                        api_key=api_key,
-                        bucket=media_bucket,
-                        uploaded=uploaded,
-                        upload_enabled=upload_enabled,
-                    )
-                )
-
-        choice_media: Dict[str, dict] = {}
-        for opt in q.get("choices", []) or []:
-            if not isinstance(opt, dict):
-                continue
-            label = str(opt.get("label") or "").strip()
-            entry = opt.get("media")
-            if label and isinstance(entry, dict):
-                choice_media[label] = normalize_media_entry(
-                    entry,
-                    input_dir=input_dir,
-                    base_url=base_url,
-                    api_key=api_key,
-                    bucket=media_bucket,
-                    uploaded=uploaded,
-                    upload_enabled=upload_enabled,
-                )
-
         metadata = {
             "source": "collegeboard_pdf",
             "external_id": external_id,
@@ -465,10 +348,6 @@ def build_question_rows(
             "extracted_question_type": extracted_type,
             "import_version": 1,
         }
-        if prompt_media:
-            metadata["prompt_media"] = prompt_media
-        if choice_media:
-            metadata["choice_media"] = choice_media
 
         q_rows.append(
             {
@@ -487,7 +366,7 @@ def build_question_rows(
             for opt in q.get("choices", []) or []:
                 label = str(opt.get("label") or "").strip()
                 content = str(opt.get("text") or "").strip()
-                if not label:
+                if not label or not content:
                     continue
                 oid = stable_uuid(f"satpdf:option:{qid}:{label}")
                 opt_rows.append(
@@ -511,13 +390,6 @@ def main() -> int:
 
     base_url = require_env("SUPABASE_URL")
     api_key = require_env("SUPABASE_SERVICE_ROLE_KEY")
-
-    media_bucket = "question-media"
-    upload_enabled = not args.dry_run
-    uploaded_paths: set[str] = set()
-
-    if upload_enabled:
-        ensure_storage_bucket(base_url, api_key, media_bucket)
 
     files = sorted(glob.glob(os.path.join(args.input_dir, "*.questions.json")))
     if not files:
@@ -586,15 +458,7 @@ def main() -> int:
 
             print(f"Import bank {slug} ({len(questions)} questions)")
 
-            q_rows, opt_rows = build_question_rows(
-                questions,
-                input_dir=args.input_dir,
-                base_url=base_url,
-                api_key=api_key,
-                media_bucket=media_bucket,
-                uploaded=uploaded_paths,
-                upload_enabled=upload_enabled,
-            )
+            q_rows, opt_rows = build_question_rows(questions)
 
             qbq_rows: List[Dict[str, Any]] = []
             for q in questions:
