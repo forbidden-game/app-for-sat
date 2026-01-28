@@ -78,8 +78,7 @@ public final class SupabasePracticeService {
                 stem: payload.stem,
                 options: payload.options,
                 answerKey: nil,
-                subject: payload.subject,
-                metadata: payload.metadata
+                subject: payload.subject
             )
         }
 
@@ -99,8 +98,7 @@ public final class SupabasePracticeService {
                 stem: payload.stem,
                 options: payload.options,
                 answerKey: nil,
-                subject: payload.subject,
-                metadata: payload.metadata
+                subject: payload.subject
             )
         }
 
@@ -616,7 +614,6 @@ private struct QuestionPayload: Decodable {
     let questionType: String
     let stem: String
     let options: [QuestionOption]?
-    let metadata: QuestionMetadata?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -624,7 +621,6 @@ private struct QuestionPayload: Decodable {
         case questionType = "question_type"
         case stem
         case options
-        case metadata
     }
 }
 

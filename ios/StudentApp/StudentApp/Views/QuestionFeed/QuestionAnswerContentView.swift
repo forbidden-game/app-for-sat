@@ -84,11 +84,6 @@ struct QuestionAnswerContentView: View {
         }
     }
 
-    private func choiceMediaURL(for label: String) -> URL? {
-        guard let urlString = question.metadata?.choiceMedia?[label]?.publicUrl else { return nil }
-        return URL(string: urlString)
-    }
-
     private func optionButton(_ option: QuestionOption, questionId: String, questionIndex: Int) -> some View {
         let isCurrentQuestion = questionIndex == state.currentIndex
         let storedSelection = store[questionId]?.displayString
@@ -113,14 +108,9 @@ struct QuestionAnswerContentView: View {
                 // ✅ Using OptionBadge component
                 OptionBadge(label: option.label, isSelected: isSelected)
 
-                if let mediaUrl = choiceMediaURL(for: option.label) {
-                    RemoteImageView(url: mediaUrl, cornerRadius: 8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    MathTextView(text: option.content, style: .option)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                MathTextView(text: option.content, style: .option)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Spacer()
             }
