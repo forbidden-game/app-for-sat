@@ -168,7 +168,7 @@ jobs:
         run: npm run lint
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: 1.200.3
 
@@ -273,7 +273,7 @@ jobs:
         run: npm run check -w ai-coach-service
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: 1.200.3
 
@@ -335,7 +335,7 @@ jobs:
         run: npm run check -w ai-coach-notification-sender
 
       - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
+        uses: supabase/setup-cli@v2
         with:
           version: 1.200.3
 
